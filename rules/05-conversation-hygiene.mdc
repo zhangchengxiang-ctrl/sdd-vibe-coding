@@ -1,0 +1,33 @@
+---
+description: 对话卫生 — 轨锁定、换轨落盘、handoff 只改行。Always apply。
+alwaysApply: true
+---
+
+# 对话卫生
+
+## 范围锁定
+
+一个会话默认一条轨（**Intake** / **Owner** / **Build**）。  
+边界外新需求 → 完成当前轨后写 `.next-rail.md` 或建议新对话。  
+可写路径 → `vibe-coding` → `role-rails`。
+
+## 换轨硬触发
+
+| 触发 | 动作 |
+|------|------|
+| 口述愿望/故障未排期 | **Intake**：写 demand-pool；禁 Spec / 改码 |
+| Intake 收束需排期 | `docs/product/.next-rail.md`（rail: owner）+ 一行指针 |
+| 排期 / 拍板切片 | **Owner**：改池；升格 Spec；禁业务实现 |
+| Owner 派落地 | `docs/specs/<id>/.next-rail.md` + 一行指针；**新对话 Build** |
+| 验收矩阵尚有无终态 | 同会话继续下一 SC 或 Blocked+原因 |
+| 矩阵跑完且不 OK | remediation + `.next-rail`；禁同会话热修 |
+| remediation 收束 | 再测 `.next-rail` + 一行指针 |
+| 合同变更（In/体验/生效通道） | 停「到齐」；更新 Spec 或新对话 |
+| 上下文混多目标 / 同区二次修复仍失败 | 建议新对话 |
+
+聊天指针必含路径；工单含：轨 · 挂载 · 进度 · 禁止事项。  
+阶段 0：禁止验收/Intake 自动 spawn 开修。
+
+## 会话结束
+
+仅当推进了已挂载 Spec 的状态/下一步/blocker 时更新 `docs/reference/handoff.md` **对应行**。

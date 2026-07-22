@@ -1,0 +1,35 @@
+**[Intake·DEM-001·shape]**
+
+这轮没法在当前工作区直接改业务代码，原因有两层：
+
+1. **空仓**：`sdd-sandbox-empty` 只有 SDD 脚手架，没有搜索页源码；实现在 **SkillHub**：`/home/zcx/code/skillhub/web/src/pages/search.tsx`。
+2. **SDD 闸**：「优化 + 编号清单」判为 **Intake**；且钩子禁止写工作区外文件。对 skillhub 的 `StrReplace` 已全部被拦截。
+
+我已把需求沉淀为产品记忆（可 Review）：
+
+- `docs/product/demand-pool.md` → **DEM-001**
+- `docs/product/modules/search-experience/shape.md` → 三处 AC + 改动文件清单
+- `docs/reference/handoff.md` → 筹备中条目
+
+---
+
+### 待落地改动（SkillHub）
+
+| # | 你的要求 | 当前代码 | 改法 |
+|---|---------|---------|------|
+| 1 | 去掉顶部冗余提示条 | 筛选区下有 `search.loadingMore` 条（268–273 行） | 删除该块；SearchBar 已有 `isSearching` |
+| 2 | 默认按相关度 | `sort \|\| 'newest'`（search.tsx:96、router.tsx:207） | 改为 `'relevance'` |
+| 3 | 空态引导 + 示例 | 无 `q` 时 EmptyState 无 description/action | 加 `search.emptyGuide` + 可点示例 `agent` / `code review` / `@global` |
+
+---
+
+### 如何让我真正改代码
+
+任选其一：
+
+1. **在 Cursor 打开 SkillHub 仓库**（`/home/zcx/code/skillhub`），再发：**「开始做 DEM-001」**（或「实现搜索体验优化」——需含「开始做/实现」类 Build 信号，且不要以「优化」开头）。
+2. 或在本仓回复 **「开始在 skillhub 实现 DEM-001」**——Build 轨下可用 Shell 改工作区外文件。
+
+你列了 **3** 条，消息里写了「四点」——若还有第 4 条（例如首页「查看全部」也要统一默认 `relevance`），补一句我一起写进 Shape。
+
+**Docs: N/A**（Intake 轨，仅产品记忆；无 Spec 挂载）

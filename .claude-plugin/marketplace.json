@@ -1,0 +1,24 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "sdd-superpowers-marketplace",
+  "description": "SDD Superpowers local marketplace",
+  "owner": {
+    "name": "SDD Superpowers"
+  },
+  "metadata": {
+    "description": "sdd-superpowers — Spec-Driven Delivery for any repo",
+    "version": "0.3.0"
+  },
+  "plugins": [
+    {
+      "name": "sdd-superpowers",
+      "description": "Spec-Driven Delivery：判轨 · 产品记忆 · Intake→Owner→Build · docs CI",
+      "version": "0.3.0",
+      "author": {
+        "name": "SDD Superpowers"
+      },
+      "source": "./",
+      "category": "productivity"
+    }
+  ]
+}

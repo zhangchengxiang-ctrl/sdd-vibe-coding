@@ -1,0 +1,32 @@
+---
+description: 文档回填 — 指向宿主 docs/README 矩阵；已挂 Spec / 新产品能力变更时拦截假完成。Always apply。
+alwaysApply: true
+---
+
+# 文档回填（拦截级）
+
+> **唯一真源：宿主仓 `docs/README.md`（或 `docs/README.zh-CN.md`）回填矩阵。**  
+> 插件不硬编码项目路径；无矩阵时用 scaffold 模板中的默认矩阵。
+
+## 何时适用
+
+仅对已挂载 Spec、新产品能力或架构/系统边界变更执行。  
+回答、诊断、纯验证、trivial、内部规则维护、不改变产品合同的修复 → 默认 **Docs: N/A**（验证报告写理由）。
+
+## 拦截条件
+
+适用时，以下任一成立则禁止报告「完成 / 可合并 / 已修复」：
+
+- 已挂载 Spec 但行为变更未更新对应 requirements / tasks / validation
+- 未按宿主回填矩阵更新，且 validation 未写 **Docs: N/A** + 理由
+- 改系统边界未更新 `docs/product/foundation/system-map.md` / 必要 ADR（若宿主有）
+- Spec 状态、下一步或 blocker 已变，但未更新 `docs/reference/handoff.md` **对应行**
+- 宿主 `AGENTS.md` 要求的前端/浏览器验证未做（若改动触及用户可见面）
+
+## 红线
+
+- **禁止**用新增文档或勾任务替代真实实现和验证
+- **禁止**把 handoff 写成单焦点长文（格式 → 插件 `skills/_docs-factory/HANDOFF.md`）
+- 切版/关版/新建设计稿 → 同步宿主 `docs/product/README.md` 模块索引（若存在）
+
+项目红线、验证命令、进程边界 → **只读宿主 `AGENTS.md`**，不在本规则写死。

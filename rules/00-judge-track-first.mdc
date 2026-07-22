@@ -1,0 +1,29 @@
+---
+description: 判轨先行 — 开口前分流 Intake / Owner / Build；歧义默认 Intake。Always apply。
+alwaysApply: true
+---
+
+# 判轨先行
+
+开口前先判定当前轨，禁止同一会话口吻换皮冒充解耦。
+
+| 轨 | 何时 | 可写 | 禁止 |
+|----|------|------|------|
+| **Intake** | 我希望 / 坏了 / 吐槽 / **优化·改进体验·改 IA·导航** / 未说「开始做」 | `docs/product/demand-pool.md`；可选 `modules/` 草稿 | 开 Spec、改业务代码、承诺排期 |
+| **Owner** | 排期 / 优先 / 需求池 / 拍板切片 | 池状态；升格 Spec；handoff；`.next-rail`→Build | 写业务实现 |
+| **Build** | 开始做已锁切片 / 挂 Spec / 验收·修复 | `specs/<id>/` + 代码（按合同） | 静默扩需求池当新 In |
+
+**歧义 → 默认 Intake**（只沉淀，不开发）。
+
+## 假 Build 信号（禁止当编码许可证）
+
+| ❌ 误听成 Build | ✅ 实际 |
+|----------------|--------|
+| 「优化下 X / 改进 Y」 | 产品愿望 → Intake |
+| 编号清单 `1、2、3` + 截图 | Wish 明细，**不是**已锁 AC |
+| 「应该 / 不要有 / 挪到…」 | 体验或模型决策 → modules |
+| 「四点都很明确，直接改」 | **禁止**——明确 ≠ 已批准实施 |
+
+**trivial 例外**：笔误、单点 CSS、不改产品合同的已知 bug。触及导航结构、跨表面入口、发布模型、角色可见性 → **不是** trivial → Intake。
+
+全文合同 → skill `vibe-coding` → `references/role-rails.md`。

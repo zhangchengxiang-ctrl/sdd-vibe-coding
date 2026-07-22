@@ -1,0 +1,23 @@
+{
+  "name": "sdd-superpowers",
+  "version": "0.3.0",
+  "description": "Spec-Driven Delivery for any repo: 判轨先行 · 产品记忆先行 · Intake→Owner→Build · spec 工具箱 · 验收→修复闭环 · 产品回归合同 · docs CI。项目细节只读宿主 AGENTS.md / docs/。",
+  "author": {
+    "name": "SDD Superpowers"
+  },
+  "logo": "assets/logo.svg",
+  "keywords": [
+    "sdd",
+    "spec-driven",
+    "intake",
+    "product-memory",
+    "product-regression",
+    "vibe-coding",
+    "cursor",
+    "claude-code",
+    "codex"
+  ],
+  "rules": "./rules/",
+  "skills": "./skills/",
+  "hooks": "hooks.json"
+}
