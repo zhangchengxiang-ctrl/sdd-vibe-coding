@@ -1,6 +1,6 @@
 interface:
-  display_name: "Delivery Verification"
-  short_description: "按真实用户场景执行分层验收、维护证据链并诚实分类失败结果"
-  default_prompt: "Use $testing to verify this delivery scope with honest scenario evidence."
+  display_name: "产品交付验收"
+  short_description: "按真实用户旅程验收，先给可否交付的结论、证据和限制"
+  default_prompt: "使用 $testing 验收当前版本，先用产品经理能判断的方式告诉我是否可以交付。"
 policy:
   allow_implicit_invocation: false

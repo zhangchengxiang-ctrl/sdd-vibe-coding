@@ -24,8 +24,25 @@ ACTIVE_VERSION_STATUSES = {"ready", "in-progress", "verifying", "blocked"}
 TASK_STATUSES = {"ready", "in-progress", "passed", "failed", "blocked", "cancelled"}
 RAILS = {"shape", "plan", "build", "verify", "repair", "diagnose", "incident"}
 WORKSPACES = {"local", "codex-worktree", "git-worktree", "blocked", "n/a"}
-CLAIM_TYPES = {"task", "contract", "resource"}
+CLAIM_TYPES = {"resource"}
 CLAIM_STATUSES = {"active", "released"}
+ROUTE_VERSION = "1"
+ROUTE_REQUIRED_FIELDS = {
+    "route_version",
+    "route_id",
+    "rail",
+    "spec",
+    "task",
+    "objective",
+    "source",
+    "workspace",
+    "owner",
+    "claims",
+    "stop_when",
+    "on_pass",
+    "on_fail",
+}
+ROUTE_NATIVE_FIELDS = {"thread_id", "subagent_id", "goal_id"}
 
 
 class Report:
@@ -49,28 +66,57 @@ def clean_cell(value: str) -> str:
     return value.strip().replace("`", "").replace("**", "")
 
 
+def heading_level(line: str) -> int | None:
+    match = re.match(r"^(#+)\s+", line)
+    return len(match.group(1)) if match else None
+
+
+def find_heading(
+    lines: list[str],
+    heading: str | tuple[str, ...],
+) -> tuple[int, str] | None:
+    candidates = (heading,) if isinstance(heading, str) else heading
+    for candidate in candidates:
+        try:
+            return lines.index(candidate), candidate
+        except ValueError:
+            continue
+    return None
+
+
+def heading_label(heading: str | tuple[str, ...]) -> str:
+    return heading if isinstance(heading, str) else " or ".join(heading)
+
+
 def markdown_link_target(value: str) -> str | None:
     match = re.search(r"\[[^\]]+\]\(([^)]+)\)", value)
     return match.group(1) if match else None
 
 
-def parse_table(path: Path, heading: str, report: Report) -> list[dict[str, str]]:
+def parse_table(
+    path: Path,
+    heading: str | tuple[str, ...],
+    report: Report,
+) -> list[dict[str, str]]:
     if not path.is_file():
         return []
     lines = path.read_text(encoding="utf-8").splitlines()
-    try:
-        start = lines.index(heading) + 1
-    except ValueError:
-        report.fail(f"{path}: missing section {heading}")
+    found = find_heading(lines, heading)
+    if found is None:
+        report.fail(f"{path}: missing section {heading_label(heading)}")
         return []
+    heading_index, actual_heading = found
+    start = heading_index + 1
+    target_level = heading_level(actual_heading)
 
     while start < len(lines) and not lines[start].lstrip().startswith("|"):
-        if lines[start].startswith("## "):
-            report.fail(f"{path}: no table under {heading}")
+        level = heading_level(lines[start])
+        if level is not None and target_level is not None and level <= target_level:
+            report.fail(f"{path}: no table under {actual_heading}")
             return []
         start += 1
     if start >= len(lines):
-        report.fail(f"{path}: no table under {heading}")
+        report.fail(f"{path}: no table under {actual_heading}")
         return []
 
     def cells(line: str) -> list[str]:
@@ -90,7 +136,7 @@ def parse_table(path: Path, heading: str, report: Report) -> list[dict[str, str]
             rows.append(dict(zip(headers, values)))
         else:
             report.fail(
-                f"{path}: table row under {heading} has {len(values)} cells, "
+                f"{path}: table row under {actual_heading} has {len(values)} cells, "
                 f"expected {len(headers)}"
             )
         start += 1
@@ -119,6 +165,33 @@ def task_status(path: Path) -> str:
     return ""
 
 
+def section_field(
+    path: Path,
+    heading: str | tuple[str, ...],
+    field: str,
+) -> str:
+    if not path.is_file():
+        return ""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    found = find_heading(lines, heading)
+    if found is None:
+        return ""
+    heading_index, actual_heading = found
+    start = heading_index + 1
+    target_level = heading_level(actual_heading)
+    for line in lines[start:]:
+        level = heading_level(line)
+        if level is not None and target_level is not None and level <= target_level:
+            break
+        match = re.match(
+            rf"^\s*-\s*{re.escape(field)}\s*[：:]\s*(.*)$",
+            line,
+        )
+        if match:
+            return clean_cell(match.group(1))
+    return ""
+
+
 def yaml_like_fields(path: Path) -> dict[str, str]:
     fields: dict[str, str] = {}
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -135,6 +208,67 @@ def resolve_doc_link(root: Path, source: Path, cell: str) -> Path | None:
     if target.startswith("docs/"):
         return (root / target).resolve()
     return (source.parent / target).resolve()
+
+
+def validate_route(
+    route_path: Path,
+    *,
+    spec_id: str,
+    task_id: str,
+    rail: str,
+    workspace: str,
+    owner: str,
+    report: Report,
+) -> None:
+    route = yaml_like_fields(route_path)
+    missing = sorted(
+        key
+        for key in ROUTE_REQUIRED_FIELDS
+        if key not in route or route[key] == ""
+    )
+    if missing:
+        report.fail(f"{route_path}: missing required Route v1 fields {missing}")
+
+    expected_source = f"docs/specs/{spec_id}/tasks/{task_id}.md"
+    expected_fields = {
+        "route_version": ROUTE_VERSION,
+        "route_id": f"{spec_id}/{task_id}",
+        "spec": spec_id,
+        "task": task_id,
+        "rail": rail,
+        "workspace": workspace,
+        "source": expected_source,
+        "owner": owner,
+    }
+    for key, expected in expected_fields.items():
+        if key in route and route[key] != expected:
+            report.fail(
+                f"{route_path}: {key}='{route[key]}', expected '{expected}'"
+            )
+
+    for field in sorted(ROUTE_NATIVE_FIELDS & set(route)):
+        value = route[field]
+        if not value or value.lower() in {"none", "n/a"} or (
+            value.startswith("<") and value.endswith(">")
+        ):
+            report.fail(
+                f"{route_path}: optional native field {field} must be null "
+                "or a real runtime ID"
+            )
+
+    for owner_kind, native_field in (
+        ("user-thread", "thread_id"),
+        ("subagent", "subagent_id"),
+    ):
+        prefix = f"{owner_kind}:"
+        if not owner.startswith(prefix):
+            continue
+        expected_id = owner.removeprefix(prefix)
+        if not expected_id or route.get(native_field) != expected_id:
+            report.fail(
+                f"{route_path}: owner '{owner}' requires "
+                f"{native_field}='{expected_id}'"
+            )
 
 
 def ids(pattern: str, text: str) -> set[str]:
@@ -202,9 +336,15 @@ def main() -> int:
             "终态",
         ],
         "docs/specs/_template/routes/T-001.next-rail.md": [
+            "route_version:",
+            "route_id:",
             "rail:",
             "source:",
             "workspace:",
+            "owner:",
+            "thread_id:",
+            "subagent_id:",
+            "goal_id:",
             "claims:",
         ],
         "docs/operations/incidents/_template.md": [
@@ -233,7 +373,7 @@ def main() -> int:
         root / "docs/reference/claims.md", "# Active Claims", report
     )
     active_claims: dict[str, dict[str, str]] = {}
-    active_resources: dict[tuple[str, str], str] = {}
+    active_resources: dict[str, str] = {}
     for row in claim_rows:
         claim_id = clean_cell(row.get("Claim", ""))
         if not claim_id:
@@ -246,7 +386,10 @@ def main() -> int:
         workspace = clean_cell(row.get("Workspace", "")).lower()
         status = clean_cell(row.get("Status", "")).lower()
         if claim_type not in CLAIM_TYPES:
-            report.fail(f"claim {claim_id}: invalid Type '{claim_type}'")
+            report.fail(
+                f"claim {claim_id}: invalid Type '{claim_type}'; "
+                "only 'resource' is allowed"
+            )
         if status not in CLAIM_STATUSES:
             report.fail(f"claim {claim_id}: invalid Status '{status}'")
         if workspace not in WORKSPACES:
@@ -260,10 +403,10 @@ def main() -> int:
             if claim_id in active_claims:
                 report.fail(f"duplicate active Claim ID {claim_id}")
             active_claims[claim_id] = row
-            key = (claim_type, resource)
+            key = resource.casefold()
             if key in active_resources:
                 report.fail(
-                    f"claim conflict {claim_type}:{resource} "
+                    f"claim conflict resource:{resource} "
                     f"({active_resources[key]} and {claim_id})"
                 )
             active_resources[key] = claim_id
@@ -281,6 +424,7 @@ def main() -> int:
         report.ok(f"active rows={len(active_rows)}; WIP_CAP={wip_cap}")
 
     handoff_specs: set[str] = set()
+    referenced_claims: set[str] = set()
     for row in active_rows:
         spec_match = re.search(r"v\d{4}\.\d{2}-[a-z0-9-]+", row.get("Spec", ""))
         assert spec_match
@@ -318,19 +462,15 @@ def main() -> int:
         if route_path is None or not route_path.is_file():
             report.fail(f"handoff {spec_id}/{task_id}: Route is missing")
         else:
-            route = yaml_like_fields(route_path)
-            expected_source = f"docs/specs/{spec_id}/tasks/{task_id}.md"
-            for key, expected in {
-                "spec": spec_id,
-                "task": task_id,
-                "rail": rail,
-                "workspace": workspace,
-                "source": expected_source,
-            }.items():
-                if route.get(key) != expected:
-                    report.fail(
-                        f"{route_path}: {key}='{route.get(key)}', expected '{expected}'"
-                    )
+            validate_route(
+                route_path,
+                spec_id=spec_id,
+                task_id=task_id,
+                rail=rail,
+                workspace=workspace,
+                owner=owner,
+                report=report,
+            )
 
         claim_cell = clean_cell(row.get("Claims", ""))
         claim_ids = [
@@ -338,6 +478,7 @@ def main() -> int:
             if item and item.lower() not in {"n/a", "none", "—"}
         ]
         for claim_id in claim_ids:
+            referenced_claims.add(claim_id)
             claim = active_claims.get(claim_id)
             if claim is None:
                 report.fail(
@@ -350,6 +491,9 @@ def main() -> int:
                 report.fail(
                     f"handoff {spec_id}/{task_id}: Claim {claim_id} belongs elsewhere"
                 )
+
+    for claim_id in sorted(set(active_claims) - referenced_claims):
+        report.fail(f"active Claim {claim_id} is not referenced by active handoff")
 
     for version_file in sorted((root / "docs/specs").glob("v*/VERSION.md")):
         spec_dir = version_file.parent
@@ -427,7 +571,16 @@ def main() -> int:
             )
             if not mode_match or mode_match.group(1) not in WORKSPACES:
                 report.fail(f"{task_path}: invalid or missing workspace.mode")
+            if current == "passed":
+                result = section_field(task_path, "## 实际证据", "结果")
+                evidence = section_field(task_path, "## 实际证据", "证据路径")
+                if not result or not evidence:
+                    report.fail(
+                        f"{task_path}: passed Task requires actual result and evidence path"
+                    )
 
+        scenario_ids: set[str] = set()
+        requirement_ids: set[str] = set()
         if status in ACTIVE_VERSION_STATUSES:
             requirement_rows = parse_table(
                 spec_dir / "requirements.md", "## Requirements", report
@@ -465,6 +618,166 @@ def main() -> int:
             task_scenarios = ids(r"SC-\d{3}", task_text)
             for scenario_id in sorted(scenario_ids - task_scenarios):
                 report.fail(f"{spec_id}: {scenario_id} is not assigned to a Task")
+
+        delivery_target = version_field(version_file, "Delivery Target")
+        requires_accounted_matrix = delivery_target in {
+            "matrix-accounted",
+            "acceptance-passed",
+            "production-restored",
+            "production-delivered",
+            "user-accepted",
+        } or status == "done"
+        if requires_accounted_matrix:
+            validation_path = spec_dir / "validation.md"
+            if not requirement_ids:
+                requirement_rows = parse_table(
+                    spec_dir / "requirements.md", "## Requirements", report
+                )
+                requirement_ids = {
+                    clean_cell(row.get("ID", ""))
+                    for row in requirement_rows
+                    if re.fullmatch(r"R-\d{3}", clean_cell(row.get("ID", "")))
+                }
+            if not scenario_ids:
+                scenario_rows = parse_table(
+                    spec_dir / "scenario-spec.md", "## 场景矩阵", report
+                )
+                scenario_ids = {
+                    clean_cell(row.get("ID", ""))
+                    for row in scenario_rows
+                    if re.fullmatch(r"SC-\d{3}", clean_cell(row.get("ID", "")))
+                }
+            validation_rows = parse_table(
+                validation_path,
+                ("### 追踪矩阵", "## 追踪矩阵"),
+                report,
+            )
+            validation_scenarios: set[str] = set()
+            results: dict[str, str] = {}
+            for row in validation_rows:
+                scenario_id = clean_cell(row.get("Scenario", ""))
+                if not re.fullmatch(r"SC-\d{3}", scenario_id):
+                    continue
+                validation_scenarios.add(scenario_id)
+                requirement_id = clean_cell(row.get("Requirement", ""))
+                task_id = clean_cell(row.get("Task", ""))
+                implementation = clean_cell(row.get("Implementation", ""))
+                evidence = clean_cell(row.get("Evidence", ""))
+                result = clean_cell(row.get("Result", ""))
+                results[scenario_id] = result
+                if requirement_id not in requirement_ids:
+                    report.fail(
+                        f"{spec_id} validation {scenario_id}: unknown Requirement "
+                        f"'{requirement_id}'"
+                    )
+                if task_id not in actual_tasks:
+                    report.fail(
+                        f"{spec_id} validation {scenario_id}: unknown Task '{task_id}'"
+                    )
+                if not implementation or not evidence:
+                    report.fail(
+                        f"{spec_id} validation {scenario_id}: "
+                        "Implementation and Evidence are required"
+                    )
+                if result not in {"Pass", "Fail", "Blocked"}:
+                    report.fail(
+                        f"{spec_id} validation {scenario_id}: invalid Result '{result}'"
+                    )
+            for scenario_id in sorted(scenario_ids - validation_scenarios):
+                report.fail(
+                    f"{spec_id}: {scenario_id} missing from validation trace matrix"
+                )
+
+            classified_rows = parse_table(
+                validation_path,
+                ("### Fail / Blocked 分类", "## Fail / Blocked 分类"),
+                report,
+            )
+            classified = {
+                clean_cell(row.get("Scenario", "")): row
+                for row in classified_rows
+                if clean_cell(row.get("Scenario", ""))
+            }
+            for scenario_id, result in sorted(results.items()):
+                if result not in {"Fail", "Blocked"}:
+                    continue
+                row = classified.get(scenario_id)
+                if row is None:
+                    report.fail(
+                        f"{spec_id}: {scenario_id} {result} lacks classification"
+                    )
+                    continue
+                if not clean_cell(row.get("分类", "")) or not clean_cell(
+                    row.get("下一 Rail / Work Order", "")
+                ):
+                    report.fail(
+                        f"{spec_id}: {scenario_id} classification lacks route"
+                    )
+
+            engineering_conclusion = ("### 工程结论", "## 结论")
+            matrix = section_field(
+                validation_path,
+                engineering_conclusion,
+                "Matrix",
+            )
+            acceptance = section_field(
+                validation_path,
+                engineering_conclusion,
+                "Acceptance",
+            )
+            if matrix != "matrix-accounted":
+                report.fail(
+                    f"{spec_id}: accounted Delivery Target requires "
+                    "Matrix=matrix-accounted"
+                )
+            if delivery_target in {
+                "acceptance-passed",
+                "production-delivered",
+                "user-accepted",
+            } or status == "done":
+                non_pass = sorted(
+                    scenario_id
+                    for scenario_id, result in results.items()
+                    if result != "Pass"
+                )
+                if non_pass:
+                    report.fail(
+                        f"{spec_id}: acceptance requires all Scenarios Pass; "
+                        f"non-pass={non_pass}"
+                    )
+                if acceptance != "acceptance-passed":
+                    report.fail(
+                        f"{spec_id}: Delivery Target requires "
+                        "Acceptance=acceptance-passed"
+                    )
+
+        if delivery_target in {"production-restored", "production-delivered"}:
+            validation_path = spec_dir / "validation.md"
+            required_production_fields = [
+                "Deploy / rollback",
+                "Health",
+                "原始故障信号",
+                "核心用户路径",
+                "监控观察窗口",
+                "回滚点",
+            ]
+            missing_fields = [
+                field
+                for field in required_production_fields
+                if not section_field(
+                    validation_path,
+                    (
+                        "### Production Verification（适用时）",
+                        "## Production Verification（适用时）",
+                    ),
+                    field,
+                )
+            ]
+            if missing_fields:
+                report.fail(
+                    f"{spec_id}: production Delivery Target missing evidence "
+                    f"{missing_fields}"
+                )
 
         if (spec_dir / "optional/scenario-spec.md").exists():
             report.fail(f"{spec_id}: scenario-spec.md must be at Spec root")

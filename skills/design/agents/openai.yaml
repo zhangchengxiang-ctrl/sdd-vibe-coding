@@ -1,6 +1,6 @@
 interface:
-  display_name: "Product Shape"
-  short_description: "澄清产品诉求、用户目标和体验边界，形成可交付价值切片"
-  default_prompt: "Use $design to clarify this product request and produce a design-ready value slice."
+  display_name: "产品需求澄清"
+  short_description: "澄清目标用户、真实问题和首个可交付价值，不要求技术术语"
+  default_prompt: "使用 $design 帮我把这个产品想法想清楚，只问会改变产品结果的关键问题。"
 policy:
   allow_implicit_invocation: false

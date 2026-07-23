@@ -1,9 +1,9 @@
 ---
 name: testing
 description: >-
-  Codex 的 Verify 专项 Skill：执行 Task、Version 或 Production 验证，维护证据链，
-  分类 Fail 并给出下一 Rail。仅在 vibe-coding 已路由到 Verify，或用户显式调用本 Skill
-  时使用；不隐式接管普通测试请求，不修改实现。
+  面向略懂技术产品经理的 Codex Verify 专项 Skill：按真实用户旅程执行 Task、Version
+  或 Production 验证，先用交付卡给出可否交付的中文结论、证据和限制，再维护工程证据链。
+  仅在 vibe-coding 已路由到 Verify，或用户显式调用本 Skill 时使用；不修改实现。
 ---
 
 # Testing：Verify 与证据
@@ -36,6 +36,23 @@ description: >-
 UI/人工 Scenario 至少需要一次真实通道 V2。API 成功、DOM 存在、Toast 出现或脚本旁路
 都不能单独证明用户 Job 通过。
 
+## 用户前台输出
+
+验收结果必须先输出“交付结果”，不得先展示工程矩阵。交付卡包含：
+
+- **结论**：可交付、不可交付或受阻，并用一句话说明原因；
+- **如何体验**：环境、入口、适用角色和代表性数据；
+- **已验证的用户结果**：每项写实际观察和可复核证据；
+- **未通过或无法验证**：写用户影响、严重度和原因，不能只写内部分类；
+- **已知限制**：包括未覆盖内容；
+- **上线状态**：未上线、已上线、未知或不适用；
+- **需要用户做什么**：体验确认、批准下一动作或无需动作；
+
+聊天前台默认不显示 Requirement、Scenario、Task、Oracle、V0–V3、Rail、Delivery Target、
+Matrix、commit、Workspace 等工程术语。正式报告仍保存完整工程证据；用户明确要求时，在
+交付卡之后展开“技术详情（可选）”。交付卡之后单列且只列一个“下一步”，用普通中文
+给出最小可执行动作。
+
 ## Fail 路由
 
 | 分类 | 下一步 |
@@ -55,4 +72,5 @@ UI/人工 Scenario 至少需要一次真实通道 V2。API 成功、DOM 存在�
 所有 Scenario 有终态，只能说明 `matrix-accounted`；关版条件全部满足才是
 `acceptance-passed`。正式结果按
 [Validation Report](./references/validation-report.md) 输出，必须同时写通过证据、失败、
-Blocked、未覆盖项和限制。
+Blocked、未覆盖项和限制。报告必须先写 PM 验收摘要，再写工程矩阵；内部状态不能替代
+“可交付 / 不可交付 / 受阻”的前台结论。

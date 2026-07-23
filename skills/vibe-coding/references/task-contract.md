@@ -1,6 +1,6 @@
 # Task Contract
 
-> 本文件是技术 Task、单对话 Work Order 和跨对话路由的唯一真源。
+> 本文件是技术 Task、单对话 Work Order、原生执行绑定和跨对话恢复指针的唯一真源。
 
 ## 1. Task 定义
 
@@ -32,7 +32,8 @@ docs/specs/<id>/
 ```
 
 `tasks.md` 只保存 Task Graph、索引、依赖、状态和推荐顺序；`tasks/T-xxx.md` 是该 Task
-的唯一执行合同；`routes/T-xxx.next-rail.md` 是进入下一次对话的指针。
+的唯一执行合同；`routes/T-xxx.next-rail.md` 是 Codex 的机器恢复指针，不是给 PM 复制
+粘贴的操作口令。
 
 ## 3. Work Order 必填
 
@@ -65,55 +66,90 @@ ready | in-progress | passed | failed | blocked | cancelled
 Build / Repair 对话开工时：
 
 1. 读宿主 `AGENTS.md`；
-2. 读 handoff 指定的 `routes/T-xxx.next-rail.md`；
+2. 从当前 Build owner 的明确绑定恢复 Task；没有绑定时由 Codex 从项目 handoff 索引
+   自动解析 `routes/T-xxx.next-rail.md`；
 3. 只补读 Task 明示的 Spec、产品真源和代码入口；
-4. 检查工作区、依赖、Workspace Strategy、Claim 和共享资源；
-5. 领取所需 Claim，并将 Task 标记 `in-progress`；
+4. 检查工作区、依赖、单一 owner、Workspace Strategy 和外部共享资源；
+5. 领取所需外部资源 Claim，并将 Task 标记 `in-progress`；
 6. 在 Task 范围内实现、定向验证和修正；
-7. 写实际证据、设置终态并释放 Claim。
+7. 写实际证据、设置终态并释放外部资源 Claim。
 
 同一 Task 内测试失败后可继续修复；换 Task、改产品合同或改技术方向必须换 Rail。
+
+### 原生执行映射
+
+- **Plan**：多步骤工作且当前 surface 提供原生 Plan 时，同步当前 Rail 的步骤、状态和
+  检查点；文件 Work Order 保存持久合同，原生 Plan 保存本次执行进度。
+- **Goal**：只有用户或上层指令明确要求持续 Goal，且当前 surface 允许时，才将一个
+  Work Order 的 objective 绑定到一个原生 Goal。Goal 不改变 Rail、权限或完成证据。
+- **Subagent**：用户已授权实施后，独立 Task 可交给一个原生 Subagent；父任务传入
+  objective、source 和 stop condition，并负责收集结果。Subagent thread 不是用户拥有的
+  独立 Codex 任务，也不会自动获得 Worktree。
+- **用户任务**：只有用户明确要求创建时，才代建新的用户可见 Codex 任务；否则由用户在
+  新任务中用“开始第一步”等自然语言启动，Codex 自动解析项目 handoff 索引和 Route。
+- **Worktree**：一个会修改文件的 owner 只使用一个 Local checkout 或一个 Worktree。
+  托管 Worktree 通常由用户在新任务入口选择；不可用时使用明确路径的 CLI Git Worktree。
+- **Handoff**：原生 Handoff 只移动同一 Codex 任务及其 Git 状态，在 Local 与该任务关联
+  的 Worktree 间切换。跨任务恢复只使用项目 handoff 索引和 Route。
+
+一个 Task 及其允许写入区域同一时刻只能由一个
+`current-chat | user-thread | subagent` owner 与其 Workspace 拥有。文件或 Task 冲突
+通过单 owner、依赖和串行顺序解决，不再创建 Task/file Claim。
 
 ## 5. Next Rail Route
 
 每个 Task 使用独立的 `docs/specs/<id>/routes/T-xxx.next-rail.md`。禁止使用仓库根部单一
 `.next-rail.md` 作为全局调度状态；它无法表达并行 Task。
 
-Route 只做路由，不复制 Task 正文：
+Route 只保存机器恢复所需的稳定指针和可选原生绑定，不复制 Task 正文：
 
 ```yaml
+route_version: 1
+route_id: vYYYY.MM-example/T-003
 rail: build
 spec: vYYYY.MM-example
 task: T-003
 objective: 用户可以完成某件事
 source: docs/specs/vYYYY.MM-example/tasks/T-003.md
 workspace: local
+owner: current-chat
+thread_id: null
+subagent_id: null
+goal_id: null
+claims: []
 stop_when: Task 验收条件全部有证据
 on_pass: verify
 on_fail: blocked-or-replan
 ```
 
-Plan 在 Task ready 时创建 Route，并在 handoff 的 `Route` 列登记路径。一个 Worktree /
-对话只挂载一个 Route；并行 Task 各自使用独立文件。Task 终态后 Route 保留为历史指针，
-handoff 将其移到最近关闭。
+Plan 在 Task ready 时创建 Route，并在项目 handoff 索引的 `Route` 列登记路径。原生任务、
+Subagent 或 Goal 创建后回填实际 ID；没有相应能力时字段保持 `null`。一个 Worktree / owner 只挂载
+一个 Route；并行 Task 各自使用独立文件。Task 终态后 Route 保留为历史指针，handoff
+将其移到最近关闭。Codex 负责解析和传递 Route，用户前台只展示目标、状态、证据和下一步。
 
 ## 6. Claim
 
-Claim 使用 Task 或共享资源粒度，不锁整个 Spec：
+Claim 只用于无法由 `current-chat | user-thread | subagent` owner + Workspace 所有权隔离的
+外部共享资源，例如：
 
-- Task claim：防止两个对话写同一 Task；
-- contract claim：迁移、公共 API、生成物等共享合同；
-- resource claim：开发服务器、数据库、测试账号、浏览器环境。
+- 开发服务器、端口和串行运行时；
+- 数据库、测试数据集和迁移执行窗口；
+- 测试账号、浏览器/设备会话和第三方沙箱；
+- 部署槽位、生产操作窗口和其他有容量或互斥约束的外部系统。
+
+Task、文件、目录、公共合同和生成物不使用 Claim；它们必须在 Plan 中通过依赖、单 owner、
+写入边界和串行合并顺序解决。无法给重叠文件确定唯一 owner 时禁止并行。
 
 Claim 的权威账本是 `docs/reference/claims.md`：
 
-- `active` Claim 必须记录唯一 ID、类型、资源键、Spec、Task、Owner 和 Workspace；
-- 同一 `type + resource` 同时只能有一个 active Claim；
+- `active` Claim 必须记录唯一 ID、`resource` 类型、外部资源键、Spec、Task、Owner 和
+  Workspace；
+- 同一外部 `resource` 同时只能有一个 active Claim；
 - handoff 的 `Claims` 列必须引用账本中的 active Claim ID；
-- Task 开工前领取，结束、取消或阻塞交接时释放；
-- 无并行写风险时写 `N/A`，不制造空 Claim。
+- 使用外部资源前领取，结束、取消或阻塞交接时释放；
+- 无外部共享资源冲突时写 `N/A`，不制造空 Claim。
 
-Task Work Order 只列所需 Claim，不复制 Claim 当前状态。
+Task Work Order 只列所需外部资源 Claim，不复制 Claim 当前状态。
 
 ## 7. 完成
 

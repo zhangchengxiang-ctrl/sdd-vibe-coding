@@ -2,12 +2,26 @@
 
 > 通用流程由插件 Skill `vibe-coding` 管理。本文只记录本仓特有事实，不复制工作流合同。
 
+## 项目就绪度
+
+这张表由技术管理员补全。PM 首次使用时，Codex 只报告“可开始”或缺失项及其负责人，不让
+PM 猜命令、账号或环境事实。
+
+| 能力 | 状态 | 负责人 / 入口 |
+|---|---|---|
+| 本地启动与定向验证 | ready / missing | |
+| 用户可见页面验收 | ready / missing / n/a | |
+| 日志与监控只读入口 | ready / missing / n/a | |
+| Preview / Staging | ready / missing / n/a | |
+| 部署与回滚 | ready / missing / n/a | |
+
 ## 开工
 
 1. 读根 `AGENTS.md`；
-2. 判定 Shape / Plan / Build / Verify / Repair / Diagnose / Incident；
-3. Build / Repair 只读当前 `tasks/T-xxx.md` 与其显式依赖；
-4. 按 Task 的 Workspace Strategy 选择 Local 或 Worktree。
+2. 检查当前目标所需能力是否 ready；
+3. 使用自然语言理解用户结果，内部再判定工作轨；
+4. Build / Repair 只读当前 Task 与其显式依赖；
+5. 按 Task 的 Workspace Strategy 选择 Local 或 Worktree。
 
 ## 本仓入口
 
@@ -20,7 +34,7 @@
 | 日志 / 监控 | |
 | 部署 / 回滚 | |
 
-## 共享资源
+## 外部共享资源
 
 | 资源 | 冲突规则 | 领取 / 释放方式 |
 |---|---|---|

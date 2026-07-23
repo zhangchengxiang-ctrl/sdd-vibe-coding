@@ -51,11 +51,29 @@ docs/specs/<id>/
 - `scenario-spec.md`：用户结果与可执行 Oracle；
 - `tasks.md`：Task Graph、索引和依赖；
 - `tasks/T-xxx.md`：唯一执行合同；
-- `routes/T-xxx.next-rail.md`：下一对话的单 Task 路由；
+- `routes/T-xxx.next-rail.md`：供 Codex 机器恢复与无原生线程能力时回退的单 Task 指针；
 - `validation.md`：版本级验收与真实证据。
 
 按风险添加 `clarify.md`、`migration-design.md`、`threat-model.md`、`test-plan.md` 等，不为
 形式完整创建空文档。
+
+## Codex 原生映射
+
+先探测当前 Codex surface 实际提供的能力，不假设所有入口都有同一组工具：
+
+- 有原生 Plan 时，将当前 Plan Rail 的步骤和检查点同步到原生 Plan；`technical-plan.md`
+  仍保存跨任务、跨对话的持久技术事实；
+- 只有用户或上层指令明确要求持续 Goal，且当前 surface 允许创建 Goal 时，才把本次
+  `code-ready` 目标绑定到原生 Goal；否则不要为普通规划请求自行创建 Goal；
+- 用户已授权实施且有 Subagent 能力时，可把彼此独立的 ready Task 分配给单 Rail
+  Subagent；Plan 只建立边界和调度信息，不在授权前提前实施；
+- 用户拥有的独立 Codex 任务只在用户明确要求创建时才可代建。托管 Worktree 由用户在
+  新任务入口选择；原生 Handoff 只移动同一任务的 Local / Worktree 状态；
+- 没有相应原生能力时保留文件 Route、用户自然语言启动的新任务和 CLI Git Worktree 回退。
+
+原生 Plan item、Goal 和 Subagent ID 属于运行时绑定；Work Order、Route 和项目 handoff
+索引只保存恢复所需的最小标识，不复制原生运行历史。原生 Handoff 没有被当作跨任务 ID
+保存。
 
 ## Plan 流程
 
@@ -66,8 +84,8 @@ docs/specs/<id>/
 5. 以可独立判断的垂直结果拆 Task，不默认按 DB/API/UI 横切；
 6. 为每个 Task 填完整 Work Order；
 7. 分析 Task 依赖、文件写入重叠和共享资源；
-8. 为每个 Task 明确 Workspace Strategy、Claim 与 Delivery；
-9. 为每个 ready Task 创建独立 Route，并登记 handoff；
+8. 为每个 Task 明确单一 owner、Workspace Strategy、外部共享资源 Claim 与 Delivery；
+9. 为每个 ready Task 创建机器可恢复 Route，登记原生运行时绑定或文件回退，并更新 handoff；
 10. 写版本级验证计划和集成重测点；
 11. 运行结构/一致性自检，输出 `code-ready`。
 
@@ -107,6 +125,12 @@ Major、单向门或破坏性方案在 Work Order ready 前需要用户批准技
 
 ## Plan 交付
 
-向用户只展示技术方案摘要、关键代价、需要批准的单向门、Task 顺序/并行关系和第一张
-Work Order。把 handoff 指向首个 ready Task 的 `routes/T-xxx.next-rail.md`，下一对话进入
-`build`；并行 Task 分别使用自己的 Route。
+向用户只展示技术方案摘要、关键代价、需要批准的单向门、业务结果顺序/并行关系和第一个
+可实施结果，不在前台展示 Work Order。用户说“开始第一步”等自然语言并已授权实施后：
+
+- 有 Subagent 时，父任务可把首个 ready Work Order 交给新的单 Rail Subagent；
+- 只有用户明确要求创建新的 Codex 任务时，才代建用户拥有的任务；
+- 没有上述能力或授权时，Plan 在此停止，提示用户在新的 Codex 任务中说“开始第一步”。
+
+Codex 自行从项目 handoff 索引和 Route 解析首个 ready Task；不要求 PM 输入 Route 路径、
+Subagent ID 或 Worktree 目录。不得在当前 Plan owner 中静默进入 Build。

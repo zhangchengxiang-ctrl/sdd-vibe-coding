@@ -1,6 +1,6 @@
 {
   "name": "sdd-superpowers",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Codex-only Spec-Driven Delivery: product shaping, technical planning, one-task work orders, verification, production diagnosis, and conditional Worktree/PR delivery.",
   "author": {
     "name": "SDD Superpowers"
@@ -8,9 +8,9 @@
   "homepage": "https://github.com/sdd-superpowers/sdd-superpowers",
   "repository": "https://github.com/sdd-superpowers/sdd-superpowers",
   "interface": {
-    "displayName": "SDD Superpowers",
-    "shortDescription": "Turn product intent into bounded Codex delivery work.",
-    "longDescription": "Shape product intent, create technical Task Work Orders, run one bounded task per conversation, verify complete scenarios, diagnose production issues, and choose Local or Worktree/PR delivery from project evidence.",
+    "displayName": "SDD 产品交付助手",
+    "shortDescription": "把产品想法变成边界清楚、结果可验收的 Codex 交付",
+    "longDescription": "面向略懂技术的产品经理：用中文自然描述目标和关键取舍，Codex 负责澄清、拆解、实施与验收。用户默认只看理解、决策、进度和交付卡片，工程细节按需展开。",
     "developerName": "SDD Superpowers",
     "category": "Productivity",
     "capabilities": [
@@ -19,9 +19,9 @@
       "Workflow"
     ],
     "defaultPrompt": [
-      "Use vibe-coding to shape this product request before implementation.",
-      "Turn the approved product slice into technical Task Work Orders.",
-      "Diagnose this production issue without changing production state."
+      "我有一个产品想法，请先帮我理解清楚，并告诉我只需要决定什么。",
+      "产品方向已经确认，请用业务结果说明实施顺序、关键风险和下一步，先不要编码。",
+      "请按真实用户旅程验收当前版本，先告诉我是否可以交付，再给出证据和限制。"
     ]
   },
   "license": "MIT",

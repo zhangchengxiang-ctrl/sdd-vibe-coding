@@ -1,6 +1,6 @@
 interface:
-  display_name: "Vibe Coding Delivery"
-  short_description: "将产品诉求路由为有边界、可验证、可交接的单任务交付流程"
-  default_prompt: "Use $vibe-coding to route this request and produce the correct bounded delivery outcome."
+  display_name: "产品交付助手"
+  short_description: "用中文处理产品澄清、方案和验收，并只展示用户可判断的结果"
+  default_prompt: "请用自然语言帮我处理这个产品诉求；无论是澄清、制定方案还是验收，都只告诉我我理解的目标、当前进展或交付结果，以及一个下一步。"
 policy:
   allow_implicit_invocation: true

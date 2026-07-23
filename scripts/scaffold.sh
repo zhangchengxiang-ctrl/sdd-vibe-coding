@@ -4,13 +4,14 @@ set -euo pipefail
 
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEMPLATES="$PLUGIN_ROOT/templates"
+TARGET_INPUT="."
+
 TARGET_INPUT="${1:-.}"
 
 if [[ ! -d "$TARGET_INPUT" ]]; then
   echo "ERROR: target directory does not exist: $TARGET_INPUT" >&2
   exit 1
 fi
-
 TARGET="$(cd "$TARGET_INPUT" && pwd)"
 echo "scaffold: target=$TARGET"
 
@@ -39,8 +40,4 @@ for checker in check-docs.sh check-docs.py; do
   fi
 done
 
-if [[ ! -f "$TARGET/docs/.sdd-scaffold" ]]; then
-  printf 'sdd-superpowers-scaffold %s\n' "$(date -Iseconds)" > "$TARGET/docs/.sdd-scaffold"
-  echo "  + docs/.sdd-scaffold"
-fi
 echo "scaffold: done"

@@ -9,7 +9,7 @@
 - 宿主是 Git 仓库；
 - `base_ref` 与 `base_sha` 已解析；
 - 当前脏改动是否属于 Task；
-- Route、Task 和所需 Claim 已存在；
+- Route、Task、单一 owner 和所需外部资源 Claim 已存在；
 - setup、依赖、忽略文件和共享资源已明确；
 - Delivery 是否授权 branch、commit、push 或 PR。
 
@@ -17,19 +17,26 @@
 
 ## 2. Codex 托管 Worktree
 
-Codex 桌面端可为新对话选择 Worktree，也可用 **Hand off** 在 Local 与该对话关联的
-Worktree 之间移动。执行顺序：
+当前 Codex surface 暴露 Subagent、托管 Worktree 或 **Hand off** 时，只按实际语义使用，
+不根据文档名称猜测工具存在。用户任务与 Subagent 是不同 owner；一个 Task 绑定一个 owner
+和一个 Workspace。执行顺序：
 
-1. 为 Task 建立独立 Route，并在 handoff 登记；
-2. 领取 Claim；
-3. 新对话选择 **Worktree**，选择 Work Order 的起始分支；
-4. 在提示中明确 `$vibe-coding` 和 Route 路径；
-5. 确认实际 checkout 与计划的 `base_sha` 一致；
-6. 运行宿主定义的 Worktree setup；
-7. 执行一个 Task，并在该 Worktree 内取得 Task Evidence；
-8. Delivery 需要分支时，使用 **Create branch here** 创建唯一分支；
-9. 需要复用 Local 环境时，使用 **Hand off**，不要在两个 Worktree 同时 checkout 同一分支；
-10. 回填 handoff、PR、证据并释放 Claim。
+1. 为 Task 建立机器 Route，在 handoff 登记 objective、source、stop condition 和推荐
+   Workspace；
+2. 用户已授权实施且任务可独立时，可分派一个 Subagent；用户拥有的新 Codex 任务仅在用户
+   明确要求时创建，否则用户可在新任务中用自然语言启动；
+3. 托管 Worktree 由用户在新任务入口选择。Subagent 默认使用父任务当前 Workspace，不把
+   Subagent 当成自动隔离的 Worktree；
+4. 父任务把 `$vibe-coding`、objective 和 source 直接传给 Subagent；PM 不输入 Route 路径；
+5. 回填实际 user-thread / subagent / goal ID；相应能力不可用时保留 `null`；
+6. 确认实际 checkout 与计划的 `base_sha` 一致；
+7. 领取数据库、端口、账号、浏览器等所需外部资源 Claim，运行宿主定义的 Worktree setup；
+8. 执行一个 Task，并在该 Worktree 内取得 Task Evidence；
+9. Delivery 需要分支时，按当前 surface 或 Git 能力创建唯一分支；
+10. 同一用户任务需要在 Local 与其关联 Worktree 间移动且原生 Handoff 可用时使用
+    Handoff；跨任务或 Handoff 不可用时停止该 owner，由项目 handoff 索引和 Route 在目标
+    Workspace 恢复，禁止两个 Worktree 同时 checkout 同一分支；
+11. 回填 handoff、PR、证据并释放外部资源 Claim。
 
 Codex 托管 Worktree 初始通常是 detached HEAD。不要把“已经有 Worktree”误认为“已经有
 分支”。被 `.gitignore` 忽略的本地文件不会自动随 Handoff 移动；宿主确有需要时才配置
@@ -37,7 +44,7 @@ Codex 托管 Worktree 初始通常是 detached HEAD。不要把“已经有 Work
 
 ## 3. CLI Git Worktree
 
-只有 Workspace Strategy 明示 `git-worktree` 时才执行：
+托管 Worktree / Handoff 不可用，且 Workspace Strategy 明示 `git-worktree` 时才执行：
 
 1. 只读检查 `git status --short`、`git branch --show-current` 和
    `git worktree list --porcelain`；
@@ -52,7 +59,8 @@ Codex 托管 Worktree 初始通常是 detached HEAD。不要把“已经有 Work
 
 ## 4. 并行与集成
 
-- 一个并行 Task 对应一个 Route、Workspace、Claim 集合和证据集合；
+- 一个并行 Task 对应一个 owner、Route、Workspace、外部资源 Claim 集合和证据集合；
+- Task/file 互斥由单 owner 与 Worktree 承担，不创建 Task/file Claim；
 - Worktree 不隔离数据库、端口、测试账号、浏览器或生产环境；
 - 公共合同先行时，依赖 Task 在同步新 base 后重新执行直接验证；
 - 各 PR 分别绿灯不等于 Version Acceptance；
@@ -60,6 +68,7 @@ Codex 托管 Worktree 初始通常是 detached HEAD。不要把“已经有 Work
 
 ## 5. 收尾状态
 
-handoff 必须记录真实 Workspace、base SHA、Branch、PR、Claims、Task Status 和下一动作。
+handoff 必须记录真实 owner / 原生 ID、Workspace、base SHA、Branch、PR、外部资源
+Claims、Task Status 和下一动作。Route 是机器恢复指针，不作为 PM 操作说明。
 Codex 托管 Worktree 的清理由产品管理；永久或 CLI Worktree 按宿主规则清理，永不删除
 仍含未交付改动的工作区。

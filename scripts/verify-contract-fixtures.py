@@ -10,6 +10,40 @@ import sys
 
 RAILS = {"shape", "plan", "build", "verify", "repair", "diagnose", "incident"}
 WORKSPACES = {"n/a", "local", "codex-worktree", "git-worktree", "blocked"}
+WORK_ORDER_STATES = {"not-needed", "to-create", "ready", "missing"}
+SOURCE_SCOPES = {
+    "product-and-current-system",
+    "approved-product-and-code",
+    "task-route-and-code",
+    "scenarios-and-runtime",
+    "production-evidence",
+}
+WRITE_SCOPES = {
+    "product-docs",
+    "spec-and-work-orders",
+    "task-boundary",
+    "validation-evidence",
+    "diagnosis-record",
+    "incident-record",
+}
+ARTIFACTS = {
+    "product-slice",
+    "technical-plan-and-work-orders",
+    "task-evidence",
+    "validation-report",
+    "diagnosis",
+    "incident-work-order",
+    "production-verification",
+}
+STOP_CONDITIONS = {
+    "design-ready",
+    "code-ready",
+    "task-passed",
+    "matrix-accounted",
+    "root-cause-located",
+    "incident-plan-ready",
+    "production-restored",
+}
 NO_CODE_RAILS = {"shape", "plan", "verify", "diagnose"}
 
 
@@ -71,7 +105,11 @@ def main() -> int:
         workspace = expected.get("workspace")
         may_write_code = expected.get("may_write_code")
         may_deploy = expected.get("may_deploy")
-        requires_work_order = expected.get("requires_work_order")
+        work_order_state = expected.get("work_order_state")
+        source_scope = expected.get("source_scope")
+        write_scope = expected.get("write_scope")
+        artifact = expected.get("expected_artifact")
+        stop_condition = expected.get("stop_condition")
 
         if rail not in RAILS:
             fail(f"{label}: invalid rail {rail!r}")
@@ -81,13 +119,22 @@ def main() -> int:
         if workspace not in WORKSPACES:
             fail(f"{label}: invalid workspace {workspace!r}")
             errors += 1
-        if not all(
-            isinstance(value, bool)
-            for value in (may_write_code, may_deploy, requires_work_order)
-        ):
+        if not all(isinstance(value, bool) for value in (may_write_code, may_deploy)):
             fail(f"{label}: boolean authorization fields are required")
             errors += 1
             continue
+        if work_order_state not in WORK_ORDER_STATES:
+            fail(f"{label}: invalid work_order_state {work_order_state!r}")
+            errors += 1
+        for value, allowed, field in [
+            (source_scope, SOURCE_SCOPES, "source_scope"),
+            (write_scope, WRITE_SCOPES, "write_scope"),
+            (artifact, ARTIFACTS, "expected_artifact"),
+            (stop_condition, STOP_CONDITIONS, "stop_condition"),
+        ]:
+            if value not in allowed:
+                fail(f"{label}: invalid {field} {value!r}")
+                errors += 1
 
         if rail in NO_CODE_RAILS and may_write_code:
             fail(f"{label}: {rail} cannot write business code")
@@ -95,14 +142,22 @@ def main() -> int:
         if may_deploy and rail != "incident":
             fail(f"{label}: only an explicitly authorized incident case may deploy")
             errors += 1
-        if rail in {"build", "repair"} and not requires_work_order:
-            fail(f"{label}: {rail} requires a Work Order")
+        if rail in {"build", "repair"} and work_order_state not in {"ready", "missing"}:
+            fail(f"{label}: {rail} must have a ready or missing Work Order")
             errors += 1
-        if rail == "incident" and (may_write_code or may_deploy) and not requires_work_order:
-            fail(f"{label}: mutating Incident requires a Work Order")
+        if rail == "incident" and (may_write_code or may_deploy) and work_order_state != "ready":
+            fail(f"{label}: mutating Incident requires a ready Work Order")
             errors += 1
-        if rail in {"shape", "verify", "diagnose"} and requires_work_order:
-            fail(f"{label}: {rail} should not require an execution Work Order")
+        if rail in {"shape", "verify", "diagnose"} and work_order_state != "not-needed":
+            fail(f"{label}: {rail} must not create or consume an execution Work Order")
+            errors += 1
+        if work_order_state == "missing" and (
+            may_write_code or may_deploy or workspace != "blocked"
+        ):
+            fail(f"{label}: missing Work Order must block mutation and workspace")
+            errors += 1
+        if work_order_state == "to-create" and (may_write_code or may_deploy):
+            fail(f"{label}: Work Order creation rail cannot mutate implementation")
             errors += 1
         if workspace in {"codex-worktree", "git-worktree"}:
             worktree_count += 1

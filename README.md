@@ -1,6 +1,6 @@
 # SDD Superpowers
 
-面向懂一点技术的产品经理的 **Codex-only Spec-Driven Delivery 插件**。
+面向略懂技术产品经理的 **Codex-only Spec-Driven Delivery 插件**。
 
 用户只需要表达诉求、判断关键产品取舍、授权实施并体验真实成果。插件负责把复杂功能
 澄清为产品蓝图，拆成有明确边界的技术 Task，在独立对话中逐项实现，并用可追溯证据完成
@@ -9,20 +9,25 @@
 > 用户前台保持简单；`docs/`、Spec、Task Work Order、handoff 和 evidence 是 Agent
 > 用于跨对话恢复和工程交付的内部记忆。
 
+“略懂技术”表示用户可以判断产品范围、基础技术取舍、环境、Task、Branch 和 PR，但不需要
+手工维护 Route、Claim、base SHA 或验收矩阵。安装、首次项目配置和生产入口由技术管理员
+准备；PM 的日常入口始终是自然语言。
+
 ## 用户会看到什么
 
 | 用户意图 | Codex 做什么 | 不会做什么 |
 |---|---|---|
 | “我希望……”／“优化这个体验” | **Shape**：调查现状、澄清目标、保存产品决策 | 不改业务代码 |
 | “按这个方向拆解”／“准备实施” | **Plan**：形成技术方案、Task Graph 和测试矩阵 | 不在规划对话编码 |
-| “执行 T-003” | **Build**：只完成该 Task 并取得直接证据 | 不扩展 Scope |
+| “按计划开始第一个实施任务” | **Build**：只完成该 Task 并取得直接证据 | 不扩展 Scope |
 | “完整验收这个版本” | **Verify**：按矩阵验证并分类问题 | 不边验边修 |
 | “修复这些验收问题” | **Repair**：修复一组同根因问题 | 不顺手处理无关项 |
 | “排查线上问题” | **Diagnose**：读取真实环境证据并定位根因 | 不自动修复或部署 |
 | “立即恢复生产” | **Incident**：止血、最小修复、生产验证 | 不做大规模重构 |
 
-用户侧默认只展示四类卡片：理解、决策、进度、交付。内部文件名和状态术语只在用户要求
-查看时展开。
+用户侧默认只展示四类卡片：理解、决策、进度、交付；每次只给一个明确下一动作。Task、
+Branch、PR 等基础信息放在可选的“技术详情”，内部文件路径和状态术语只在用户要求查看时
+展开。
 
 ## 主流程
 
@@ -37,7 +42,10 @@ Production issue → Diagnose → Incident / Repair / Plan / Blocked
 一个对话只挂载一个工作轨和一个主目标。Build 可以在同一 Task 内反复实现和定向复验，
 但不能换到另一个 Task；Verify 只能记录证据和分类 Fail。
 
-## 安装
+## 安装与角色
+
+技术管理员只需为每个工作环境安装一次插件，并在宿主仓补全 `AGENTS.md` 中的真实命令、
+环境、验证和部署入口。PM 不需要运行以下命令；这些命令用于本地开发和管理员安装。
 
 ```bash
 git clone <repo-url> sdd-vibe-coding
@@ -92,9 +100,9 @@ scripts/check-docs.sh
 | 长期产品决策 | 宿主 `docs/product/modules/` |
 | 当前版本技术与范围合同 | 宿主 `docs/specs/<id>/` |
 | 当前 Task | 宿主 `docs/specs/<id>/tasks/T-xxx.md` |
-| 下一对话 Route | 宿主 `docs/specs/<id>/routes/T-xxx.next-rail.md` |
-| 多线索引 | 宿主 `docs/reference/handoff.md` |
-| 并行 Claim | 宿主 `docs/reference/claims.md` |
+| 跨客户端恢复 Route（fallback） | 宿主 `docs/specs/<id>/routes/T-xxx.next-rail.md` |
+| 活跃工作机器索引 | 宿主 `docs/reference/handoff.md` |
+| 外部共享资源 Claim | 宿主 `docs/reference/claims.md` |
 | 当前实现事实 | 代码和真实运行证据 |
 
 五份跨 Skill 合同位于：
@@ -136,7 +144,7 @@ skills/vibe-coding/references/
 - 可执行验收条件；
 - 最低证据；
 - Workspace / Branch / PR；
-- 独立 Route 与所需 Claim；
+- 跨客户端恢复 Route（适用时）与外部共享资源 Claim；
 - 风险、回滚和终态。
 
 Task 应是可独立验收的垂直切片，而不是“先建表、再写 API、再做前端”这种分层半成品。
@@ -153,9 +161,12 @@ Worktree 只隔离文件，不自动隔离数据库、端口、账号和浏览�
 `codex/<spec>-<task>`。是否 commit、push、创建 Draft/Ready PR 由 Work Order 或用户授权，
 不从“使用 Worktree”自动推导。
 
-Codex 桌面端使用一个 Task 对应一个托管 Worktree/对话；初始通常是 detached HEAD，需要
-PR 时再创建独立分支。CLI 使用显式 Git Worktree。两种路径都必须校验 base SHA、领取 Claim、
-完成 setup、回填证据，并在合并顺序完成后进行 integration retest。
+普通 Task 使用当前 Build owner 和 Work Order；只有用户或上层明确要求持续 Goal 时才创建
+原生 Goal。Codex 桌面端可让用户在新任务入口选择托管 Worktree；原生 Handoff 只移动同一
+任务及其 Git 状态，在 Local 与该任务关联的 Worktree 间切换。Subagent 是当前任务的内部
+委派，不等同于用户拥有的新任务，也不会自动获得独立 Worktree。CLI 使用显式 Git Worktree
+和 Route fallback。所有路径都必须校验 base、协调外部共享资源、完成 setup、回填证据，并
+在合并顺序完成后进行 integration retest。
 
 ## 线上问题
 
@@ -177,7 +188,7 @@ Incident 优先回滚、功能开关、隔离依赖或配置修正；大范围�
 bash scripts/verify.sh
 ```
 
-验证包括：
+默认验证只执行确定性检查，包括：
 
 - Codex manifest 和 marketplace；
 - Skill frontmatter 与权威合同引用；
@@ -186,7 +197,7 @@ bash scripts/verify.sh
 - Task、Scenario、Incident、Workspace 合同；
 - `check-docs.sh`；
 - 路由合同 Fixture 的结构和覆盖；
-- live Codex eval runner 的可执行性。
+- live Codex eval runner 的可执行性，但不冒充真实行为通过。
 
 确定性验证不会冒充模型行为。真实路由评估必须显式运行，会调用 `codex exec`：
 
@@ -197,7 +208,7 @@ npm run eval-live -- --case shape-vague-wish
 npm run eval-live -- --all
 ```
 
-Live eval 在临时只读宿主中挂载本仓 Skills，使用 JSON Schema 约束输出，并将真实
+Live routing eval 在临时只读宿主中挂载本仓 Skills，使用 JSON Schema 约束输出，并将真实
 Rail、代码/部署授权、Work Order 和 Workspace 与合同期望逐项比较。
 
 证据分三层：

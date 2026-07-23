@@ -1,6 +1,7 @@
-# AGENTS.md — 项目工程约定
+# AGENTS.md — 项目事实
 
-> 由 SDD Superpowers 显式初始化。请用本仓真实事实补全；Codex 以本文件为项目约定真源。
+> 由 SDD Superpowers 显式初始化。只填写本仓可核验的事实、命令和约束；可复用 SDD
+> 工作流由插件 Skill 负责，不在本文件复制。
 
 ## 项目
 
@@ -53,30 +54,18 @@
 
 ## 单向门
 
-以下事项在执行前需要用户批准计划和风险；按本仓增删：
+只列本仓真实存在、执行前需要批准的事项；不要保留不适用的通用示例。
 
-- 数据库迁移、数据删除或不可逆修复；
-- 对外 API / schema 兼容性；
-- 权限、安全和隐私边界；
-- 生产配置、部署单元和发布；
-- 大规模依赖或架构迁移。
+- 事项 / 触发条件：
+- 批准人或政策：
+- 风险与回滚入口：
 
-## Git、Worktree 与 PR
+## Git 与交付事实
 
-- 分支前缀默认 `codex/`，除非本仓另有约定。
-- 短任务或必须共享当前本地状态时可用 Local。
-- 并行独立 Task、无关 WIP、Hotfix 隔离、独立 PR 或高风险实验可用 Worktree。
-- 同文件、迁移、公共合同或共享数据库/端口/账号冲突时不得并行。
-- Worktree 只隔离文件，不隔离外部资源。
-- commit、push、PR、merge、deploy 分别授权，不相互推出。
-- 工作区脏状态、base 或目标路径不清时先停止。
-
-## SDD 工作方式
-
-- 主入口 Skill：`vibe-coding`；专项：`design`、`spec`、`testing`、`debug`。
-- 一个对话只做一个 Rail 和一个主目标。
-- Build / Repair 一次只执行一张 `tasks/T-xxx.md` Work Order。
-- 每个 Task 使用独立的 `routes/T-xxx.next-rail.md`，禁止仓库根单一指针承担并行调度。
-- 并行 Claim 的权威账本是 `docs/reference/claims.md`。
-- 活跃工作上限若需要，由本仓设置 `WIP_CAP`；插件不提供通用固定值。
-- 文档地图见 `docs/README.md`；检查运行 `bash scripts/check-docs.sh`。
+- 分支命名规则：
+- Worktree 初始化 / setup 命令：
+- 必跑 PR 检查：
+- 分支保护与合并策略：
+- commit / push / PR 是否需要单独授权：
+- 部署与回滚授权：
+- 共享数据库、端口、账号或浏览器限制：
