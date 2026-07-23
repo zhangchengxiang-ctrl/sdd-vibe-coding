@@ -1,28 +1,67 @@
-# 验证报告模板（正式验收 / 发布 / PR）
+# Validation Report
 
-普通修复只需在最终回复列出实际验证；正式验收、发布或 PR 需要结构化记录时
-使用本模板。未运行的检查不必为了填表而补跑。
+> 正式验收、发布或事故恢复使用；普通 Task 可直接在 Work Order 中记录证据。
 
 ```markdown
-### 验证报告
-- **改动范围**：（路径摘要）
-- **Trivial 判定**：trivial / small / non-trivial / major
-- **Version**：`docs/specs/<id>/` 或 **Docs: N/A**（理由：___）
-- **Delivery Target / Current Gate**：___ / ___
-- **实际达到**：design-ready / code-ready / dev-effective / production-delivered / user-accepted
-- **定向检查**：（实际命令 → 结果）
-- **全量回归**：命令 → 结果 / N/A（仅发布、CI、全局合同或用户明确要求）
-- **迁移**：命令 → 结果 / N/A
-- **浏览器**：宿主浏览器验收 → OK / N/A（理由）
-- **交付证据**：环境 / 版本 / deploy / health / 关键路径 / N/A
-- **Docs 回填**：
-  - [ ] specs/<id>/tasks · validation
-  - [ ] product/foundation/system-map.md（若改进程边界）
-  - [ ] product/README.md 索引状态（若绑定设计稿）
-  - [ ] handoff.md
-  - 或 **Docs: N/A**：___
-- **过渡态**：（代码与文档不一致时写明，避免下一 Agent 误判）
-- **结论**：可合并 / 待用户确认 / 阻塞于 ___
+# Validation Report · <scope>
+
+## 声明
+
+- Rail：verify | incident
+- 验收层次：Task Validation | Version Acceptance | Production Verification
+- Spec / Task：
+- 声明范围：
+- 目标 Delivery Target：
+- 实际 Delivery Target：
+- 时间：
+
+## 执行上下文
+
+- Environment / URL：
+- Version / commit：
+- Workspace：
+- Branch：
+- PR：
+- Role / account：
+- Test data：
+
+## 追踪矩阵
+
+| Requirement | Scenario | Task | Oracle | Evidence | Result |
+|---|---|---|---|---|---|
+| | | | | | Pass / Fail / Blocked |
+
+## 实际验证
+
+| 层 | 命令或步骤 | 结果 | 证据 |
+|---|---|---|---|
+| V0 | | | |
+| V1 | | | |
+| V2 | | | |
+| V3 | | | |
+
+## Fail / Blocked
+
+| Scenario | 表象 | 分类 | 根因或未知 | 下一 Rail / Work Order |
+|---|---|---|---|---|
+| | | implementation / product-ux / technical-plan / test-oracle / environment / new-request / unknown-root-cause | | |
+
+## 生产验证（适用时）
+
+- Deploy / rollback：
+- Health：
+- 原始故障信号：
+- 核心用户路径：
+- 数据一致性：
+- 监控观察窗口：
+- 回滚点：
+
+## 结论
+
+- Matrix：matrix-accounted | incomplete
+- Acceptance：acceptance-passed | not-passed | n/a
+- 未覆盖项与限制：
+- 下一步：
 ```
 
-**禁止**：未填 Version 或 Docs 行就声称完成（文档回填规则）。
+不得省略失败、Blocked 或未执行项。未运行的命令不能写成通过；证据不足时降低声明。

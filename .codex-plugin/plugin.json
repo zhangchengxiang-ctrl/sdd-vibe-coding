@@ -1,7 +1,7 @@
 {
   "name": "sdd-superpowers",
-  "version": "0.3.2",
-  "description": "Spec-Driven Delivery for Codex: 判轨先行 · 产品记忆先行 · Intake→Owner→Build · Accept只测 · spec toolbox · docs CI.",
+  "version": "0.4.0",
+  "description": "Codex-only Spec-Driven Delivery: product shaping, technical planning, one-task work orders, verification, production diagnosis, and conditional Worktree/PR delivery.",
   "author": {
     "name": "SDD Superpowers"
   },
@@ -9,8 +9,8 @@
   "repository": "https://github.com/sdd-superpowers/sdd-superpowers",
   "interface": {
     "displayName": "SDD Superpowers",
-    "shortDescription": "Spec-Driven Delivery gates and skills for any repo.",
-    "longDescription": "Install portable SDD skills (vibe-coding, design, spec, testing) plus Intake hard gates. Project details stay in the host AGENTS.md / docs/.",
+    "shortDescription": "Turn product intent into bounded Codex delivery work.",
+    "longDescription": "Shape product intent, create technical Task Work Orders, run one bounded task per conversation, verify complete scenarios, diagnose production issues, and choose Local or Worktree/PR delivery from project evidence.",
     "developerName": "SDD Superpowers",
     "category": "Productivity",
     "capabilities": [
@@ -19,18 +19,20 @@
       "Workflow"
     ],
     "defaultPrompt": [
-      "Use vibe-coding Intake: I want to improve search UX (numbered wishlist).",
-      "Scaffold empty-repo docs with scripts/scaffold.sh.",
-      "Use the spec skill to cut a version package from an approved design."
+      "Use vibe-coding to shape this product request before implementation.",
+      "Turn the approved product slice into technical Task Work Orders.",
+      "Diagnose this production issue without changing production state."
     ]
   },
   "license": "MIT",
   "keywords": [
     "sdd",
     "spec-driven",
-    "intake",
-    "product-memory",
-    "vibe-coding"
+    "task-work-order",
+    "worktree",
+    "incident",
+    "vibe-coding",
+    "codex"
   ],
   "skills": "./skills/"
 }

@@ -1,26 +1,20 @@
-# UX Standards · 本版 Jobs（模板）
+# UX Jobs · <version-id>
 
-> **服从真源：** `vibe-coding/references/ux-standards.md`  
-> （Agent：`Read 插件 skills/vibe-coding/references/ux-standards.md`）  
->  
-> 本文件**只写本版 Jobs 与通道约束**；不得另立与真源冲突的 Pass 定义。  
-> 切版后从 `_template/optional/` 复制并改名进 Spec 根；账本见验收时的 `ux-test-results.md`。
+> 通用判定见插件 `testing/references/ux-standards.md`；本文件只补充当前版本的用户 Job
+> 和专有 Oracle。
 
-## Jobs（切版时填满）
+| Job | Role | Context | Effective Channel | Completion Oracle | Failure recovery |
+|---|---|---|---|---|---|
+| J-001 | | | | | |
 
-| ID | 谁 | 情境 | 目标（Effective 判据） |
-|----|----|------|------------------------|
-| J1 | | | |
-| J2 | | | |
+## 宿主约束
 
-## 本仓通道约束（按需）
+- 浏览器 / 设备：
+- 可访问性标准：
+- 不允许的测试旁路：
 
-- （例）安装生效不得用旁路对话冒充主运行时证明  
-- （例）治理评审不得以 UUID 为主识别信息  
+## 关版
 
-## 关版自检（抄进 validation）
-
-- [ ] 已 Read `vibe-coding/references/ux-standards.md`  
-- [ ] 核心 Job Effective = 是  
-- [ ] 无开放严重度 4（或书面例外）  
-- [ ] `ux-test-results` 记 Jobs + H#，非 SC Pass 粉饰  
+- [ ] 核心 Job 已在真实通道执行
+- [ ] 严重阻断问题已解决或明确阻塞验收
+- [ ] 证据可让未参与实现的人判断结果

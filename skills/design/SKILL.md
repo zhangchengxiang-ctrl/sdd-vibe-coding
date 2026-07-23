@@ -1,114 +1,79 @@
 ---
 name: design
 description: >-
-  SDD 产品塑形与分层蓝图：体验 / 模型 / 呈现 / 运行时 / 交付。
-  触发：写产品设计 / product/modules / 优化体验 / 改 IA·导航·入口 /
-  成块 UX 愿望（未说开始做时勿改业务代码）。别名：product-design-package。
+  Codex 的 Shape 专项 Skill：澄清用户 Job、体验边界与首个价值切片并沉淀产品蓝图。
+  仅在 vibe-coding 已路由到 Shape，或用户显式调用本 Skill 时使用；不隐式接管普通产品诉求，
+  不写业务代码。
 ---
 
-# Design（产品设计包）
+# Design：Shape 产品诉求
 
-**方法论：** 关注点分层产品包。  
-**章节合同真源：** 宿主 `docs/product/foundation/product-package-contract.md`（若无则用插件 templates 骨架）。  
-**互补：** `vibe-coding` · `spec` · [`SYSTEM.md`](../../SYSTEM.md) §2.1
+本 Skill 只负责已确认的 Shape Rail。先读宿主 `AGENTS.md`、产品真源和
+[`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)。
 
-**DO NOT CODE**：本 skill 只 Shape / 蓝图。确认实施后回 `vibe-coding` → 体系调 `spec`。  
-默认 **Intake**：可写 `modules/` + 需求池；**禁止**升格 Spec 或改业务代码。
+## 目标
 
----
+把模糊愿望塑造成可以交给 Plan 的产品切片：
 
-## 0. 何时用
+- 谁在什么情境下遇到什么问题；
+- 用户要完成的 Job 和可观察结果；
+- In / Out 与非目标；
+- 关键体验、权限和失败路径；
+- 已知事实、假设与未知；
+- 首个可交付价值切片；
+- 只需要用户决定的互斥或不可逆事项。
 
-| 场景 | 动作 |
-|------|------|
-| 「我希望…」 | 一屏 Wish；勿立刻五层全文 |
-| 「优化 / 改进」成块体验（IA、导航、入口、发布模型） | **开/改包**；禁止「清单够清楚 → 改码」 |
-| 新功能蓝图（非 trivial） | **默认建包** |
-| 多篇横切同一能力 | **合并进一包** |
-| 单篇混多层 | **按层拆开** |
+Shape 禁止创建实施 Spec、修改业务代码、部署或把技术偏好冒充产品决定。
 
-**与 Build 闸门**：编号清单 + 截图仍是 Wish；未说「开始做 / 实现 / 按这个来」→ 只写 `modules/`（+ 可选 DEM）。
+## 工作方式
 
-### 豁免（可单文件）
+1. 读取代码、现有产品文档和真实界面，建立当前状态；
+2. 用一张理解卡复述问题、目标、非目标和未知；
+3. 只追问会改变产品结果的 1–3 个问题；
+4. 提出有明确代价的推荐，不把可逆技术细节抛给 PM；
+5. 保存经确认的产品切片；
+6. 输出 `design-ready`，并为下一次 Plan 提供入口。
 
-同时：正文 ≤ ~80 行 · 只覆盖一层 · 无多层混写。索引在 `docs/product/README.md` 备注「单文件 · 豁免」。
+外部事实、竞品、法规或平台能力会影响设计时才联网，并记录来源与日期。
 
-### 愿望渐进塑形
+## 产品包
 
-```markdown
-目标：
-当前系统状态：
-建议的首个价值切片：
-关键假设：
-Delivery Target：
-需要决定的问题：
-```
-
-先内部 Ground；互斥方向 / 单向门 / 显著成本才问产品专家。外部调研门：竞品/法规/最新平台事实不足时再联网。
-
----
-
-## 1. 目录
+成块能力可存放在：
 
 ```text
 docs/product/modules/<slug>/
-├── README.md              # 门面（必）
-├── 01-experience.md       # 体验（默认必）
-├── 02-product-model.md    # 产品模型（默认必）
-├── 03-presentation.md     # 呈现（可省）
-├── 04-runtime.md          # 运行时意图·薄（可省）
-└── 05-delivery.md         # 交付（默认必）
+├── README.md
+├── 01-experience.md
+├── 02-product-model.md
+├── 03-presentation.md
+├── 04-runtime.md
+└── 05-delivery.md
 ```
 
-| 规则 | 说明 |
-|------|------|
-| `<slug>` | kebab-case；能力名非版本号 |
-| 编号 | `01`–`05` 固定读序；域特化可同号改名，须在 README 声明 |
-| 语言后缀 | **读宿主约定**（默认无后缀 `.md`；宿主可要求 `.zh-CN.md` 等） |
-| 空层 | README 声明省略，勿造空文件 |
+只创建当前问题需要的层，不为空目录凑文档。宿主存在
+`docs/product/foundation/product-package-contract.md` 时服从其章节合同。
 
----
+| 层 | 负责 | 不负责 |
+|---|---|---|
+| Experience | 角色、旅程、操控面、失败体验 | 表结构、算法 |
+| Product model | 能力、对象、状态、权限、冻结决策 | UI 配置、实现代码 |
+| Presentation | IA、入口、文案和视觉语义 | 数据库和 API 细节 |
+| Runtime intent | 运行边界和关键路径意图 | 完整技术设计 |
+| Delivery | 首切片、后续切片、风险和指标 | Task 拆解 |
 
-## 2. 五层职责
+简单诉求可以只写 demand pool 或单页设计，不强制五层产品包。
 
-| 序 | 文件 | 负责 | 不负责 |
-|----|------|------|--------|
-| — | README | 一句话、状态、读序、决策索引 | 展开规则正文 |
-| 1 | 01-experience | 角色、旅程、操控面、体验非目标 | 表结构、算法细节 |
-| 2 | 02-product-model | 能力、对象、状态、权限、冻结项 | UI JSON、实现路径 |
-| 3 | 03-presentation | IA、文案/视觉语义、表面规格 | 业务触发、DB |
-| 4 | 04-runtime | **薄意图**：边界、关键路径语义 | 表结构、API 全集 → Spec |
-| 5 | 05-delivery | 分期、联调、风险；可**索引** SC | 重定义概念；SC 正文在 Spec |
+## 交付给 Plan
 
-层内章节全集 → 宿主 `product-package-contract`（无则 templates）。
+Shape 结束时给出：
 
----
+- 一句话问题与目标用户；
+- 已确认的首个价值切片；
+- In / Out；
+- 成功、关键失败与权限场景；
+- 不可破坏的产品不变量；
+- 未决项及负责人；
+- 产品真源路径；
+- 下一 Rail：`plan`。
 
-## 3. README 门面（必含）
-
-一句话 · 状态/Gap/Spec · 读序地图 · 已拍板决策**索引表** · 真源边界。决策只索引不复制规则。
-
----
-
-## 4. 拆分 / 合并 SOP
-
-定边界 → 标层 → 写包 → 删旧路径并改外链 → 更新 `docs/product/README.md` → 自检无双真源。
-
----
-
-## 5. 与 Spec
-
-| 层 | 角色 |
-|----|------|
-| `product/modules/<slug>/` | 产品决策蓝图（可超前） |
-| `docs/specs/<id>/` | 本版实施 + 关版 scenario |
-| system-map + 代码 | as-built |
-
-「开始做」后由 `spec` 升格；切版必含 `scenario-spec` 覆盖矩阵（non-trivial）。  
-**禁止** modules 与 Spec 双写关版 SC 正文。
-
----
-
-## 6. 反模式
-
-按渠道拆平行长文 · README 粘贴全文 · 凑五层空文件 · 拆包顺便改契约 · 04 写成实现手册 · 「清单清楚直接改码」。
+不要在同一对话继续技术拆解或编码。

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Production Debug"
+  short_description: "基于真实环境诊断复杂线上问题，并在授权边界内安全恢复生产"
+  default_prompt: "Use $debug to diagnose this production issue without assuming modification or deployment authority."
+policy:
+  allow_implicit_invocation: false

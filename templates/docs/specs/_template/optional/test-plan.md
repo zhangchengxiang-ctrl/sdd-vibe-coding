@@ -1,32 +1,28 @@
 # Test Plan · <version-id>
 
-## 自动化
+> 仅在验证策略超出 `AGENTS.md` 默认约定时使用。
 
-| 范围 | 命令 | 通过标准 |
-|------|------|----------|
-| 定向静态检查 | `<与改动范围匹配的命令>` | 本次 diff 相关 0 error |
-| 定向单元/集成 | `<相关测试文件或子集>` | 0 failed |
-| 场景 E2E（若适用） | `npx playwright test tests/e2e/<spec>.spec.ts` | 0 failed |
+## 范围
 
-全量 `make check` / `make test` / E2E 只在发布、CI、全局合同或用户明确
-要求时加入本表；不要把所有可用命令默认叠加。
+- 验收层次：
+- Target Environment：
+- Version / commit：
+- 角色、账号和测试数据：
 
-## 浏览器（若改 `<host-ui>/`）
+## 策略
 
-| 场景 | 步骤 | URL |
-|------|------|-----|
-| | | （宿主 AGENTS.md 中的预览 URL）… |
+| Requirement / Scenario | 风险 | V0 | V1 | V2 | V3 | Oracle |
+|---|---|---|---|---|---|---|
+| | | | | | | |
 
-遵循宿主 AGENTS.md 中的浏览器验收约定。
+命令、URL 和工具必须来自宿主 `AGENTS.md` 或代码库，不在模板中写死。
 
-## 回归
+## 共享资源
 
-- 若触达 [`docs/product/regression-register.md`](../../../product/regression-register.md) 中 `active` 面 → 跑该面「验证入口」（产品回归，非本版验收矩阵全文）。
-- 本版关版且模块进入维护态 → 晋升关键子集到 Spec 根 `regression-map.md` 并登记（合同：`foundation/product-regression.md（若有）`）。
-- [ ] 未登记面：至少自列 2–3 条未改核心路径仍可用（临时；有稳定子集后应晋升登记）
+| 资源 | 冲突 | 领取 / 释放 |
+|---|---|---|
+| | | |
 
-## 部署相关（若触达）
+## Blocked 条件
 
-- [ ] `npm run db:migrate:pg` 成功（若改 schema）
-- [ ] `/health` → `db.migrationStatus: "ready"`
-- [ ] 目标 `宿主部署/reload 命令` 已执行
+-

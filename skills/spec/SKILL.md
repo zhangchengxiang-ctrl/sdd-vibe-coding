@@ -1,117 +1,112 @@
 ---
 name: spec
 description: >-
-  SDD 版本包工具箱：升格切版（generate）· 消歧（clarify）· 对照代码（converge）·
-  覆盖度分析（analyze）· 需求质量七维（checklist）。
-  触发：切版 / 开 Spec / clarify / converge / analyze / checklist /
-  产品专家确认「开始做 / 实现 / 构建」。设计讨论本身不触发 generate。
+  Codex 的 Plan 专项 Skill：把已确认的产品切片转成技术计划、Scenario、Task Graph
+  和单 Task Work Order，并为每个 Task 决定 Local/Worktree/PR 策略。仅在
+  vibe-coding 已路由到 Plan，或用户显式调用本 Skill 时使用；不隐式接管实施请求，不写业务代码。
 ---
 
-# Spec（工具箱）
+# Spec：Plan 技术拆解
 
-**先读**：[`vibe-coding`](../vibe-coding/SKILL.md) · [`SYSTEM.md`](../../SYSTEM.md) §2.1 · 宿主 `AGENTS.md` · `docs/README*`。
+本 Skill 只负责已确认的 Plan Rail。先读：
 
-**DO NOT CODE**（generate / clarify 写合同；converge/analyze/checklist 默认只读建议）。编码回 `vibe-coding`。
+- 宿主 `AGENTS.md`；
+- 已确认的产品真源；
+- [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)；
+- [`task-contract.md`](../vibe-coding/references/task-contract.md)；
+- [`workspace-contract.md`](../vibe-coding/references/workspace-contract.md)；
+- Worktree 被选中时读取
+  [`codex-worktree-execution.md`](../vibe-coding/references/codex-worktree-execution.md)；
+- [`evidence-contract.md`](../vibe-coding/references/evidence-contract.md)。
 
-按用户意图选模式；未指定时：实施意图 → **generate**；设计前消歧 → **clarify**；关版对照 → **converge**。
+## 进入条件
 
----
+至少要知道目标用户、可观察结果、当前切片 In / Out 和关键产品不变量。缺失会改变结果的
+信息时回到 Shape；普通可逆技术细节由 Plan 自主决定。
 
-## A. Generate（升格切版）
+非 trivial 使用 `docs/specs/<id>/`。trivial / small fix 可以直接形成轻量 Work Order，
+但仍要写目标、边界和验收。
 
-### 模式
+## 核心工件
 
-| 模式 | 触发 | 规则 |
-|------|------|------|
-| **A 蓝图升格** | modules 已确认进实施 | 忠实升格全文；Phase 只排顺序 |
-| **B 用户拆版** | 用户明示「本版只做…」 | 仅确认子集进 In |
-| **C 愿望升格** | 无完整蓝图；已确认开始实现 | 从 Kickoff / 首切片生成动态 Spec |
-| **D 验收迭代** | 验收不 OK | Fail SC + 体验 → remediation |
+```text
+docs/specs/<id>/
+├── VERSION.md
+├── context.md
+├── requirements.md
+├── technical-plan.md
+├── scenario-spec.md
+├── tasks.md
+├── tasks/
+│   ├── T-001.md
+│   └── T-002.md
+├── routes/
+│   ├── T-001.next-rail.md
+│   └── T-002.next-rail.md
+├── validation.md
+└── evidence/
+```
 
-「切版」= 升格实施真源，**不是**再砍范围。用户未缩 scope → 禁止把后续 Phase 塞进 Out。
+- `technical-plan.md`：现状、方案、影响面、单向门、迁移/回滚和关键决策；
+- `scenario-spec.md`：用户结果与可执行 Oracle；
+- `tasks.md`：Task Graph、索引和依赖；
+- `tasks/T-xxx.md`：唯一执行合同；
+- `routes/T-xxx.next-rail.md`：下一对话的单 Task 路由；
+- `validation.md`：版本级验收与真实证据。
 
-### 核心工件
+按风险添加 `clarify.md`、`migration-design.md`、`threat-model.md`、`test-plan.md` 等，不为
+形式完整创建空文档。
 
-从宿主 `docs/specs/_template/`（或插件 templates）创建 `docs/specs/vYYYY.MM-<slug>/`。
+## Plan 流程
 
-**必有**：`VERSION.md` · `context.md` · `requirements.md` · `tasks.md` · `validation.md`
+1. 对照代码和宿主事实确认现状，不从产品蓝图猜实现；
+2. 建立 Requirement → Scenario 映射；
+3. 选择最小但完整的技术方案，列出备选和取舍；
+4. 标记宿主单向门、外部依赖、环境和回滚边界；
+5. 以可独立判断的垂直结果拆 Task，不默认按 DB/API/UI 横切；
+6. 为每个 Task 填完整 Work Order；
+7. 分析 Task 依赖、文件写入重叠和共享资源；
+8. 为每个 Task 明确 Workspace Strategy、Claim 与 Delivery；
+9. 为每个 ready Task 创建独立 Route，并登记 handoff；
+10. 写版本级验证计划和集成重测点；
+11. 运行结构/一致性自检，输出 `code-ready`。
 
-| 按需（从 `_template/optional/` 拷到 Spec **根**） | 触发 |
-|------|------|
-| `scenario-spec.md` | 新产品能力 / Major（**禁止**留在 optional/ 当真源） |
-| `ux-standards.md` | UI / manual SC / 模式 D |
-| `clarify.md` | 阻断实施的互斥决策 |
-| `design.md` | 新模块 / 状态机 / 关键技术合同 |
-| `scope.md` / `product-design.md` / `research.md` | 模式 A/B 或需保存塑形成果 |
-| `experience-design.md` / `problem-map.md` | **模式 D 必建** experience-design |
-| `test-plan.md` | 策略超出宿主默认定向验证 |
-| `migration-design.md` / `threat-model.md` | DDL / 安全面 |
-| `regression-map.md` | 关版维护态关键旅程晋升 |
-| `evidence/` / `user-review.md` | 正式验收 |
+Major、单向门或破坏性方案在 Work Order ready 前需要用户批准技术计划。
 
-### Ready Gate（实施前）
+## Task 拆分标准
 
-- `Requirements Lock=locked`
-- 当前 Slice 的 Job、In/Out、AC 明确；Scenario 可执行
-- Target Environment / 账号 / 依赖可用或标 blocked
-- Effective Channel 与 Oracle 明确
-- Major / 单向门已 Plan Approval
+每个 Task 都必须：
 
-Ready 不成立 → 不得用文档完整度冒充可实施。
+- 一句话说明用户或系统结果；
+- In / Out 明确；
+- 有稳定写入边界和不变量；
+- 能独立取得最低证据；
+- 依赖和共享资源已列明；
+- 有明确失败路由；
+- 大到有价值，小到单个对话可完成。
 
-### 工作流摘要
+若两个“任务”必须一起才能观察结果，应合成一个 Task 的内部步骤。若两个 Task 可独立
+实现、验证和合并，才考虑并行 Worktree / PR。
 
-1. **Ground**（内部 + 必要 External Research Gate）  
-2. **Clarify / Shape** → Kickoff；每轮 ≤1–3 高价值问题  
-3. **Ready Gate**  
-4. **落盘** + handoff 加行 + 产品索引（蓝图状态→已切版）  
-5. **Scenario 合同**：角色 × 旅程 × 成功/失败/权限；矩阵无空窗  
-6. **体验合同**（有 UI）→ Jobs + [`ux-standards`](../vibe-coding/references/ux-standards.md)  
-7. 一屏实施摘要 → 回 `vibe-coding` Build  
+## Workspace 决策
 
-模式 D：必含 `experience-design.md`（体验方案，不只 bug）。详见 `acceptance-to-remediation`。
+- 默认先比较 Local 与 Worktree 的隔离收益和环境成本；
+- 当前工作区有无关 WIP、独立 PR、Hotfix、长时并行任务时倾向 Worktree；
+- 同文件、迁移、公共 API、账号/数据库/端口竞争时禁止并行；
+- commit、push、PR、merge 和 deploy 的授权分别记录，不相互推出。
 
-### 切版语义自检
+## 内部模式
 
-落盘 `scope.md` 前：「我在做 A（忠实升格）还是 B（用户明示裁剪）？」用户没说缩 scope → 必须是 A。
+- `generate`：从已确认产品切片创建 Plan；
+- `clarify`：只清除阻断实施的歧义；
+- `converge`：只读对照 Spec 与代码，提出缺口；
+- `analyze`：检查 Requirement / Scenario / Task / Validation 覆盖；
+- `checklist`：按决策充分性、范围诚实度、下游可执行性和验证性审查。
 
-### 禁止
+这些模式都不得写业务代码。
 
-要求用户填完整 PRD · 设计讨论就建 Spec · 已确认实施仍逼说「切版」 · 私自裁剪蓝图。
+## Plan 交付
 
----
-
-## B. Clarify（消歧）
-
-1. 挂载 `docs/specs/<id>/`  
-2. 扫描：模糊需求、未决选型、隐含假设、契约缺口、scope 漏洞、宿主红线（`AGENTS.md`）  
-3. 写入 `clarify.md`；**禁止**开放「是否砍半」（升格后范围已锁）  
-4. 全部 `[x]` → PASS；否则 BLOCK  
-
-只写 clarify / 回填 requirements。
-
----
-
-## C. Converge（对照代码）
-
-关版时建议跑一次。读 VERSION / requirements / tasks / scenario → Glob 探测代码根（禁止写死 `apps/`）→ 已完成/未完成表 → 新 task 须用户确认后写入。系统性差距 → 宿主 `gap-register`（若有）。
-
----
-
-## D. Analyze（覆盖度 · 只读）
-
-AC × design × tasks × scenario × 测试矩阵 → P0/P1 问题表。
-
----
-
-## E. Checklist（七维 · 只读）
-
-1. Decision-readiness  
-2. Substance over theater  
-3. Strategic coherence（roadmap / 产品索引 / Gap）  
-4. Done-ness clarity（validation / scenario / Jobs）  
-5. Scope honesty  
-6. Downstream usability  
-7. Shape fit  
-
-输出：评分 · 阻断项 · **PASS / PASS-WITH-WARNING / BLOCK**。
+向用户只展示技术方案摘要、关键代价、需要批准的单向门、Task 顺序/并行关系和第一张
+Work Order。把 handoff 指向首个 ready Task 的 `routes/T-xxx.next-rail.md`，下一对话进入
+`build`；并行 Task 分别使用自己的 Route。

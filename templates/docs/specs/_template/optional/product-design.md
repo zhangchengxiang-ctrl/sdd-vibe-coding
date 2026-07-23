@@ -1,24 +1,23 @@
-# Product Design · <version-id>
+# Product Design Context · <version-id>
 
-> 本版本涉及的产品上下文。**摘要即可**，全貌见对应设计稿。
+> 只保存本版本需要的产品摘要和链接；完整产品语义仍由 `docs/product/` 负责。
 
-## 关联路线
+## 来源
 
-| 文档 | 链接 |
-|------|------|
-| 季度概览 | [`../../planning/roadmap.md（若有）`](../../planning/roadmap.md（若有）) |
-| 周计划 | [`../../roadmap/weekly/`](../../roadmap/weekly/) |
+| 类型 | 路径 | 与本版本关系 |
+|---|---|---|
+| Product module | `docs/product/modules/<slug>/` | |
+| Demand / decision | | |
+| Roadmap | `docs/planning/roadmap.md` | |
 
-## 产品约束
+## 已确认产品切片
 
-- 
+- 用户 Job：
+- In：
+- Out：
+- 产品不变量：
+- 成功与关键失败：
 
-## 引用设计稿
+## 本版本产品变化
 
-| 文档 | 链接 |
-|------|------|
-| | [`../../modules/<slug>/`](../../modules/<slug>/) |
-
-## 本版本产品变更摘要
-
-（若无 UI/能力边界变化，写「无，仅技术/后端」）
+若没有产品语义变化，写明“无；仅实现现有合同”。

@@ -15,7 +15,7 @@
 | 概念 | 证明什么 | 真源 |
 |------|----------|------|
 | **验收** | 本版相对设计能否办成 | Spec `scenario-spec` + Browser 证据 |
-| **再测** | Fail 是否修好 | remediation 矩阵 |
+| **Repair 后再测** | 同根因 implementation Fail 是否修好 | Repair Task 的 Scenario 与 evidence |
 | **产品回归** | 维护态：同一批用户主路径是否仍成立 | register 选型复跑 **同级** 浏览器证明 |
 
 ---
@@ -66,10 +66,10 @@
 |------|--------|
 | diff 命中 `touch` | 命中面的 contract + product |
 | 单面 / 模块 | `SURFACE=` / `MODULE=`（宿主命令） |
-| 全库 | 显式 `ALL=1`（非默认） |
+| 全库 | 宿主显式全量参数（非默认） |
 | 仅合同探活 | 显式 contract profile（不得称产品 PASS） |
 
-选型命令以宿主 `AGENTS.md` 为准（例：`make verify-product-regression BASE=<sha>`）。
+选型命令以宿主 `AGENTS.md` 为准。
 
 ---
 

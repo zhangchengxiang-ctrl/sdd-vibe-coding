@@ -1,0 +1,6 @@
+interface:
+  display_name: "Vibe Coding Delivery"
+  short_description: "将产品诉求路由为有边界、可验证、可交接的单任务交付流程"
+  default_prompt: "Use $vibe-coding to route this request and produce the correct bounded delivery outcome."
+policy:
+  allow_implicit_invocation: true

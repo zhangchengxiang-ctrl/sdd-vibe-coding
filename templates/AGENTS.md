@@ -1,68 +1,82 @@
-# AGENTS.md — 工程宪法（SDD scaffold）
+# AGENTS.md — 项目工程约定
 
-> 由 **sdd-superpowers** `scripts/scaffold.sh` 生成。按本仓事实改写；Agent 以本文件为项目真源。
+> 由 SDD Superpowers 显式初始化。请用本仓真实事实补全；Codex 以本文件为项目约定真源。
 
-## Plan Approval
+## 项目
 
-架构变更、新产品能力、破坏性操作、单向门 → 聊天给出计划，用户明确批准（「可以开始」/「批准」/ `go ahead`）后再执行。
+- 产品/服务：
+- 主要技术栈：
+- 代码入口：
+- 默认分支：
 
-## 文档分层
+## 环境与入口
 
-| 层 | 路径 | 用途 |
-|----|------|------|
-| 宪法 | 本文件 | 技术栈、命令、红线、部署 |
-| 规格 | `docs/` | 产品门面 + `docs/specs/` 版本包 |
+| 环境 | URL / 访问方式 | 版本识别 | 日志 / 监控 |
+|---|---|---|---|
+| Local | | | |
+| Preview / Staging | | | |
+| Production | | | |
 
-编码主入口 skill：**vibe-coding**（插件提供）。验证 skill：**testing**。
+生产 SSH、数据库、部署和回滚入口只写安全的定位方法，不写密钥。
 
-## Environments
-
-| 用途 | 值（请填写） |
-|------|----------------|
-| 本地 / 预览 URL | |
-| 生产 URL | |
-| 应用监听 | |
-
-## Architecture
-
-（简述进程 / 部署单元边界。若有多进程故意双份代码，在此写明，禁止 Agent「DRY 合并」。）
-
-## Makefile / 常用命令
+## 常用命令
 
 ```bash
-# 按本仓填写，例如：
-# make check
-# make test
-# make build
-# bash scripts/check-docs.sh
+# 安装：
+# 启动：
+# 定向测试：
+# 全量测试：
+# lint / typecheck：
+# build：
+# docs check：bash scripts/check-docs.sh
 ```
 
-## Verification
+## 架构与写入边界
 
-| 变更类型 | 命令 / 义务 |
-|----------|-------------|
-| 后端 | 定向 typecheck + 相关测试 |
-| 前端用户可见 | 定向检查 + **浏览器验收**（方式见下） |
-| 产品回归 | 见 `docs/product/foundation/product-regression.md`；选型命令自填 |
-| 发版 | 本仓部署流程 |
+- 进程 / 部署单元：
+- 公共 API / schema 真源：
+- 生成物及生成命令：
+- 不得修改的区域：
 
-浏览器验收：按本仓约定（Browser MCP / Playwright / 其它）。**禁止**用纯 API 冒充 UI 验收（若产品有 UI）。
+## 验证
 
-## 单向门（须人审 + 定向加验）
+| 变更 | 最低验证 |
+|---|---|
+| 后端逻辑 | 相关静态检查 + 单元/集成 |
+| 用户可见前端 | 相关检查 + 真实浏览器 Scenario |
+| 全栈 | 相关前后端检查 + 当前用户 Job |
+| 数据库 / 单向门 | 迁移、兼容、health、回滚或本仓等价 |
+| 发布 | 版本、deploy、health、核心路径、监控、回滚点 |
 
-默认：DB migration · 对外 API 契约 · 权限/安全边界 · 进程边界 · 数据删除 · 生产配置。按本仓增删。
+- 浏览器工具 / 账号：
+- CI / 发布门：
 
-## Git
+## 单向门
 
-- 主线：`main`（或本仓默认分支）
-- commit / push：仅用户明示或 Spec 约定边界
-- **禁止** Agent 擅自创建 git worktree，除非用户本轮明确要求
+以下事项在执行前需要用户批准计划和风险；按本仓增删：
 
-## WIP
+- 数据库迁移、数据删除或不可逆修复；
+- 对外 API / schema 兼容性；
+- 权限、安全和隐私边界；
+- 生产配置、部署单元和发布；
+- 大规模依赖或架构迁移。
 
-活跃 Spec 上限与 `scripts/check-docs.sh` 的 `WIP_CAP` **同一数字**（默认 **8**）。
+## Git、Worktree 与 PR
 
-## SDD
+- 分支前缀默认 `codex/`，除非本仓另有约定。
+- 短任务或必须共享当前本地状态时可用 Local。
+- 并行独立 Task、无关 WIP、Hotfix 隔离、独立 PR 或高风险实验可用 Worktree。
+- 同文件、迁移、公共合同或共享数据库/端口/账号冲突时不得并行。
+- Worktree 只隔离文件，不隔离外部资源。
+- commit、push、PR、merge、deploy 分别授权，不相互推出。
+- 工作区脏状态、base 或目标路径不清时先停止。
 
-见 `docs/README.md`。插件：判轨 · 产品记忆 · 完成门禁 · 回填 · 对话卫生。  
-检查：`bash scripts/check-docs.sh`
+## SDD 工作方式
+
+- 主入口 Skill：`vibe-coding`；专项：`design`、`spec`、`testing`、`debug`。
+- 一个对话只做一个 Rail 和一个主目标。
+- Build / Repair 一次只执行一张 `tasks/T-xxx.md` Work Order。
+- 每个 Task 使用独立的 `routes/T-xxx.next-rail.md`，禁止仓库根单一指针承担并行调度。
+- 并行 Claim 的权威账本是 `docs/reference/claims.md`。
+- 活跃工作上限若需要，由本仓设置 `WIP_CAP`；插件不提供通用固定值。
+- 文档地图见 `docs/README.md`；检查运行 `bash scripts/check-docs.sh`。

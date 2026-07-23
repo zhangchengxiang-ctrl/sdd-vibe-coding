@@ -1,7 +1,7 @@
 {
   "name": "sdd-superpowers",
-  "version": "0.3.2",
-  "description": "Cursor / Claude Code / Codex plugin: Spec-Driven Delivery (判轨 / 产品记忆 / Intake→Owner→Build / Accept只测 / 产品回归 / docs CI)",
+  "version": "0.4.0",
+  "description": "Codex-only Spec-Driven Delivery plugin: Shape, Plan, Task Work Orders, Verify, Diagnose, Incident, and conditional Worktree/PR delivery.",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -10,11 +10,10 @@
   "scripts": {
     "scaffold": "bash ./scripts/scaffold.sh",
     "verify": "bash ./scripts/verify.sh",
-    "check-docs": "bash ./scripts/check-docs.sh",
+    "verify-contracts": "python3 ./scripts/verify-contract-fixtures.py ./evals/routing-contract-cases.json",
+    "eval-live": "python3 ./scripts/run-live-evals.py",
+    "check-docs": "bash ./scripts/check-docs.sh ./templates",
     "install": "bash ./scripts/install.sh",
-    "install-local": "bash ./scripts/install.sh",
-    "install-cursor": "bash ./scripts/install.sh cursor",
-    "install-claude": "bash ./scripts/install.sh claude",
-    "install-codex": "bash ./scripts/install.sh codex"
+    "install-local": "bash ./scripts/install.sh"
   }
 }

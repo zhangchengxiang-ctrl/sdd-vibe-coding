@@ -2,6 +2,5 @@
 node_modules/
 *.log
 .tmp/
-.dev/
 docs/.sdd-scaffold
 **/.sdd-scaffold

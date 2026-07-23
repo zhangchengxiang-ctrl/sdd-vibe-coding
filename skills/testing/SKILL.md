@@ -1,43 +1,58 @@
 ---
 name: testing
 description: >-
-  跨项目定向测试与证据分层（V0–V3）。矩阵验收 / 禁热修 / remediation →
-  vibe-coding acceptance-to-remediation（本 skill 不复述）。
-  触发：测试 / test / E2E / 验证报告 / 回归 / 定向验证。
+  Codex 的 Verify 专项 Skill：执行 Task、Version 或 Production 验证，维护证据链，
+  分类 Fail 并给出下一 Rail。仅在 vibe-coding 已路由到 Verify，或用户显式调用本 Skill
+  时使用；不隐式接管普通测试请求，不修改实现。
 ---
 
-# 测试与验收
+# Testing：Verify 与证据
 
-**先读**：宿主 `AGENTS.md` + 当前任务直接验收条件。已挂 Spec → `scenario-spec` / `validation`；体验 → [`ux-standards`](../vibe-coding/references/ux-standards.md)。  
-**Accept 矩阵 / 3 硬钉 / 轨工单** → [`acceptance-to-remediation`](../vibe-coding/references/acceptance-to-remediation.md)（禁止本文件复述）。
+本 Skill 只运行在已确认的 Verify Rail，不修改业务代码。先读宿主 `AGENTS.md`、当前声明范围、
+[`evidence-contract.md`](../vibe-coding/references/evidence-contract.md) 和适用 Scenario。
+用户体验场景再读 [UX Standards](./references/ux-standards.md)。
 
-## 原则
+## 先声明验收层次
 
-- 主代理做最小定向验证；全量仅发布/CI/全局合同或用户明示。  
-- 已通过且代码未变 → 不重跑。只修本次 diff 引入或直接阻断项。
+| 层次 | 要回答的问题 |
+|---|---|
+| Task Validation | 当前 T-xxx 是否按合同完成？ |
+| Version Acceptance | 多个 Task 集成后，当前版本是否满足产品结果？ |
+| Production Verification | 目标版本是否在生产真实生效且健康？ |
 
-## 证据分层（V0–V3）
+不得用 Task 证据替代 Version Acceptance，也不得用本地/预览证据声明生产交付。
 
-| 层 | 证明 | 例 |
-|----|------|-----|
-| V0 | 静态合同 | lint / 类型 |
-| V1 | 逻辑 | 定向单测 / API |
-| V2 | 真实通道 SC | Browser / 运行时 Job |
-| V3 | 全局 | 全量 / CI / 发布 |
+## 执行
 
-UI Demo Gate ≥ 一次 V2。命令从宿主 `AGENTS.md` / Makefile 读（禁止写死）。
+1. 固定环境、版本、角色、数据和声明范围；
+2. 建立 Requirement → Scenario → Task → Evidence 追踪；
+3. 从宿主 `AGENTS.md` 取得真实命令、URL、账号和工具；
+4. 按风险选择 V0–V3 的最小充分组合；
+5. 实际执行每个适用 Scenario，记录 `Pass | Fail | Blocked`；
+6. 记录命令、时间、环境、版本、观察值和证据路径；
+7. 对 Fail 做归因，不在 Verify 中顺手修代码；
+8. 给出实际 Delivery Target 和下一 Rail。
 
-## 改动 → 最低验收
+UI/人工 Scenario 至少需要一次真实通道 V2。API 成功、DOM 存在、Toast 出现或脚本旁路
+都不能单独证明用户 Job 通过。
 
-| 改动 | 原则 |
-|------|------|
-| 后端 | 相关静态 + 后端测 |
-| 前端 | 相关前端测 + **宿主浏览器验收** |
-| 全栈 | 相关前后端 + 当前 In scenario |
-| DB / 单向门 | migrate/health 或宿主等价；单向门 + 人眼 diff |
+## Fail 路由
 
-新产品 / Major：`scenario-spec` 覆盖角色 × 旅程 × 失败/权限。  
-有 UI：`ux-test-results` + Jobs；核心 Job Fail / 严重度 4 → 不得关版。
+| 分类 | 下一步 |
+|---|---|
+| implementation | `repair` Work Order |
+| product / ux | `shape` |
+| technical-plan | `plan` |
+| test-oracle | 修订测试合同 |
+| environment / account / data | `blocked` |
+| new-request | demand pool / `shape` |
+| unknown-root-cause | `diagnose` |
 
-证据目录：`docs/specs/<id>/evidence/`（截图 · README · `user-review`）。  
-正式报告 → [`validation-report`](./references/validation-report.md)。Ordinary fix → Docs: N/A。
+只有同根因的 implementation Fail 可以合为一个 Repair Task。
+
+## 声明
+
+所有 Scenario 有终态，只能说明 `matrix-accounted`；关版条件全部满足才是
+`acceptance-passed`。正式结果按
+[Validation Report](./references/validation-report.md) 输出，必须同时写通过证据、失败、
+Blocked、未覆盖项和限制。

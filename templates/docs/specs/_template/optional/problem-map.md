@@ -1,8 +1,5 @@
-# Problem Map（模式 D）
+# Problem Map · <version-id>
 
-> 验收 Fail / 用户判决 → 缺陷 D* + 体验 E* 映射。
-
-| SC / 判决 | 类型 | ID | 说明 | 目标工件 |
-|-----------|------|-----|------|----------|
-| | D* 断点 | D1 | | requirements / design |
-| | E* 体验 | E1 | | experience-design |
+| Fail / 反馈 | 证据 | 分类 | 根因或未知 | 下一 Rail | Work Order |
+|---|---|---|---|---|---|
+| | | implementation / product-ux / technical-plan / test-oracle / environment / new-request / unknown-root-cause | | | |

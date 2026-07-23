@@ -1,43 +1,23 @@
-# 需求池（Demand Pool）
+# 需求池
 
-> **用户愿望 / 故障 / 体验吐槽的排期入口。**  
-> 与 [gap-register.md](./gap-register.md)（蓝图−现状）分工：口述进本池；能力账本进 gap。  
-> 角色合同 → skill `vibe-coding` → `references/role-rails.md`。
+用户愿望、普通故障和体验反馈先记录在这里；生产事故另见
+`docs/operations/incidents/`。需求池不是实施授权。
 
-## 字段说明
+## 状态
 
-| 字段 | 说明 |
-|------|------|
-| ID | `DEM-NNN`（本文件内递增） |
-| 类型 | `wish` / `fault` / `ux` / `other` |
-| 来源 | 谁提出 / 哪次会话 |
-| 摘要 | 一句话 |
-| 现状痛点 | 现在怎样 |
-| 期望 | 办成什么算够 |
-| 非目标 | 明确不做 |
-| 建议优先级 | Intake 建议：`P0`/`P1`/`P2`/`park`（**非**排期承诺） |
-| Owner 优先级 | Owner 判决后填写；未审则 `—` |
-| 状态 | 见下表 |
-| 链接 | modules / Spec / GAP / handoff 筹备行 |
-
-### 状态语义
-
-| 状态 | 含义 | 谁改 |
-|------|------|------|
-| `draft` | Intake 已记；信息可能不全 | Intake |
-| `ready` | 可排期 | Intake；Owner 可退回 `needs-intake` |
-| `scheduled` | Owner 已排入近期 | Owner |
-| `in-spec` | 已有 `docs/specs/<id>/` | Owner 升格后 |
-| `done` | 已交付或关闭 | Owner / Build 关版回写 |
-| `wontfix` | 明确不做（必写理由） | Owner |
-| `needs-intake` | 退回补澄清 | Owner |
+| 状态 | 含义 |
+|---|---|
+| `draft` | 信息可能不完整 |
+| `shaping` | 正在澄清产品切片 |
+| `ready-for-plan` | 产品切片已确认，可进入 Plan |
+| `planned` | 已有 Spec / Task |
+| `delivered` | 已交付 |
+| `parked` | 暂不处理，附理由 |
 
 ## 条目
 
-| ID | 日期 | 类型 | 摘要 | 建议优先级 | Owner | 状态 | 链接 |
-|----|------|------|------|------------|-------|------|------|
-| | | | | | — | | |
+| ID | 日期 | 类型 | 用户问题 / 目标 | 优先级建议 | 状态 | 产品真源 / Spec |
+|---|---|---|---|---|---|---|
+| DEM-001 | | wish / fault / ux / other | | P0 / P1 / P2 / park | draft | |
 
-## 已关闭
-
-（短链即可）
+优先级建议不是排期承诺；只有明确的产品决定或 Roadmap 才能改变排期。

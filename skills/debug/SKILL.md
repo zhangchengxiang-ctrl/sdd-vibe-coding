@@ -1,0 +1,58 @@
+---
+name: debug
+description: >-
+  Codex 的 Diagnose 与 Incident 专项 Skill。用于复杂 bug、线上排障、生产故障、
+  日志/监控定位、止血和 Hotfix。仅在 vibe-coding 已路由到 Diagnose/Incident，
+  或用户显式调用本 Skill 时使用；不隐式接管普通 bug 请求，诊断不自动授权修改或部署。
+---
+
+# Debug：Diagnose / Incident
+
+只处理已确认的 Diagnose / Incident Rail。先读宿主 `AGENTS.md` 和
+[`incident-contract.md`](../vibe-coding/references/incident-contract.md)。需要改代码时同时读取
+[`task-contract.md`](../vibe-coding/references/task-contract.md)、
+[`workspace-contract.md`](../vibe-coding/references/workspace-contract.md) 和
+[`evidence-contract.md`](../vibe-coding/references/evidence-contract.md)。
+
+## 环境门
+
+先确认目标环境、URL、版本/commit、时间范围、用户/请求标识，以及宿主定义的日志、监控、
+SSH、数据库、部署与回滚入口。不确定时只做安全的只读调查或问最小问题；禁止用本机状态
+代表生产。
+
+所有日志和证据脱敏，不输出密钥、令牌和敏感用户数据。
+
+## Diagnose
+
+“排查、看看原因、线上有错”默认只授权诊断：
+
+1. 固定表象、影响范围和时间线；
+2. 区分已确认事实与推测；
+3. 建立 2–3 个可证伪假设；
+4. 从真实环境取得证据逐个排除；
+5. 定位根因层并给出置信度；
+6. 输出最小 Repair / Plan Work Order。
+
+Diagnose 不写业务代码、不改配置/数据、不部署。根因不明时不得用试错修改生产状态。
+
+## Incident
+
+核心服务不可用、活跃数据损坏/丢失风险、活跃安全事件或核心旅程严重故障时进入
+Incident。目标只有恢复生产：
+
+```text
+确认影响 → 选择止血 → 最小变更 → 最低验证
+→ 部署授权 → 生产 health/关键路径 → 观察 → 后续 Work Order
+```
+
+止血优先回滚、功能开关、隔离依赖和配置修正，最后才是最小 Hotfix。Incident 不承载
+大规模重构。任何变更前先在事故记录中固定最小 Incident Work Order；生产部署、数据
+操作、迁移和安全边界变化仍需明确授权。
+
+## Workspace 与结果
+
+Local 有无关 WIP、需要稳定分支或独立紧急 PR 时优先 Worktree；干净工作区中的唯一事故、
+回滚或配置止血不强制 Worktree。
+
+`production-restored` 只表示服务恢复。长期根因、回归、产品债和技术债必须形成独立
+Repair / Plan / Verify Work Order。

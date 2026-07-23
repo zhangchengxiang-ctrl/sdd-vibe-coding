@@ -1,25 +1,24 @@
-# Commit Checklist · <version-id>
+# Commit / PR Checklist · <version-id>
 
-> 提交与 PR 规范。配合 `AGENTS.md` 与文档回填规则。
+> 仅在 Work Order 的 Delivery 明示 commit 或 PR 时使用；服从宿主 `AGENTS.md`。
 
 ## 提交前
 
-- [ ] diff 仅包含本版本 scope（无无关格式化）
-- [ ] 无 `.env` / secret 进仓库
-- [ ] commit message：Conventional Commits（`type(scope): description`）
+- [ ] diff 只包含当前 Task / PR 范围
+- [ ] 没有 secret、临时日志或无关生成物
+- [ ] Task Validation 已记录真实证据
+- [ ] 分支、base SHA 和依赖 PR 与 Work Order 一致
 
 ## PR
 
-- [ ] 标题含版本 ID 或功能摘要
-- [ ] 描述链到 `docs/specs/<id>/`
-- [ ] 附 validation 报告摘要（含 **Docs 回填**）
-- [ ] CI 绿
+- [ ] 标题和描述能说明独立价值切片
+- [ ] 链接 Spec、Task 和 validation/evidence
+- [ ] 写明迁移、共享合同、回滚和集成重测
+- [ ] CI 状态如实记录
 
 ## 合并后
 
-- [ ] `VERSION.md` → `done`，填合并日期
-- [ ] `docs/planning/roadmap.md` 更新状态
-- [ ] 按 [docs/README.md](../../README.zh-CN.md) 回填矩阵
-- [ ] 若绑定设计稿：`product/README.md` → `部分落地` / `已验收`
-- [ ] `reference/handoff.md` 更新
-- [ ] 生产：`make deploy` / `make deploy-ccc`（按改动单元）
+- [ ] 依赖分支按计划同步
+- [ ] 执行 Work Order 指定的 integration retest
+- [ ] 更新 handoff 的 Task / Branch / PR / Next
+- [ ] 生产发布仍按独立授权与宿主流程执行
