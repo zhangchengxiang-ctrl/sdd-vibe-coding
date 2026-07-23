@@ -1,16 +1,16 @@
 ---
-name: product-design-package
+name: design
 description: >-
   SDD 产品塑形与分层蓝图：体验 / 模型 / 呈现 / 运行时 / 交付。
   触发：写产品设计 / product/modules / 优化体验 / 改 IA·导航·入口 /
-  成块 UX 愿望（未说开始做时勿改业务代码）。
+  成块 UX 愿望（未说开始做时勿改业务代码）。别名：product-design-package。
 ---
 
-# 产品设计包（Product Design Package）
+# Design（产品设计包）
 
 **方法论：** 关注点分层产品包。  
 **章节合同真源：** 宿主 `docs/product/foundation/product-package-contract.md`（若无则用插件 templates 骨架）。  
-**互补：** `vibe-coding` · `spec` · [`_docs-factory/CONVENTIONS.md`](../_docs-factory/CONVENTIONS.md)
+**互补：** `vibe-coding` · `spec` · [`SYSTEM.md`](../../SYSTEM.md) §2.1
 
 **DO NOT CODE**：本 skill 只 Shape / 蓝图。确认实施后回 `vibe-coding` → 体系调 `spec`。  
 默认 **Intake**：可写 `modules/` + 需求池；**禁止**升格 Spec 或改业务代码。

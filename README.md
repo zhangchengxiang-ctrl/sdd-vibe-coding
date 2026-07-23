@@ -1,69 +1,100 @@
-# SDD Superpowers
+# SDD Superpowers（VibeCoding）
 
-把 **Spec-Driven Delivery** 打包成可分享插件，支持 **Cursor · Claude Code · Codex**：
+让**不太懂技术的产品经理**也能用自然语言做 Spec-Driven Delivery：你说愿望，体系帮你塑形、排期、落地、验收——**没说「开始做」之前，不会乱动代码**。
 
-- **判轨先行** · **产品记忆先行** · **门禁优先级**
-- **Intake → Owner → Build** · spec 工具箱 · 验收→修复闭环
-- **产品回归合同** · **docs CI** · **空仓 scaffold**
-
-项目细节只读宿主 `AGENTS.md` / `docs/`。
-
-## 当前版本 0.3.0
-
-| 项 | 状态 |
+| 名 | 含义 |
 |----|------|
-| Cursor 插件 + rules 00–05 + hooks | ✅ |
-| Claude Code（`.claude-plugin` + marketplace + harness hooks） | ✅ |
-| Codex（`.codex-plugin` + `.agents/plugins` marketplace） | ✅ |
-| vibe-coding / product-design-package / spec / testing | ✅ |
-| 产品回归 · Mode D · check-docs-sdd | ✅ |
-| `/intake` commands · Marketplace 公开发布 · 英文化 | ⏳ S4–S5 |
+| **sdd-superpowers** | 插件 / 产品名（装到 Cursor · Claude Code · Codex） |
+| **sdd-vibe-coding** | 本仓库目录 |
+| **VibeCoding** | 这套方法论的别名 |
 
-## 安装
+体系地图（维护者）→ [`SYSTEM.md`](./SYSTEM.md)  
+安装细节 → [`INSTALL.md`](./INSTALL.md)  
+Agent 入口 → [`skills/vibe-coding/SKILL.md`](./skills/vibe-coding/SKILL.md)
 
-```bash
-# 三端（缺 CLI 的自动 SKIP）
-bash ~/code/sdd-superpowers/scripts/install-local.sh
+---
 
-# 或单端
-bash ~/code/sdd-superpowers/scripts/install-local.sh cursor
-bash ~/code/sdd-superpowers/scripts/install-local.sh claude
-bash ~/code/sdd-superpowers/scripts/install-local.sh codex
+## 给产品经理：你说什么 → 会发生什么
+
+| 你这样说 | 体系做什么 | 不会做什么 |
+|----------|------------|------------|
+| 「我希望…」「优化搜索体验」「改进顶栏」+ 编号清单/截图 | **Intake**：记进需求池，必要时写产品设计草稿 | 不改业务代码、不开实施 Spec、不承诺排期 |
+| 「排期」「这周优先做哪个」「缓做 / 不做」 | **Owner**：改优先级、定首切片、必要时升格 Spec | 不写业务实现 |
+| 「开始做」「按这个来」「实现」「构建」且切片已确认 | **Build**：按 Spec 编码、验证、给你看成果 | 不静默扩大需求 |
+| 「跑验收」「走查」「总评」 | **Accept**（只测）：按场景矩阵逐条测；不 OK 开修复版工单 | 验收会话里不热修代码 |
+
+**一句话铁律**：清单再清楚、截图再多，也不等于「开始做」。只有你明确说开始做（或已挂好 Spec），才会动业务代码。
+
+### 示例对话
+
+```text
+你：优化一下扩展安装流程
+    1. 安装成功要有反馈
+    2. 失败要说人话
+    3. 顶栏入口太深
+
+Agent（Intake）：
+  → 写 DEM-xxx 进需求池
+  → 若成块，开/改产品设计包 modules/
+  → 给你一屏 Intake Card（问题·非目标·未决）
+  → 停。不改代码。
+
+你：开始做，就按刚才那张卡的首切片
+
+Agent（Owner→Build）：
+  → 升格 Spec → 新对话编码 → Demo Card 给你看入口与证据
 ```
 
-空宿主仓：
+### 怎么唤起各轨（自然语言 · 无斜杠命令）
+
+| 你说 | 走哪 |
+|------|------|
+| 「走 Intake / 记进需求池」 | Intake → `vibe-coding` + `role-rails` |
+| 「排期 / 优先 / 升格」 | Owner → `role-rails` |
+| 「开始做 / 按这个来」 | Build → `vibe-coding` + Spec |
+| 「跑验收 / 走查」 | Accept → `testing` + `acceptance-to-remediation` |
+| 「切版 / 消歧 / 收敛」 | skill `spec` |
+| 「空仓 scaffold」 | `scripts/scaffold.sh` |
+
+细则 → [`skills/vibe-coding/references/role-rails.md`](./skills/vibe-coding/references/role-rails.md)。
+
+---
+
+## 快速安装
 
 ```bash
-bash ~/code/sdd-superpowers/scripts/scaffold.sh /path/to/empty-repo
+bash ~/code/sdd-vibe-coding/scripts/install.sh
+# 或：cursor / claude / codex
 ```
 
 | Harness | 安装后 |
 |---------|--------|
-| Cursor | Reload Window → Plugins 见 sdd-superpowers |
-| Claude Code | `/reload-plugins` → `/plugin` 确认；或 `claude plugin list` |
-| Codex | Plugins Directory → **SDD Superpowers (local)** → Install |
+| Cursor | Reload Window → Plugins 见 **sdd-superpowers** |
+| Claude Code | `/reload-plugins` → `/plugin` 确认 |
+| Codex | Plugins → **SDD Superpowers (local)** → Install |
 
-## 验证
+空宿主仓：
 
 ```bash
-cd ~/code/sdd-superpowers && bash scripts/verify-slice1.sh
-claude plugin validate ~/code/sdd-superpowers   # 若已装 Claude CLI
+bash ~/code/sdd-vibe-coding/scripts/scaffold.sh /path/to/empty-repo
 ```
 
-## 布局
+完整步骤、hooks 标记、验证命令 → [`INSTALL.md`](./INSTALL.md)。
 
-```text
-.cursor-plugin/     Cursor manifest
-.claude-plugin/     Claude Code manifest + marketplace
-.codex-plugin/      Codex manifest
-.agents/plugins/    Codex/ChatGPT local marketplace
-hooks.json          Cursor user/plugin hooks
-hooks/hooks.json    Claude Code / Codex lifecycle hooks
-rules/              always-apply（Cursor .mdc；scaffold 同步到 .claude/rules）
-skills/             共享技能（三端共用）
-scripts/            scaffold · install-local · check-docs-sdd · hooks
-templates/          AGENTS + docs 骨架
-```
+---
+
+## 当前版本 0.3.2
+
+| 项 | 状态 |
+|----|------|
+| Cursor / Claude / Codex 三端插件 | ✅ |
+| 判轨 · 产品记忆 · Intake→Owner→Build · Accept 只测 | ✅ |
+| 编码许可证 = Spec 或明示开始做（DEM≠放行） | ✅ |
+| 信息架构：rules+skills 唯一真源 · SYSTEM 地图 | ✅ |
+| 自然语言唤轨（Intake/Owner/Build/Accept） | ✅ |
+| Marketplace 公开发布 · 英文化 | ⏳ |
+
+---
 
 ## License
 

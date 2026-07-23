@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# verify-slice1.sh — 结构 + 三端清单 + scaffold + hooks + check-docs-sdd
+# verify.sh — 结构 + 三端清单 + scaffold + hooks + check-docs
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -25,7 +25,7 @@ else
 fi
 
 echo "== hooks hard gate unit (Cursor + Claude harness) =="
-if node "$ROOT/scripts/verify-hooks-unit.mjs" >/dev/null; then
+if node "$ROOT/scripts/verify-hooks.mjs" >/dev/null; then
   ok "hooks deny business write on Intake (cursor+harness)"
 else
   bad "hooks unit failed"
@@ -43,15 +43,17 @@ for p in \
   package.json \
   LICENSE \
   README.md \
-  scripts/hooks/pre-tool-use.mjs \
-  scripts/hooks/before-submit-prompt.mjs \
-  scripts/hooks/harness-pre-tool-use.mjs \
-  scripts/hooks/harness-user-prompt.mjs \
-  scripts/hooks/harness-session-start.mjs \
-  scripts/hooks/harness-lib.mjs \
-  scripts/install-local.sh \
+  INSTALL.md \
+  SYSTEM.md \
+  scripts/hooks/shared.mjs \
+  scripts/hooks/session.mjs \
+  scripts/hooks/prompt.mjs \
+  scripts/hooks/tool.mjs \
+  scripts/install.sh \
+  scripts/verify.sh \
+  scripts/verify-hooks.mjs \
   scripts/scaffold.sh \
-  scripts/check-docs-sdd.sh \
+  scripts/check-docs.sh \
   rules/00-judge-track-first.mdc \
   rules/01-product-memory-first.mdc \
   rules/02-gate-precedence.mdc \
@@ -62,12 +64,12 @@ for p in \
   skills/vibe-coding/references/role-rails.md \
   skills/vibe-coding/references/execution-discipline.md \
   skills/vibe-coding/references/acceptance-to-remediation.md \
-  skills/product-design-package/SKILL.md \
+  skills/vibe-coding/references/handoff.md \
+  skills/vibe-coding/references/ux-standards.md \
+  skills/design/SKILL.md \
   skills/spec/SKILL.md \
   skills/testing/SKILL.md \
-  skills/_docs-factory/CONVENTIONS.md \
-  skills/_docs-factory/VALIDATION-REPORT.md \
-  skills/_docs-factory/UX-STANDARDS.md \
+  skills/testing/references/validation-report.md \
   templates/AGENTS.md \
   templates/docs/README.md \
   templates/docs/product/foundation/product-regression.md \
@@ -90,7 +92,7 @@ echo "== vibe-coding line budget (~120) =="
 lines=$(wc -l < "$ROOT/skills/vibe-coding/SKILL.md")
 if [[ "$lines" -le 130 ]]; then ok "vibe-coding SKILL.md = $lines lines"; else bad "vibe-coding too long: $lines"; fi
 
-echo "== de-AgentDeck coupling (forbidden hardcodes in plugin body) =="
+echo "== host-coupling (forbidden hardcodes in plugin body) =="
 FORBIDDEN_PATTERNS=(
   'ccc\.dev\.local'
   'ccc\.flow\.chat'
@@ -99,7 +101,6 @@ FORBIDDEN_PATTERNS=(
   'deepseek-v4-flash'
   'kaon/deepseek'
   'make reload-web'
-  'agentdeck-ui'
   'NEXUS_'
   'apps/web/src/extensions'
   'apps/worker/src/extensions'
@@ -107,7 +108,7 @@ FORBIDDEN_PATTERNS=(
   'spec-generate'
 )
 for pat in "${FORBIDDEN_PATTERNS[@]}"; do
-  if rg -n --glob '!README.md' --glob '!verify-slice1.sh' --glob '!evidence/**' -e "$pat" \
+  if rg -n --glob '!README.md' --glob '!INSTALL.md' --glob '!SYSTEM.md' --glob '!verify.sh' --glob '!.dev/**' -e "$pat" \
       "$ROOT/rules" "$ROOT/skills" "$ROOT/templates" "$ROOT/scripts" >/tmp/sdd-coup.txt 2>/dev/null; then
     bad "forbidden pattern /$pat/:"
     cat /tmp/sdd-coup.txt
@@ -136,10 +137,11 @@ rg -q '优化' "$ROOT/rules/00-judge-track-first.mdc" || ROUTE_OK=0
 rg -q '编号清单' "$ROOT/rules/00-judge-track-first.mdc" || ROUTE_OK=0
 rg -q 'Intake' "$ROOT/rules/00-judge-track-first.mdc" || ROUTE_OK=0
 rg -q '禁止' "$ROOT/rules/00-judge-track-first.mdc" || ROUTE_OK=0
-rg -q '编号清单' "$ROOT/skills/vibe-coding/references/role-rails.md" || ROUTE_OK=0
 rg -q '两者皆无' "$ROOT/rules/01-product-memory-first.mdc" || ROUTE_OK=0
+rg -q 'rules/00' "$ROOT/skills/vibe-coding/references/role-rails.md" || ROUTE_OK=0
+rg -q 'DEM ≠ 编码许可证|DEM≠ 编码许可证|DEM ≠' "$ROOT/skills/vibe-coding/references/role-rails.md" || ROUTE_OK=0
 if [[ "$ROUTE_OK" -eq 1 ]]; then
-  ok "假 Build 信号 → Intake + 产品记忆闸 encoded"
+  ok "假 Build 信号 → Intake + 产品记忆闸 encoded (SoT=rules/00; role-rails=pointer)"
 else
   bad "routing contract incomplete"
 fi
@@ -157,13 +159,22 @@ for must in \
   docs/product/regression/surfaces.json \
   docs/reference/handoff.md \
   docs/specs/_template/VERSION.md \
-  scripts/check-docs-sdd.sh \
+  scripts/check-docs.sh \
   .cursor/sdd-enabled \
   .claude/sdd-enabled \
   .cursor/rules/00-judge-track-first.mdc \
   .claude/rules/00-judge-track-first.md
 do
   [[ -e "$TMP/$must" ]] && ok "scaffold created $must" || bad "scaffold missing $must"
+done
+# Cursor scaffold must not ship Claude-only harness leftovers
+if ls "$TMP/.cursor/hooks"/harness-* >/dev/null 2>&1; then
+  bad "scaffold copied harness-* into .cursor/hooks"
+else
+  ok "scaffold .cursor/hooks whitelist (no harness-*)"
+fi
+for hook in shared.mjs session.mjs prompt.mjs tool.mjs; do
+  [[ -e "$TMP/.cursor/hooks/$hook" ]] && ok "scaffold hook $hook" || bad "scaffold missing hook $hook"
 done
 
 bash "$ROOT/scripts/scaffold.sh" "$TMP" >/tmp/sdd-sc2.txt 2>&1 || true
@@ -173,11 +184,11 @@ else
   bad "scaffold re-run unexpected"
 fi
 
-echo "== check-docs-sdd on fresh scaffold =="
-if bash "$TMP/scripts/check-docs-sdd.sh" "$TMP"; then
-  ok "check-docs-sdd green on scaffold"
+echo "== check-docs on fresh scaffold =="
+if bash "$TMP/scripts/check-docs.sh" "$TMP"; then
+  ok "check-docs green on scaffold"
 else
-  bad "check-docs-sdd failed on scaffold"
+  bad "check-docs failed on scaffold"
 fi
 
 echo "== claude plugin validate =="
@@ -205,5 +216,5 @@ if [[ "$FAIL" -ne 0 ]]; then
   echo "RESULT: FAIL"
   exit 1
 fi
-echo "RESULT: PASS — Slice 2–3 / 0.3.0 Claude+Codex packaging green"
+echo "RESULT: PASS — IA optimization / 0.3.2 packaging green"
 exit 0

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Portable SDD docs integrity check. Run from host repo root:
-#   bash scripts/check-docs-sdd.sh
-# Or: bash /path/to/sdd-superpowers/scripts/check-docs-sdd.sh /path/to/host
+#   bash scripts/check-docs.sh
+# Or: bash /path/to/sdd-superpowers/scripts/check-docs.sh /path/to/host
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

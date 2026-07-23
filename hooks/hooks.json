@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'ROOT=\"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT}}}\"; exec node \"$ROOT/scripts/hooks/harness-session-start.mjs\"'"
+            "command": "bash -c 'ROOT=\"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT}}}\"; exec node \"$ROOT/scripts/hooks/session.mjs\" --harness=claude'"
           }
         ]
       }
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'ROOT=\"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT}}}\"; exec node \"$ROOT/scripts/hooks/harness-user-prompt.mjs\"'"
+            "command": "bash -c 'ROOT=\"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT}}}\"; exec node \"$ROOT/scripts/hooks/prompt.mjs\" --harness=claude'"
           }
         ]
       }
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'ROOT=\"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT}}}\"; exec node \"$ROOT/scripts/hooks/harness-pre-tool-use.mjs\"'"
+            "command": "bash -c 'ROOT=\"${CLAUDE_PLUGIN_ROOT:-${PLUGIN_ROOT:-${CODEX_PLUGIN_ROOT}}}\"; exec node \"$ROOT/scripts/hooks/tool.mjs\" --harness=claude'"
           }
         ]
       }

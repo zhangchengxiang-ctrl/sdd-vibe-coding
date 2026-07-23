@@ -3,17 +3,17 @@
   "hooks": {
     "sessionStart": [
       {
-        "command": "node ./scripts/hooks/session-start.mjs"
+        "command": "node ./scripts/hooks/session.mjs"
       }
     ],
     "beforeSubmitPrompt": [
       {
-        "command": "node ./scripts/hooks/before-submit-prompt.mjs"
+        "command": "node ./scripts/hooks/prompt.mjs"
       }
     ],
     "preToolUse": [
       {
-        "command": "node ./scripts/hooks/pre-tool-use.mjs",
+        "command": "node ./scripts/hooks/tool.mjs",
         "matcher": "Write|Delete|StrReplace|EditNotebook|Shell"
       }
     ]

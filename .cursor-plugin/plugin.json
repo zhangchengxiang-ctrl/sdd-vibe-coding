@@ -1,7 +1,7 @@
 {
   "name": "sdd-superpowers",
-  "version": "0.3.0",
-  "description": "Spec-Driven Delivery for any repo: 判轨先行 · 产品记忆先行 · Intake→Owner→Build · spec 工具箱 · 验收→修复闭环 · 产品回归合同 · docs CI。项目细节只读宿主 AGENTS.md / docs/。",
+  "version": "0.3.2",
+  "description": "Spec-Driven Delivery for any repo: 判轨先行 · 产品记忆先行 · Intake→Owner→Build · Accept只测 · spec 工具箱 · 验收→修复闭环 · 产品回归合同 · docs CI。项目细节只读宿主 AGENTS.md / docs/。",
   "author": {
     "name": "SDD Superpowers"
   },

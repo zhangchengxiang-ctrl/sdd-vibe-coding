@@ -7,13 +7,13 @@
   },
   "metadata": {
     "description": "sdd-superpowers — Spec-Driven Delivery for any repo",
-    "version": "0.3.0"
+    "version": "0.3.2"
   },
   "plugins": [
     {
       "name": "sdd-superpowers",
-      "description": "Spec-Driven Delivery：判轨 · 产品记忆 · Intake→Owner→Build · docs CI",
-      "version": "0.3.0",
+      "description": "Spec-Driven Delivery：判轨 · 产品记忆 · Intake→Owner→Build · Accept只测 · docs CI",
+      "version": "0.3.2",
       "author": {
         "name": "SDD Superpowers"
       },

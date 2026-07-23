@@ -1,50 +1,35 @@
 ---
-description: 完成门禁 — Done 定义、范围标签、禁止问蠢问题。Always apply（排在判轨/产品记忆之后）。
+description: 完成门禁 — Done / 范围标签 / 禁假完成。Always apply（在 00·01·02 之后）。
 alwaysApply: true
 ---
 
 # 完成门禁
 
-> **上位**：先遵守 `00-judge-track-first` 与 `01-product-memory-first` 与 `02-gate-precedence`。  
-> Intake 会话的 Done ≠ 改完代码。
+> **上位**：`rules/00` · `01` · `02`。Accept 矩阵细则 → `vibe-coding` → `acceptance-to-remediation`（本文件不复述 3 硬钉）。
 
-## 做完的定义（唯一）
-
-**用户本轮明确目标达到约定 Delivery Target，且直接验收条件生效** = Done。  
-不是：计划 bullet 勾完 · 文件数凑齐 · 「核心文件已写」。
-
+**Done** = 用户本轮目标达到约定 Delivery Target，且直接验收条件生效。  
+不是：计划勾完 · 文件数凑齐 · 「核心文件已写」。  
 诚实区分：`code-ready` · `dev-effective` · `production-delivered` · `user-accepted`。
 
-**完成必带范围标签**：`[轨·范围·Delivery Target]`，例  
-`[Intake·DEM-001·shape]` / `[验收·矩阵 18/18·已跑完·总评不OK]` / `[切片 Phase2·dev-effective]`。  
-无标签 = **禁止**报「完成 / 已落地」。
+**完成必带** `[轨·范围·Delivery Target]`。无标签 = 禁止报「完成 / 已落地」。
 
-## 按轨的「到齐」
-
-| 轨 | 「本目标」= | 到齐动作 |
-|----|------------|----------|
-| **Intake** | DEM / Intake Card / modules 草稿 | 沉淀完毕即停；**禁止**为「做完」去改业务代码 |
-| **Owner** | 池判决 / Spec 升格 / `.next-rail` | 判决落盘；禁止编码 |
-| **Build / 实现** | 本 Phase / 声明的 Delivery Target | 范围内缺口直接补完 |
-| **验收** | scenario 覆盖矩阵 | 无终态 → 继续跑或 Blocked+原因；完成 ≠ 全绿；不 OK → remediation + `.next-rail` |
+| 轨 | 到齐 |
+|----|------|
+| **Intake** | DEM / Card / modules 草稿沉淀即停；禁借「做完」改码 |
+| **Owner** | 池判决 / Spec 升格 / `.next-rail` 落盘；禁编码 |
+| **Build** | 本 Phase Delivery Target 补齐 |
+| **Accept** | 矩阵终态齐全（≠ 全绿）；不 OK → remediation + `.next-rail`；**禁热修** → 见 `acceptance-to-remediation` |
 
 ## 禁止的提问（直接做）
 
 | ❌ | ✅ |
 |----|-----|
-| 「要不要我继续做 X？」且 X 属本轨目标 | 做完 X（commit/push 除外，须用户明示） |
-| 「还差这些，要我继续吗？」 | 属本轨 → 继续到齐；属他轨 → 写 `.next-rail` + 一行指针 |
-| 报完成后把未完成项标「可选」 | 未完成不得标可选 |
-| Intake 下「清单清楚，要不要直接改？」 | **不要改**；写 DEM / Shape |
+| 「要不要继续做 X？」且 X 属本轨 | 做完 X（commit/push 除外，须明示） |
+| 「还差这些，要我继续吗？」 | 本轨 → 到齐；他轨 → `.next-rail` + 一行指针 |
+| 完成后把未完成标「可选」 | 未完成不得标可选 |
+| Intake「清单清楚，直接改？」 | **不改**；写 DEM / Shape |
 
-## 范围熔断
+## 熔断 / 允许提问
 
-- 新问题与本次 diff 无因果 → 记录退出  
-- 同区第二次修复仍失败 → 停补丁，回根因或 blocker  
-- 定向验证已通过且代码未变 → 禁止重复同一验证  
-
-## 允许提问仅限
-
-- 真歧义且无法从仓库 / 已拍板计划推断  
-- 用户规则要求的门禁（Plan Approval、是否 commit/push）  
-- Agent 无法代劳的外部 blocker（扫码 SSO、个人 OAuth、生产密钥、真人本人）
+- 无因果新问题 → 记录退出；同区二次修失败 → 停补丁；验证已过且代码未变 → 不重跑  
+- 仅允许问：真歧义 · 用户门禁（Plan/commit）· Agent 无法代劳的外部 blocker

@@ -17,7 +17,7 @@
 | 浏览器验收 | （URL / 工具） |
 | 部署 | （命令） |
 | 产品回归 | （命令；合同见 `docs/product/foundation/product-regression.md`） |
-| WIP | 与 `scripts/check-docs-sdd.sh` `WIP_CAP` 一致（默认 8） |
+| WIP | 与 `scripts/check-docs.sh` `WIP_CAP` 一致（默认 8） |
 
 ## 本仓验证命令
 

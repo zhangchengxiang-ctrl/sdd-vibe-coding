@@ -1,6 +1,6 @@
 # 产品包章节合同与剪枝（通用）
 
-> 统一 `docs/product/modules/<slug>/` 层内写法。建包 → skill `product-design-package`。  
+> 统一 `docs/product/modules/<slug>/` 层内写法。建包 → skill `design`。  
 > 旧包不强制回填；新写/大改某层时对齐本合同。
 
 ## 1. 骨架

@@ -29,7 +29,8 @@
 3. 读 `VERSION.md` + `context.md` + 当前 Slice  
 4. 实现细节 → **读代码**
 
-主流程：插件 **`vibe-coding`**。宿主特有项写 [`guides/vibe-coding.md`](guides/vibe-coding.md)。
+主流程：插件 **`vibe-coding`**。宿主特有项写 [`guides/vibe-coding.md`](guides/vibe-coding.md)。  
+判轨 / 假 Build / 产品记忆 / 完成门禁 → 插件 `rules/00–05`（本文件不复述）。
 
 ## 回填矩阵（合并时）
 
@@ -53,8 +54,8 @@
 ## 检查
 
 ```bash
-bash <plugin>/scripts/check-docs-sdd.sh   # 或复制到宿主 scripts/
-# WIP_CAP=8 bash scripts/check-docs-sdd.sh
+bash <plugin>/scripts/check-docs.sh   # 或复制到宿主 scripts/
+# WIP_CAP=8 bash scripts/check-docs.sh
 ```
 
 ## 可搬运最小包

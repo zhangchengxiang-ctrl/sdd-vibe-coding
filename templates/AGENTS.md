@@ -34,7 +34,7 @@
 # make check
 # make test
 # make build
-# bash scripts/check-docs-sdd.sh
+# bash scripts/check-docs.sh
 ```
 
 ## Verification
@@ -60,9 +60,9 @@
 
 ## WIP
 
-活跃 Spec 上限与 `scripts/check-docs-sdd.sh` 的 `WIP_CAP` **同一数字**（默认 **8**）。
+活跃 Spec 上限与 `scripts/check-docs.sh` 的 `WIP_CAP` **同一数字**（默认 **8**）。
 
 ## SDD
 
 见 `docs/README.md`。插件：判轨 · 产品记忆 · 完成门禁 · 回填 · 对话卫生。  
-检查：`bash scripts/check-docs-sdd.sh`
+检查：`bash scripts/check-docs.sh`

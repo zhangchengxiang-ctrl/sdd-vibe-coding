@@ -1,7 +1,7 @@
-# UX Standards — Docs Factory（跨仓真源）
+# UX Standards（跨仓真源）
 
 > **本文件是 Spec skill 体系的 UX 验收标准正文。**  
-> 归属：`_docs-factory`（与 `CONVENTIONS` · `VALIDATION-REPORT` · `HANDOFF` 同级）。  
+> 归属：`vibe-coding/references/`（共享合同，非独立 skill；验证报告 → `testing/references/validation-report.md`）。  
 > **不是**个人附加 skill 的可选补丁。
 >
 > **Pass = 指定用户在真实情境下能有效、高效、满意地完成目标。**  
@@ -9,7 +9,7 @@
 
 | 工件 | 角色 |
 |------|------|
-| **本文** `_docs-factory/UX-STANDARDS.md` | 定义 · ISO · Nielsen · 关版铁律 · 反模式（**标准正文**） |
+| **本文** `vibe-coding/references/ux-standards.md` | 定义 · ISO · Nielsen · 关版铁律 · 反模式（**标准正文**） |
 | `docs/specs/<id>/ux-standards.md` | 本版 **Jobs + 通道约束**（切版时按触发表必建）；须声明服从本文 |
 | `ux-test-results.md` | 实测账本（Jobs + H# findings） |
 | `ux-walkthrough-skill` | 走查**步骤**；打分服从本文 + Spec Jobs |
@@ -84,12 +84,12 @@
 
 ### 4.2 Spec 文件最低内容
 
-1. 文首声明：**服从** `_docs-factory/UX-STANDARDS.md`（本工厂）  
+1. 文首声明：**服从** `vibe-coding/references/ux-standards.md`  
 2. **Jobs 表**（谁 × 情境 × 目标）；与 `ux-test-results` 对齐  
 3. 本仓通道约束（例：禁某对话路径顶替安装证明）  
 4. 链接：`ux-test-results.md` ·（若有）`experience-design.md`
 
-正文 §1–§3 与 §5 **不要**在 Spec 再造一份冲突稿——引用本文即可；若复制须保持与工厂一致。
+正文 §1–§3 与 §5 **不要**在 Spec 再造一份冲突稿——引用本文即可；若复制须保持与本文一致。
 
 ### 4.3 开测 / 关版
 
@@ -98,7 +98,7 @@
 3. 账本写 `ux-test-results.md`（Jobs 有效性 + findings，**禁止**仅用 SC Pass 数关版）  
 4. 关版前：`validation.md` 勾选 —— 核心 Job Effective；无开放严重度 4（或产品人书面例外）
 
-Holdout / `testing` 走查输入：`scenario-spec` + `requirements` + **本 Spec `ux-standards.md` Jobs** + 工厂本文定义。
+Holdout / `testing` 走查输入：`scenario-spec` + `requirements` + **本 Spec `ux-standards.md` Jobs** + 本文定义。
 
 ---
 
@@ -111,7 +111,7 @@ Holdout / `testing` 走查输入：`scenario-spec` + `requirements` + **本 Spec
 | 过滤 e2e → 「质感 Pass」 | 条目是否可逛、够决策？ |
 | 队列有按钮 → 治理 Pass | 能否凭**识别**而非回忆评审？ |
 | 旁路脚本顶替主通道 → Pass | 目标产品路径是否真走通？ |
-| 个人 skill 正文覆盖 Spec/工厂 | **禁止**；标准只在工厂 + Spec Jobs |
+| 个人 skill 正文覆盖 Spec / 本标准 | **禁止**；标准只在本文 + Spec Jobs |
 
 ---
 

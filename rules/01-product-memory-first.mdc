@@ -1,5 +1,5 @@
 ---
-description: 产品记忆先行 — 写宿主业务代码前必须已有产品记忆工件或明示开始做。Always apply。真闸。
+description: 产品记忆先行 — 写宿主业务代码前须有实施合同或明示开始做。Always apply。真闸。
 alwaysApply: true
 ---
 
@@ -14,14 +14,17 @@ alwaysApply: true
 
 | # | 条件 |
 |---|------|
-| **(a)** | 已存在记录该决策的**产品记忆工件**：`docs/product/modules/<slug>/` 蓝图、或 `docs/product/demand-pool.md` 归属条目、或归属 `docs/specs/<id>/` |
+| **(a)** | 已存在**实施合同**：归属 `docs/specs/<id>/`（含 remediation） |
 | **(b)** | 本轮聊天**明示**「开始做 / 实现 / 按这个来 / 构建」，且切片已确认/已锁 |
+
+**不算 (a)：** 仅有 `demand-pool` 的 DEM、仅有 `modules/` 设计稿、仅有聊天清单/截图。  
+DEM / modules = **塑形记忆**（Intake 合法产出），**不是**编码许可证。
 
 **两者皆无** → 本轮**只能**：
 
 1. 写 `docs/product/`（demand-pool / modules 草稿 / 一屏 Shape）
 2. 只读调查宿主代码与 `AGENTS.md`
-3. **禁止**改业务代码、禁止新建 `docs/specs/`
+3. **禁止**改业务代码；Intake 下**禁止**新建 `docs/specs/`（升格归 Owner）
 
 ## 空仓
 
@@ -29,8 +32,10 @@ alwaysApply: true
 
 ## 与假 Build 信号
 
+假 Build 信号表 → **权威** [`00-judge-track-first.mdc`](./00-judge-track-first.mdc)。  
 「优化 X」+ 编号清单 / 截图 /「应该…」→ **不满足 (b)**，通常也无 (a) → Intake + Shape，不改码。
 
 ## trivial 窄例外
 
-同时满足才可直修、无需新产品记忆：纯笔误、单点 CSS、已知 bug、**且**不改产品合同 / 导航 / 入口 / 发布模型。
+同时满足才可直修、无需新产品记忆：纯笔误、单点 CSS、已知 bug、**且**不改产品合同 / 导航 / 入口 / 发布模型。  
+（与 `00` trivial 例外同口径。）

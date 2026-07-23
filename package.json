@@ -1,7 +1,7 @@
 {
   "name": "sdd-superpowers",
-  "version": "0.3.0",
-  "description": "Cursor / Claude Code / Codex plugin: Spec-Driven Delivery (判轨 / 产品记忆 / Intake→Owner→Build / 产品回归 / docs CI)",
+  "version": "0.3.2",
+  "description": "Cursor / Claude Code / Codex plugin: Spec-Driven Delivery (判轨 / 产品记忆 / Intake→Owner→Build / Accept只测 / 产品回归 / docs CI)",
   "private": true,
   "license": "MIT",
   "engines": {
@@ -9,11 +9,12 @@
   },
   "scripts": {
     "scaffold": "bash ./scripts/scaffold.sh",
-    "verify": "bash ./scripts/verify-slice1.sh",
-    "check-docs": "bash ./scripts/check-docs-sdd.sh",
-    "install-local": "bash ./scripts/install-local.sh",
-    "install-cursor": "bash ./scripts/install-local.sh cursor",
-    "install-claude": "bash ./scripts/install-local.sh claude",
-    "install-codex": "bash ./scripts/install-local.sh codex"
+    "verify": "bash ./scripts/verify.sh",
+    "check-docs": "bash ./scripts/check-docs.sh",
+    "install": "bash ./scripts/install.sh",
+    "install-local": "bash ./scripts/install.sh",
+    "install-cursor": "bash ./scripts/install.sh cursor",
+    "install-claude": "bash ./scripts/install.sh claude",
+    "install-codex": "bash ./scripts/install.sh codex"
   }
 }

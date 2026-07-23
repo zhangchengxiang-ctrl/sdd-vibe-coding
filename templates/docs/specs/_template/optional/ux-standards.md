@@ -1,9 +1,9 @@
 # UX Standards · 本版 Jobs（模板）
 
-> **服从工厂真源：** skill `_docs-factory/UX-STANDARDS.md`  
-> （Agent：`Read 插件 skills/_docs-factory/UX-STANDARDS.md`；与 `CONVENTIONS` 同级）  
+> **服从真源：** `vibe-coding/references/ux-standards.md`  
+> （Agent：`Read 插件 skills/vibe-coding/references/ux-standards.md`）  
 >  
-> 本文件**只写本版 Jobs 与通道约束**；不得另立与工厂冲突的 Pass 定义。  
+> 本文件**只写本版 Jobs 与通道约束**；不得另立与真源冲突的 Pass 定义。  
 > 切版后从 `_template/optional/` 复制并改名进 Spec 根；账本见验收时的 `ux-test-results.md`。
 
 ## Jobs（切版时填满）
@@ -20,7 +20,7 @@
 
 ## 关版自检（抄进 validation）
 
-- [ ] 已 Read 工厂 `UX-STANDARDS.md`  
+- [ ] 已 Read `vibe-coding/references/ux-standards.md`  
 - [ ] 核心 Job Effective = 是  
 - [ ] 无开放严重度 4（或书面例外）  
 - [ ] `ux-test-results` 记 Jobs + H#，非 SC Pass 粉饰  

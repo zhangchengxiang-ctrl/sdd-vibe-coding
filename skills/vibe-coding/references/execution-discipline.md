@@ -1,7 +1,7 @@
 # 执行层纪律（最小充分证据）
 
 > **从属规格层，不是第二真源。**  
-> 规格 / 路由 / 回填：`CONVENTIONS.md` · `vibe-coding` 主文 · 仓内 `docs/`。  
+> 规格 / 路由 / 回填：`SYSTEM.md` §2.1 · `vibe-coding` 主文 · [`handoff.md`](./handoff.md) · 仓内 `docs/`。  
 > 本节只约束：普通修复或已挂载 `specs/<id>/` 后，如何用最少流程获得足够证据。
 
 核心：证据优先，但证据必须服务于当前验收条件。禁止把工具次数、reviewer 数量或全仓绿灯当作质量本身。
@@ -155,7 +155,7 @@ Parent 只吸收可验证事实、关键路径、明确风险与未决冲突。�
 
 | 若想做… | 正确落点 | 错误落点 |
 |---------|----------|----------|
-| 产品设计 / 方案 | `product-design-package` → `product/modules/` | 另存第二套设计真源 |
+| 产品设计 / 方案 | `design` → `product/modules/` | 另存第二套设计真源 |
 | 开版本 / 切版 | `spec` → `docs/specs/<id>/` | 会话 plan 文件冒充版本包 |
 | 任务进度 | `specs/<id>/tasks.md` | 聊天 checklist / 第二份 plan.md |
 | 发版 / reload | 宿主 AGENTS.md 中的部署命令 | 非正式发版习俗 |

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scaffold.sh — 空仓生成 AGENTS.md + docs 骨架 + 项目硬闸 + check-docs-sdd
+# scaffold.sh — 空仓生成 AGENTS.md + docs 骨架 + 项目硬闸 + check-docs
 set -euo pipefail
 
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -61,20 +61,23 @@ PY
 done
 
 mkdir -p "$TARGET/.cursor/hooks"
-cp -a "$PLUGIN_ROOT/scripts/hooks/." "$TARGET/.cursor/hooks/"
+# Cursor host only needs shared lib + Cursor entrypoints (not Claude --harness paths)
+for hook in shared.mjs session.mjs prompt.mjs tool.mjs; do
+  cp "$PLUGIN_ROOT/scripts/hooks/$hook" "$TARGET/.cursor/hooks/$hook"
+done
 cat > "$TARGET/.cursor/hooks.json" <<'EOF'
 {
   "version": 1,
   "hooks": {
     "sessionStart": [
-      { "command": "node .cursor/hooks/session-start.mjs" }
+      { "command": "node .cursor/hooks/session.mjs" }
     ],
     "beforeSubmitPrompt": [
-      { "command": "node .cursor/hooks/before-submit-prompt.mjs" }
+      { "command": "node .cursor/hooks/prompt.mjs" }
     ],
     "preToolUse": [
       {
-        "command": "node .cursor/hooks/pre-tool-use.mjs",
+        "command": "node .cursor/hooks/tool.mjs",
         "matcher": "Write|Delete|StrReplace|EditNotebook|Shell"
       }
     ]
@@ -99,9 +102,9 @@ EOF
 fi
 
 mkdir -p "$TARGET/scripts"
-cp "$PLUGIN_ROOT/scripts/check-docs-sdd.sh" "$TARGET/scripts/check-docs-sdd.sh"
-chmod +x "$TARGET/scripts/check-docs-sdd.sh"
-echo "  + scripts/check-docs-sdd.sh"
+cp "$PLUGIN_ROOT/scripts/check-docs.sh" "$TARGET/scripts/check-docs.sh"
+chmod +x "$TARGET/scripts/check-docs.sh"
+echo "  + scripts/check-docs.sh"
 
 echo "sdd-superpowers-scaffold $(date -Iseconds)" >> "$TARGET/docs/.sdd-scaffold"
 echo "scaffold: done"

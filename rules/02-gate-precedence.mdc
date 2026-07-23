@@ -22,7 +22,7 @@ alwaysApply: true
 |------|------|
 | 「差的属于本目标 → 继续到齐」vs 当前是 Intake | **Intake**：只沉淀；不问「要不要改码」 |
 | 「清单很清楚，做完才算完成」vs 无产品记忆 | **01**：只写 docs/product + Shape |
-| 验收轨「继续到齐」vs 需改实现/合同 | **验收禁改合同** → 写 remediation `.next-rail`，新对话（见 vibe-coding `acceptance-to-remediation`） |
+| 验收轨「继续到齐」vs 需改实现/合同 | **Accept 禁改合同** → 写 remediation `.next-rail`，新对话（见 vibe-coding `acceptance-to-remediation`） |
 | 完成门禁 vs 尚未判轨 | **先判轨**，再谈 Done |
 
 ## 一句话

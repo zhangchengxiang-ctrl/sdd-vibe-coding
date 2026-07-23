@@ -1,7 +1,7 @@
 {
   "name": "sdd-superpowers",
-  "version": "0.3.0",
-  "description": "Spec-Driven Delivery for Codex: 判轨先行 · 产品记忆先行 · Intake→Owner→Build · spec toolbox · docs CI.",
+  "version": "0.3.2",
+  "description": "Spec-Driven Delivery for Codex: 判轨先行 · 产品记忆先行 · Intake→Owner→Build · Accept只测 · spec toolbox · docs CI.",
   "author": {
     "name": "SDD Superpowers"
   },
@@ -10,11 +10,13 @@
   "interface": {
     "displayName": "SDD Superpowers",
     "shortDescription": "Spec-Driven Delivery gates and skills for any repo.",
-    "longDescription": "Install portable SDD skills (vibe-coding, product-design-package, spec, testing) plus Intake hard gates. Project details stay in the host AGENTS.md / docs/.",
+    "longDescription": "Install portable SDD skills (vibe-coding, design, spec, testing) plus Intake hard gates. Project details stay in the host AGENTS.md / docs/.",
     "developerName": "SDD Superpowers",
     "category": "Productivity",
     "capabilities": [
-      "Read"
+      "Read",
+      "Write",
+      "Workflow"
     ],
     "defaultPrompt": [
       "Use vibe-coding Intake: I want to improve search UX (numbered wishlist).",

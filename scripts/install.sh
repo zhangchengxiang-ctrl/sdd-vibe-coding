@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# install-local.sh — install SDD Superpowers for Cursor / Claude Code / Codex
+# install.sh — install SDD Superpowers for Cursor / Claude Code / Codex
 # Usage:
-#   bash scripts/install-local.sh              # all available harnesses
-#   bash scripts/install-local.sh cursor
-#   bash scripts/install-local.sh claude
-#   bash scripts/install-local.sh codex
-#   INSTALL_USER_HOOKS=0 bash scripts/install-local.sh cursor
+#   bash scripts/install.sh              # all available harnesses
+#   bash scripts/install.sh cursor
+#   bash scripts/install.sh claude
+#   bash scripts/install.sh codex
+#   INSTALL_USER_HOOKS=0 bash scripts/install.sh cursor
 set -euo pipefail
 
 SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -18,7 +18,14 @@ install_cursor() {
   mkdir -p "$(dirname "$DST")"
   if [[ -L "$DST" ]]; then rm "$DST"; fi
   mkdir -p "$DST"
-  rsync -a --delete --exclude '.git' "$SRC/" "$DST/"
+  rsync -a --delete \
+    --exclude '.git' \
+    --exclude '.dev' \
+    --exclude 'node_modules' \
+    --exclude '*.log' \
+    --exclude '.tmp' \
+    --exclude '.orphaned_at' \
+    "$SRC/" "$DST/"
   echo "OK Cursor: $DST (v$VER)"
 
   if [[ "$INSTALL_USER_HOOKS" == "1" ]]; then
@@ -32,14 +39,14 @@ install_cursor() {
   "version": 1,
   "hooks": {
     "sessionStart": [
-      { "command": "node ${DST}/scripts/hooks/session-start.mjs" }
+      { "command": "node ${DST}/scripts/hooks/session.mjs" }
     ],
     "beforeSubmitPrompt": [
-      { "command": "node ${DST}/scripts/hooks/before-submit-prompt.mjs" }
+      { "command": "node ${DST}/scripts/hooks/prompt.mjs" }
     ],
     "preToolUse": [
       {
-        "command": "node ${DST}/scripts/hooks/pre-tool-use.mjs",
+        "command": "node ${DST}/scripts/hooks/tool.mjs",
         "matcher": "Write|Delete|StrReplace|EditNotebook|Shell"
       }
     ]

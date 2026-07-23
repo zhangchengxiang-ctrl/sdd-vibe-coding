@@ -9,7 +9,7 @@ description: >-
 
 # Spec（工具箱）
 
-**先读**：[`vibe-coding`](../vibe-coding/SKILL.md) · [`CONVENTIONS.md`](../_docs-factory/CONVENTIONS.md) · 宿主 `AGENTS.md` · `docs/README*`。
+**先读**：[`vibe-coding`](../vibe-coding/SKILL.md) · [`SYSTEM.md`](../../SYSTEM.md) §2.1 · 宿主 `AGENTS.md` · `docs/README*`。
 
 **DO NOT CODE**（generate / clarify 写合同；converge/analyze/checklist 默认只读建议）。编码回 `vibe-coding`。
 
@@ -66,7 +66,7 @@ Ready 不成立 → 不得用文档完整度冒充可实施。
 3. **Ready Gate**  
 4. **落盘** + handoff 加行 + 产品索引（蓝图状态→已切版）  
 5. **Scenario 合同**：角色 × 旅程 × 成功/失败/权限；矩阵无空窗  
-6. **体验合同**（有 UI）→ Jobs + 工厂 UX-STANDARDS  
+6. **体验合同**（有 UI）→ Jobs + [`ux-standards`](../vibe-coding/references/ux-standards.md)  
 7. 一屏实施摘要 → 回 `vibe-coding` Build  
 
 模式 D：必含 `experience-design.md`（体验方案，不只 bug）。详见 `acceptance-to-remediation`。

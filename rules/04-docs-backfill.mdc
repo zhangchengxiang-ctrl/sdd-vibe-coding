@@ -26,7 +26,7 @@ alwaysApply: true
 ## 红线
 
 - **禁止**用新增文档或勾任务替代真实实现和验证
-- **禁止**把 handoff 写成单焦点长文（格式 → 插件 `skills/_docs-factory/HANDOFF.md`）
+- **禁止**把 handoff 写成单焦点长文（格式 → 插件 `skills/vibe-coding/references/handoff.md`）
 - 切版/关版/新建设计稿 → 同步宿主 `docs/product/README.md` 模块索引（若存在）
 
 项目红线、验证命令、进程边界 → **只读宿主 `AGENTS.md`**，不在本规则写死。

@@ -1,7 +1,8 @@
 # Handoff 约定（跨仓库）
 
 > `docs/reference/handoff.md` = **并行路由表**，不是单功能日记。  
-> 执行真源 = `docs/specs/<id>/`；handoff 只索引「有哪些线在跑」。
+> 执行真源 = `docs/specs/<id>/`；handoff 只索引「有哪些线在跑」。  
+> 归属：`vibe-coding/references/`（共享合同，非独立 skill）。
 
 ## 职责分界
 
@@ -109,4 +110,4 @@ agent 待办，不是等人项（见 `vibe-coding` §身份切换）。
 - …
 ```
 
-与 [`CONVENTIONS.md`](./CONVENTIONS.md) · [`vibe-coding`](../vibe-coding/SKILL.md) 一致。
+与 [`vibe-coding`](../SKILL.md) · [`SYSTEM.md`](../../../SYSTEM.md) 一致。
