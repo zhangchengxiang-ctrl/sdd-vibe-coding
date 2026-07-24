@@ -10,7 +10,6 @@ description: >-
 
 只处理已确认的 Diagnose / Incident Rail。先读宿主 `AGENTS.md` 和
 [`incident-contract.md`](../vibe-coding/references/incident-contract.md)。需要改代码时同时读取
-[`task-contract.md`](../vibe-coding/references/task-contract.md)、
 [`workspace-contract.md`](../vibe-coding/references/workspace-contract.md) 和
 [`evidence-contract.md`](../vibe-coding/references/evidence-contract.md)。
 
@@ -32,7 +31,7 @@ SSH、数据库、部署与回滚入口。不确定时只做安全的只读调�
 4. 建立 2–3 个可证伪假设；
 5. 从真实环境取得证据逐个排除；
 6. 定位根因层并给出置信度；
-7. 输出最小 Repair / Plan Work Order。
+7. 输出最小 Repair / Plan 执行合同。
 
 Diagnose 不写业务代码、不改配置/数据、不部署。根因不明时不得用试错修改生产状态。
 只读证据源彼此独立且当前 surface 提供 Subagent 时，可以并行委派有边界的证据调查；
@@ -45,11 +44,11 @@ Incident。目标只有恢复生产：
 
 ```text
 确认影响 → 选择止血 → 最小变更 → 最低验证
-→ 部署授权 → 生产 health/关键路径 → 观察 → 后续 Work Order
+→ 部署授权 → 生产 health/关键路径 → 观察 → 后续 执行合同
 ```
 
 止血优先回滚、功能开关、隔离依赖和配置修正，最后才是最小 Hotfix。Incident 不承载
-大规模重构。任何变更前先在事故记录中固定最小 Incident Work Order；生产部署、数据
+大规模重构。任何变更前先在事故记录中固定最小 Incident 执行合同；生产部署、数据
 操作、迁移和安全边界变化仍需明确授权。
 
 Incident 始终只有一个恢复目标和一个变更 owner。只有用户或上层指令明确要求持续 Goal，
@@ -62,7 +61,10 @@ Order、生产授权或证据。Subagent 只并行只读调查或彼此独立的
 Local 有无关 WIP、需要稳定分支或独立紧急 PR 时优先 Worktree；干净工作区中的唯一事故、
 回滚或配置止血不强制 Worktree。原生 Worktree / Handoff 可用且已获授权时优先使用；
 否则按 `workspace-contract.md` 回退到当前 Local 或 CLI Git Worktree。恢复指针由 Codex
-写入 handoff / Route，不要求 PM 输入文件路径。
+写入 handoff / 恢复指针，不要求 PM 输入文件路径。
 
 `production-restored` 只表示服务恢复。长期根因、回归、产品债和技术债必须形成独立
-Repair / Plan / Verify Work Order。
+Repair / Plan / Verify 执行合同。
+
+Incident 阶段完成后，先向用户总结恢复结果、生产证据、残余风险和建议的后续阶段；只有获得
+明确批准，才能进入 Repair、Plan 或 Verify。

@@ -44,7 +44,7 @@
 
 ### 声明
 
-- 验收层次：`Task Validation | Version Acceptance | Production Verification`
+- 验收层次：`Build Validation | Version Acceptance | Production Verification`
 - 声明范围：
 - 目标 Delivery Target：
 - 实际 Delivery Target：
@@ -53,9 +53,9 @@
 
 ### 追踪矩阵
 
-| Requirement | Scenario | Task | Implementation | Evidence | Result |
-|---|---|---|---|---|---|
-| R-001 | SC-001 | T-001 | | | Pass / Fail / Blocked |
+| Requirement | Scenario | Implementation | Evidence | Result |
+|---|---|---|---|---|
+| R-001 | SC-001 | | | Pass / Fail / Blocked |
 
 ### 实际验证
 
@@ -68,7 +68,7 @@
 
 ### Fail / Blocked 分类
 
-| Scenario | 表象 | 分类 | 根因 / 未知 | 下一 Rail / Work Order |
+| Scenario | 表象 | 分类 | 根因 / 未知 | 统一 Repair 组 / 外部阻塞 |
 |---|---|---|---|---|
 | | | implementation / product-ux / technical-plan / test-oracle / environment / new-request / unknown-root-cause | | |
 

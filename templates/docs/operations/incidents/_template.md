@@ -36,7 +36,7 @@
 - 最低发布前验证：
 - 回滚点：
 
-## Incident Work Order
+## Incident 执行合同
 
 - 恢复目标：
 - In / Out：
@@ -59,5 +59,5 @@
 
 - 根因 / 置信度：
 - 残余风险：
-- 长期 Repair / Plan / Verify Work Order：
+- 长期 Repair / Plan / Verify 执行合同：
 - 产品 / 技术 Gap：

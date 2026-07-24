@@ -10,7 +10,7 @@
 | `draft` | 信息可能不完整 |
 | `shaping` | 正在澄清产品切片 |
 | `ready-for-plan` | 产品切片已确认，可进入 Plan |
-| `planned` | 已有 Spec / Task |
+| `planned` | 已有 Spec / 执行步骤 |
 | `delivered` | 已交付 |
 | `parked` | 暂不处理，附理由 |
 

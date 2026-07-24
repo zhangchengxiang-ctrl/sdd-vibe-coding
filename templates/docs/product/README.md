@@ -27,7 +27,7 @@
 |---|---|
 | `shaping` | 产品方向仍在澄清 |
 | `design-ready` | 产品切片已确认，未进入技术 Plan |
-| `planned` | 已有 Spec 与 Task |
+| `planned` | 已有 Spec 与 执行步骤 |
 | `partially-delivered` | 部分价值切片已交付 |
 | `accepted` | 当前声明范围已通过 Version Acceptance |
 | `archived` | 历史或废弃 |

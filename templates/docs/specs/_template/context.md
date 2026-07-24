@@ -38,5 +38,5 @@
 
 ## 下一步
 
-完成 Plan 后创建 `routes/T-xxx.next-rail.md`，并让 handoff 指向第一张 ready Work Order
-对应的 Route；并行 Task 各自使用独立 Route，不复制 Task 正文。
+完成 Plan 后，直接以本 Spec 进入连续 Build；只有执行上下文确实无法继续时才记录 handoff
+恢复指针。不得为普通推进创建任务、路线或额外执行合同。

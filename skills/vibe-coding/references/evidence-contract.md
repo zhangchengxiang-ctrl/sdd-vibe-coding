@@ -1,6 +1,6 @@
 # Evidence Contract
 
-> 本文件是 Task Validation、Version Acceptance、Production Verification 和完成声明的唯一真源。
+> 本文件是 Build Validation、Version Acceptance、Production Verification 和完成声明的唯一真源。
 
 ## 1. 证据层
 
@@ -15,24 +15,25 @@
 
 ## 2. 三个验证层次
 
-### Task Validation
+### Build Validation
 
-Build / Repair 只证明当前 Task：
+Build 先证明整个 Spec 的实现状态；完成实现后运行完整单元测试批次，测试期间不得改代码。
+Repair 只在 Verify 汇总全部 Fail 并形成统一方案后开始：
 
 - 直接相关检查；
-- Task Scenario；
+- Spec Scenario；
 - 用户可见变化的真实通道；
 - 单向门附加验证；
-- diff 与 Task In / Out 自检。
+- diff 与 执行步骤 In / Out 自检。
 
 ### Version Acceptance
 
-Verify 证明多个 Task 集成后：
+Verify 证明多个 执行步骤 集成后：
 
 - 核心成功路径；
 - 关键失败和降级；
 - 角色与权限；
-- 跨 Task 集成；
+- 跨 执行步骤 集成；
 - 用户真实通道；
 - 适用回归和 UX Job。
 
@@ -45,9 +46,8 @@ Verify 证明多个 Task 集成后：
 ```text
 Requirement
 → Scenario
-→ Task
 → Implementation
-→ Task Evidence
+→ Build Evidence
 → Version Evidence
 → Production Evidence
 ```
@@ -67,7 +67,7 @@ Requirement
 
 | 类型 | 下一 Rail |
 |---|---|
-| implementation | Repair |
+| implementation | 汇总全部实现 Fail，形成统一 Repair 方案后集中修复并回验 |
 | product / ux | Shape |
 | technical-plan | Plan |
 | test-oracle | 测试合同修订 |
@@ -75,7 +75,7 @@ Requirement
 | new-request | demand pool / Shape |
 | unknown-root-cause | Diagnose |
 
-分类前不得自动创建 Repair。只有产品或体验问题才要求 `experience-design.md`。
+单个 Fail 不得触发立即修复。所有适用测试结果齐备后才能创建 Repair 方案；只有产品或体验问题才要求 `experience-design.md`。
 
 ## 6. UI 与用户体验
 
@@ -89,7 +89,7 @@ UX 详细标准见 testing Skill 的 `references/ux-standards.md`。
 完成报告必须写：
 
 - Rail；
-- Task / Scenario / 声明范围；
+- Spec / Scenario / 声明范围；
 - 实际 Delivery Target；
 - 真实运行的命令和步骤；
 - 证据路径；

@@ -1,6 +1,6 @@
 # Validation Report
 
-> 正式验收、发布或事故恢复使用；普通 Task 可直接在 Work Order 中记录证据。
+> 正式验收、发布或事故恢复使用；普通 执行步骤 可直接在 执行合同 中记录证据。
 
 ```markdown
 # Validation Report · <scope>
@@ -50,8 +50,8 @@
 ### 声明
 
 - Rail：verify | incident
-- 验收层次：Task Validation | Version Acceptance | Production Verification
-- Spec / Task：
+- 验收层次：Build Validation | Version Acceptance | Production Verification
+- Spec / 执行步骤：
 - 声明范围：
 - 目标 Delivery Target：
 - 实际 Delivery Target：
@@ -69,7 +69,7 @@
 
 ### 追踪矩阵
 
-| Requirement | Scenario | Task | Oracle | Evidence | Result |
+| Requirement | Scenario | 执行步骤 | Oracle | Evidence | Result |
 |---|---|---|---|---|---|
 | | | | | | Pass / Fail / Blocked |
 
@@ -84,7 +84,7 @@
 
 ### Fail / Blocked
 
-| Scenario | 表象 | 分类 | 根因或未知 | 下一 Rail / Work Order |
+| Scenario | 表象 | 分类 | 根因或未知 | 下一 Rail / 执行合同 |
 |---|---|---|---|---|
 | | | implementation / product-ux / technical-plan / test-oracle / environment / new-request / unknown-root-cause | | |
 

@@ -1,7 +1,7 @@
 {
   "name": "sdd-superpowers",
   "version": "0.5.0",
-  "description": "Codex-only Spec-Driven Delivery plugin: Shape, Plan, Task Work Orders, Verify, Diagnose, Incident, and conditional Worktree/PR delivery.",
+  "description": "Codex-only Spec-Driven Delivery plugin: Shape, Plan, continuous single-Spec Build, Verify, Diagnose, Incident, and conditional Worktree/PR delivery.",
   "private": true,
   "license": "MIT",
   "engines": {

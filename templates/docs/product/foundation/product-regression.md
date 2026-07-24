@@ -15,7 +15,7 @@
 | 概念 | 证明什么 | 真源 |
 |------|----------|------|
 | **验收** | 本版相对设计能否办成 | Spec `scenario-spec` + Browser 证据 |
-| **Repair 后再测** | 同根因 implementation Fail 是否修好 | Repair Task 的 Scenario 与 evidence |
+| **Repair 后再测** | 同根因 implementation Fail 是否修好 | Repair 执行步骤 的 Scenario 与 evidence |
 | **产品回归** | 维护态：同一批用户主路径是否仍成立 | register 选型复跑 **同级** 浏览器证明 |
 
 ---

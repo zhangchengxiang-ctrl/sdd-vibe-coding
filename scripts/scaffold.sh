@@ -23,6 +23,11 @@ fi
 mkdir -p "$TARGET/docs"
 while IFS= read -r -d '' file; do
   rel="${file#"$TEMPLATES/docs/"}"
+  case "$rel" in
+    specs/_template/tasks.md|specs/_template/tasks/*|specs/_template/routes/*)
+      continue
+      ;;
+  esac
   dest="$TARGET/docs/$rel"
   if [[ ! -e "$dest" ]]; then
     mkdir -p "$(dirname "$dest")"

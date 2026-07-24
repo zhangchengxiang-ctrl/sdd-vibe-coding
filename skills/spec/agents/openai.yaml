@@ -1,6 +1,6 @@
 interface:
   display_name: "Technical Plan"
-  short_description: "把确认的产品切片拆成技术方案、场景和单任务执行合同"
-  default_prompt: "Use $spec to turn the approved product slice into code-ready Task Work Orders."
+  short_description: "把确认的产品切片转成技术方案、场景和整份 Spec 执行合同"
+  default_prompt: "Use $spec to turn the approved product slice into a continuous, code-ready Spec execution contract."
 policy:
   allow_implicit_invocation: false

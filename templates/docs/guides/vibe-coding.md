@@ -20,8 +20,8 @@ PM 猜命令、账号或环境事实。
 1. 读根 `AGENTS.md`；
 2. 检查当前目标所需能力是否 ready；
 3. 使用自然语言理解用户结果，内部再判定工作轨；
-4. Build / Repair 只读当前 Task 与其显式依赖；
-5. 按 Task 的 Workspace Strategy 选择 Local 或 Worktree。
+4. Build / Repair 只读当前 执行步骤 与其显式依赖；
+5. 按 执行步骤 的 Workspace Strategy 选择 Local 或 Worktree。
 
 ## 本仓入口
 

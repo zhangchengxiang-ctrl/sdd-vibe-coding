@@ -1,16 +1,16 @@
 {
   "name": "sdd-superpowers",
-  "version": "0.5.0",
-  "description": "Codex-only Spec-Driven Delivery: product shaping, technical planning, one-task work orders, verification, production diagnosis, and conditional Worktree/PR delivery.",
+  "version": "0.5.0+codex.20260723134932",
+  "description": "Codex-only Spec-Driven Delivery: product shaping, technical planning, continuous single-Spec build, verification, production diagnosis, and conditional Worktree/PR delivery.",
   "author": {
     "name": "SDD Superpowers"
   },
   "homepage": "https://github.com/sdd-superpowers/sdd-superpowers",
   "repository": "https://github.com/sdd-superpowers/sdd-superpowers",
   "interface": {
-    "displayName": "SDD 产品交付助手",
-    "shortDescription": "把产品想法变成边界清楚、结果可验收的 Codex 交付",
-    "longDescription": "面向略懂技术的产品经理：用中文自然描述目标和关键取舍，Codex 负责澄清、拆解、实施与验收。用户默认只看理解、决策、进度和交付卡片，工程细节按需展开。",
+    "displayName": "SDD \u4ea7\u54c1\u4ea4\u4ed8\u52a9\u624b",
+    "shortDescription": "\u628a\u4ea7\u54c1\u60f3\u6cd5\u53d8\u6210\u8fb9\u754c\u6e05\u695a\u3001\u7ed3\u679c\u53ef\u9a8c\u6536\u7684 Codex \u4ea4\u4ed8",
+    "longDescription": "\u9762\u5411\u7565\u61c2\u6280\u672f\u7684\u4ea7\u54c1\u7ecf\u7406\uff1a\u7528\u4e2d\u6587\u81ea\u7136\u63cf\u8ff0\u76ee\u6807\u548c\u5173\u952e\u53d6\u820d\uff0cCodex \u8d1f\u8d23\u6f84\u6e05\u3001\u62c6\u89e3\u3001\u5b9e\u65bd\u4e0e\u9a8c\u6536\u3002\u7528\u6237\u9ed8\u8ba4\u53ea\u770b\u7406\u89e3\u3001\u51b3\u7b56\u3001\u8fdb\u5ea6\u548c\u4ea4\u4ed8\u5361\u7247\uff0c\u5de5\u7a0b\u7ec6\u8282\u6309\u9700\u5c55\u5f00\u3002",
     "developerName": "SDD Superpowers",
     "category": "Productivity",
     "capabilities": [
@@ -19,16 +19,16 @@
       "Workflow"
     ],
     "defaultPrompt": [
-      "我有一个产品想法，请先帮我理解清楚，并告诉我只需要决定什么。",
-      "产品方向已经确认，请用业务结果说明实施顺序、关键风险和下一步，先不要编码。",
-      "请按真实用户旅程验收当前版本，先告诉我是否可以交付，再给出证据和限制。"
+      "\u6211\u6709\u4e00\u4e2a\u4ea7\u54c1\u60f3\u6cd5\uff0c\u8bf7\u5148\u5e2e\u6211\u7406\u89e3\u6e05\u695a\uff0c\u5e76\u544a\u8bc9\u6211\u53ea\u9700\u8981\u51b3\u5b9a\u4ec0\u4e48\u3002",
+      "\u4ea7\u54c1\u65b9\u5411\u5df2\u7ecf\u786e\u8ba4\uff0c\u8bf7\u7528\u4e1a\u52a1\u7ed3\u679c\u8bf4\u660e\u5b9e\u65bd\u987a\u5e8f\u3001\u5173\u952e\u98ce\u9669\u548c\u4e0b\u4e00\u6b65\uff0c\u5148\u4e0d\u8981\u7f16\u7801\u3002",
+      "\u8bf7\u6309\u771f\u5b9e\u7528\u6237\u65c5\u7a0b\u9a8c\u6536\u5f53\u524d\u7248\u672c\uff0c\u5148\u544a\u8bc9\u6211\u662f\u5426\u53ef\u4ee5\u4ea4\u4ed8\uff0c\u518d\u7ed9\u51fa\u8bc1\u636e\u548c\u9650\u5236\u3002"
     ]
   },
   "license": "MIT",
   "keywords": [
     "sdd",
     "spec-driven",
-    "task-work-order",
+    "spec-run",
     "worktree",
     "incident",
     "vibe-coding",
