@@ -1,18 +1,42 @@
 # Workflow Contract
 
-> 一个确认的 Spec 是唯一交付单元；Rail 是内部动作，不是暂停点。
+> 一个确认的 Spec 是唯一交付单元；Rail 是同一交付目标内的动作模式。
 
 ## 交付语义
 
-1. 先确认 Spec 的范围、验收条件、风险边界与当前代码事实；历史 Task / Route 文件只可作为
-   背景，不参与控制流。
+1. 先确认 Spec 的范围、验收条件、风险边界与当前代码事实。
 2. `Build` 连续完成整个 Spec 的全部实现，不在局部代码、局部检查或进度汇报处结束。
 3. 实现完成后才运行一次完整的**单元测试批次**。该批次开始到结果收齐期间，禁止修改代码。
 4. `Verify` 再统一运行适用的集成、场景、端到端及真实环境探针，收齐所有失败。
 5. 有实现失败时先写一份按根因分组的统一 Repair 方案；随后 `Repair` 集中修改，完成后从完整
    验收批次重新验证。禁止“测一个点、改一个点”。
 6. 只有达到完整验收、所有剩余工作被真实外部条件阻塞、或下一步需要不可逆授权时才结束。
-   Rail 转换、测试层切换、历史任务状态、局部通过、普通 WIP、缺少新对话/子代理都不是结束理由。
+   Rail 转换、测试层切换、局部通过、普通 WIP、缺少新对话/子代理都不是结束理由。
+
+## 写代码前的硬闸
+
+在改业务代码（应用源码、配置契约、运行时行为）之前，必须满足至少一项：
+
+| # | 条件 |
+|---|---|
+| **(a)** | 已存在**已确认**的实施 Spec：`docs/specs/<id>/`（含 Verify 后转入的 Repair） |
+| **(b)** | 用户本轮**明示**「开始做 / 实现 / 按这个来 / 构建」，且产品切片已确认 |
+
+demand pool 条目、`modules/` 设计稿、聊天清单或截图 **都不算** (a)/(b)。
+
+**(a)/(b) 皆无时，本轮只能：**
+
+1. 写 `docs/product/`（demand pool / modules 草稿 / 理解卡沉淀）；
+2. 只读调查宿主代码与 `AGENTS.md`；
+3. **禁止**改业务代码；
+4. **禁止**新建 `docs/specs/`（Spec 只在用户批准进入 Plan 后由 Plan 创建）。
+
+空仓无 `AGENTS.md` / `docs/` → 先跑 `scripts/scaffold.sh`（或等价）生成骨架；scaffold **不算** (a)/(b)。
+
+trivial 豁免（跳过完整 Shape→Plan）见 [`vibe-coding/SKILL.md`](../SKILL.md)。
+
+常见 Shape 话术（「优化 X」「编号清单 + 截图」「应该/不要有…」「很明确直接改」）一律按上表处理：
+停留 Shape、沉淀切片，见 Skill `design`。
 
 ## 模式与权限
 
@@ -28,15 +52,30 @@
 
 ## 阶段闸门
 
-> 本节是"何时连续、何时暂停、跨阶段如何总结与批准"的唯一真源。其他 Skill 只引用本节，不复述规则。
+> 本节是"何时连续、何时暂停、跨阶段如何总结与批准"的唯一真源。其他 Skill 只引用本节。
 
-1. **阶段内连续**：每个阶段（Shape / Plan / Build / Verify / Repair / Diagnose / Incident）由当前
-   agent 一次性连续完成自身职责，中途不向用户交还控制权、不要求用户逐步启动。
-2. **跨阶段闸门**：`Shape → Plan → Build → Verify → Repair` 每一次阶段切换都是一个交接点。切换前
-   必须先向用户总结本阶段的目标、完成内容、证据、限制与建议的下一阶段，并取得**明确批准**后才进入
-   下一阶段；不得自行跨阶段推进，也不得要求用户重新发起任务。
-3. **阶段内暂停**：仅在以下情况于阶段内停下询问用户——产品选择互斥、破坏性/不可逆动作、用户本人
-   才能完成的外部操作、或事实与已确认需求冲突且将改变交付结果。除此之外阶段内不暂停。
+1. **阶段内连续**：每个阶段由当前 agent 一次性连续完成自身职责，中途不向用户交还控制权。
+2. **跨阶段闸门**：`Shape → Plan → Build → Verify → Repair` 每一次阶段切换前，先向用户总结本阶段
+   的目标、完成内容、证据、限制与建议的下一阶段，取得**明确批准**后才进入下一阶段。
+3. **阶段内暂停**：仅在产品选择互斥、破坏性/不可逆动作、用户本人才能完成的外部操作、或事实与
+   已确认需求冲突且将改变交付结果时询问用户。
+
+### 禁止的提问（阶段内应直接做完）
+
+| ❌ Agent 常说的话 | ✅ 正确应对 |
+|---|---|
+| 「要不要继续做 X？」且 X 属本阶段 / 本 Spec | 直接做完 X（commit / push / 部署除外，须明示授权） |
+| 「还差这些，要我继续吗？」 | 本阶段范围内 → 做到齐；跨阶段 → 按闸门总结并请求批准 |
+| 「核心已经写好了，剩下的要不要做？」 | 未完成项不得标可选；属于 In Scope 的必须做完或记为真实 Blocked |
+| Shape 下「清单已经很清楚，我直接改代码？」 | **不改码**；沉淀 demand pool / 理解卡，走硬闸 |
+
+### 建议开新对话的信号
+
+下列情况才建议用户开新对话（或明确换目标）：
+
+1. **同区二次修复仍失败**：同一根因面已按统一 Repair 方案修过一轮并回验仍 Fail → 停补丁，开新对话做 Diagnose 或重开 Plan。
+2. **会话混入第二个不相关产品目标**：当前 Spec / 阶段尚未收束 → 先收束或 Blocked；新目标开新对话走 Shape。
+3. **Verify 不通过且统一 Repair 面过大**：先交付 Verify 总结与 Repair 方案，建议新对话专跑 Repair（或先回 Plan 修订合同）。
 
 ## 实施与验收清单
 
@@ -54,7 +93,7 @@
 
 ### Repair
 
-- 只按已记录的统一 Repair 方案修改；若发现新根因，补入同一方案而不是临时局部补丁。
+- 只按已记录的统一 Repair 方案修改；若发现新根因，补入同一方案。
 - 修复完成后重跑完整的单元与 Verify 批次；不得以定向绿灯代替全量回验。
 
 ## 完成声明
@@ -69,11 +108,7 @@
 
 ## 状态词汇
 
-存在两套互不通用的状态词，按用途区分，不要混填：
-
-- **持久状态名**（写入 `spec-run.md`、`handoff.md`）：`ready | building | unit-testing | verifying |
-  repairing | blocked | acceptance-passed`。这是 agent 记录 Spec Run 进度时使用的词，`check-docs.py`
-  按此校验。
-- **路由评测协议**（`evals/` 的 `spec_run_state` 字段）：`not-started | continuous-build |
-  batch-unit-test | batch-verify | unified-repair | completed | blocked | needs-authorization`。这是
-  routing eval 的独立输出契约，只用于评测，不写入任何交付工件。
+- **持久状态**（`spec-run.md` / `handoff.md`，`check-docs.py` 校验）：
+  `ready | building | unit-testing | verifying | repairing | blocked | acceptance-passed`
+- **路由评测**（仅 `evals/` 的 `spec_run_state`，不写入交付工件）：
+  `not-started | continuous-build | batch-unit-test | batch-verify | unified-repair | completed | blocked | needs-authorization`

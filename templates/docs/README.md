@@ -10,7 +10,7 @@
 | 项目命令、环境、架构、红线 | `AGENTS.md` |
 | 产品愿望与长期蓝图 | `product/` |
 | 当前版本实施合同 | `specs/<id>/` |
-| Spec 执行合同 | `specs/<id>/technical-plan.md` + `scenario-spec.md` + `validation.md` |
+| Spec 执行合同 | `specs/<id>/technical-plan.md` + `scenario-spec.md` + `validation.md` + `spec-run.md` |
 | 活跃任务、Workspace、PR 和下一步 | `reference/handoff.md` |
 | 并行互斥 Claim | `reference/claims.md` |
 | 实际实现 | 代码、迁移和配置 |
@@ -18,6 +18,18 @@
 | 生产事故 | `operations/incidents/` |
 
 同一规则不要复制到多个层次；其他文档只链接权威来源。
+
+### 真源优先级（冲突时）
+
+```text
+specs/<id>/（执行合同）+ 代码/运行环境
+  ≫ reference/handoff.md（索引，不复制合同正文）
+  ≫ product/modules/（产品蓝图）
+  ≫ product/demand-pool.md（愿望）
+```
+
+命名约定：`docs/specs/<id>/`；产品包 `docs/product/modules/<slug>/`；
+池文件 `demand-pool.md` / `gap-register.md` / `gap-closed.md`。
 
 ## 工作轨
 
@@ -27,7 +39,7 @@ Shape → Plan → Build(Spec) → Verify
                       └ Repair ─┘
 
 复杂/线上问题：Diagnose → Repair | Plan | Incident
-生产事故：Incident → Production Verification → 长期 执行合同
+生产事故：Incident → Production Verification → 长期执行合同
 ```
 
 - Shape 澄清产品诉求；
@@ -44,9 +56,9 @@ Shape → Plan → Build(Spec) → Verify
 4. `technical-plan.md`
 5. `scenario-spec.md`
 6. `validation.md`
+7. `spec-run.md`（Build 起）
 
-不要一次读取所有历史文档；优先读取当前 Spec 的执行合同、场景和代码入口；仅在拆分时读取
-当前 Spec 的真源。
+优先读取当前 Spec 的执行合同、场景和代码入口。
 
 ## 状态
 

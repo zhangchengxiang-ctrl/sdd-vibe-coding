@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  面向略懂技术产品经理的 Codex Verify 专项 Skill：按真实用户旅程执行 执行步骤、Version
+  面向略懂技术产品经理的 Codex Verify 专项 Skill：按真实用户旅程执行 Spec / Version
   或 Production 验证，先用交付卡给出可否交付的中文结论、证据和限制，再维护工程证据链。
   仅在 vibe-coding 已路由到 Verify，或用户显式调用本 Skill 时使用；不修改实现。
 ---
@@ -20,13 +20,15 @@ description: >-
 | Version Acceptance | 当前版本是否满足产品结果？ |
 | Production Verification | 目标版本是否在生产真实生效且健康？ |
 
-不得用 执行步骤 证据替代 Version Acceptance，也不得用本地/预览证据声明生产交付。
+不得用局部实现证据替代 Version Acceptance，也不得用本地/预览证据声明生产交付。
 
 ## 执行
 
 1. 固定环境、版本、角色、数据和声明范围；
 2. 建立 Requirement → Scenario → Implementation → Evidence 追踪；
-3. 从宿主 `AGENTS.md` 取得真实命令、URL、账号和工具；
+3. 从宿主 `AGENTS.md` 取得真实命令、URL、账号和工具；有可复用测试凭据时自行切换角色/账号
+   继续跑矩阵，勿默认停等人工登录（个人账号 / OAuth / 生产密钥才算外部阻塞，见
+   `evidence-contract.md`）；
 4. 按风险选择 V0–V3 的最小充分组合；
 5. 实际执行每个适用 Scenario，记录 `Pass | Fail | Blocked`；
 6. 记录命令、时间、环境、版本、观察值和证据路径；
@@ -48,7 +50,7 @@ UI/人工 Scenario 至少需要一次真实通道 V2。API 成功、DOM 存在�
 - **上线状态**：未上线、已上线、未知或不适用；
 - **需要用户做什么**：体验确认、批准下一动作或无需动作；
 
-聊天前台默认不显示 Requirement、Scenario、执行步骤、Oracle、V0–V3、Rail、Delivery Target、
+聊天前台默认不显示 Requirement、Scenario、Oracle、V0–V3、Rail、Delivery Target、
 Matrix、commit、Workspace 等工程术语。正式报告仍保存完整工程证据；用户明确要求时，在
 交付卡之后展开“技术详情（可选）”。交付卡之后单列且只列一个“下一步”，用普通中文
 给出最小可执行动作。

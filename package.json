@@ -1,5 +1,5 @@
 {
-  "name": "sdd-superpowers",
+  "name": "sdd-vibe-coding",
   "version": "0.5.0",
   "description": "Codex-only Spec-Driven Delivery plugin: Shape, Plan, continuous single-Spec Build, Verify, Diagnose, Incident, and conditional Worktree/PR delivery.",
   "private": true,

@@ -21,16 +21,34 @@
 |---|---|---|---|---|
 | C-001 | | `modules/<slug>/` | shaping | |
 
+## 三池流转
+
+```text
+demand-pool（愿望）──Shape 确认切片──► ready-for-plan
+        │                                    │
+        │                            用户批准进入 Plan
+        │                                    ▼
+        │                         docs/specs/<id>/（实施合同）
+        │                                    │
+gap-register（蓝图 vs 现状差距）──关闭──► gap-closed（审计）
+```
+
+| 池 | 何时写入 | 何时流出 |
+|---|---|---|
+| `demand-pool.md` | Shape：新愿望 / 故障 / 体验反馈 | 切片确认 → `ready-for-plan`；批准 Plan 后挂 Spec → `planned` |
+| `gap-register.md` | 蓝图与代码/运行现状不一致 | 差距消除或明确不做 → `gap-closed.md` |
+| `gap-closed.md` | 从 gap-register 关闭的条目 | 归档审计 |
+
+新愿望进 demand-pool；实施与验收以 `docs/specs/<id>/` 为真源。产品决定变化时更新蓝图，
+技术实现变化时更新 Spec 或代码。
+
 ## 状态枚举
 
 | 状态 | 含义 |
 |---|---|
 | `shaping` | 产品方向仍在澄清 |
 | `design-ready` | 产品切片已确认，未进入技术 Plan |
-| `planned` | 已有 Spec 与 执行步骤 |
+| `planned` | 已有 Spec |
 | `partially-delivered` | 部分价值切片已交付 |
 | `accepted` | 当前声明范围已通过 Version Acceptance |
 | `archived` | 历史或废弃 |
-
-不要在 modules 和 Spec 双写同一实施合同；产品决定变化时更新蓝图，技术实现变化时更新
-Spec 或代码。

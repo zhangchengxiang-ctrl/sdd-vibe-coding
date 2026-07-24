@@ -1,7 +1,7 @@
 # 需求池
 
 用户愿望、普通故障和体验反馈先记录在这里；生产事故另见
-`docs/operations/incidents/`。需求池不是实施授权。
+`docs/operations/incidents/`。入池 → Shape；实施以 `docs/specs/<id>/` 为准。
 
 ## 状态
 
@@ -10,7 +10,7 @@
 | `draft` | 信息可能不完整 |
 | `shaping` | 正在澄清产品切片 |
 | `ready-for-plan` | 产品切片已确认，可进入 Plan |
-| `planned` | 已有 Spec / 执行步骤 |
+| `planned` | 已有 Spec |
 | `delivered` | 已交付 |
 | `parked` | 暂不处理，附理由 |
 
@@ -20,4 +20,4 @@
 |---|---|---|---|---|---|---|
 | DEM-001 | | wish / fault / ux / other | | P0 / P1 / P2 / park | draft | |
 
-优先级建议不是排期承诺；只有明确的产品决定或 Roadmap 才能改变排期。
+优先级建议供 Roadmap / 产品决定参考。

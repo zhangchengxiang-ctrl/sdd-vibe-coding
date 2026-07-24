@@ -25,4 +25,4 @@
 
 - [ ] 每条 In-scope Requirement 至少映射一个 Scenario
 - [ ] 每个 P0 需求含成功、关键失败或权限路径
-- [ ] Out 未被任何执行步骤静默实现
+- [ ] Out 未被静默实现

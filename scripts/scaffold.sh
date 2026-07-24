@@ -24,7 +24,13 @@ mkdir -p "$TARGET/docs"
 while IFS= read -r -d '' file; do
   rel="${file#"$TEMPLATES/docs/"}"
   case "$rel" in
-    specs/_template/tasks.md|specs/_template/tasks/*|specs/_template/routes/*)
+    # 按需再建：不随 scaffold 默认拷贝，模板仍留在插件仓
+    specs/_template/optional/problem-map.md|\
+    specs/_template/optional/research.md|\
+    specs/_template/optional/commit-checklist.md|\
+    specs/_template/optional/scope.md|\
+    specs/_template/optional/product-design.md|\
+    specs/_template/optional/experience-design.md)
       continue
       ;;
   esac

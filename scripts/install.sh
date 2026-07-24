@@ -3,8 +3,8 @@
 set -euo pipefail
 
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-MARKETPLACE="sdd-superpowers-local"
-PLUGIN="sdd-superpowers@${MARKETPLACE}"
+MARKETPLACE="sdd-vibe-coding-local"
+PLUGIN="sdd-vibe-coding@${MARKETPLACE}"
 
 if ! command -v codex >/dev/null 2>&1; then
   echo "ERROR: Codex CLI is required." >&2

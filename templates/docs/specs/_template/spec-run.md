@@ -1,7 +1,6 @@
 # Spec Run · <version-id>
 
-> 此文件是该 Spec 的持久执行状态。一个 Spec 只允许一个连续 Run；不得创建 Task、Route 或
-> 每步交接来替代它。
+> 本 Spec 的唯一运行态：交付目标、当前模式、测试批次与统一 Repair 方案写在此文件。
 
 ## 交付目标
 

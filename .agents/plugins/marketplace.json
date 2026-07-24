@@ -1,11 +1,11 @@
 {
-  "name": "sdd-superpowers-local",
+  "name": "sdd-vibe-coding-local",
   "interface": {
-    "displayName": "SDD Superpowers (local)"
+    "displayName": "Vibe Coding (local)"
   },
   "plugins": [
     {
-      "name": "sdd-superpowers",
+      "name": "sdd-vibe-coding",
       "source": {
         "source": "local",
         "path": "./"

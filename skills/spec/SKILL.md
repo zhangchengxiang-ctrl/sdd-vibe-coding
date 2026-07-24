@@ -8,7 +8,8 @@ description: >-
 # Spec：Plan 技术方案
 
 只在 Plan 模式使用。先读宿主 `AGENTS.md`、已确认产品真源、`workflow-contract.md`、
-`workspace-contract.md` 与 `evidence-contract.md`。
+`workspace-contract.md` 与 `evidence-contract.md`。新建 Spec 与跨阶段批准以
+[`workflow-contract.md`](../vibe-coding/references/workflow-contract.md) 硬闸与阶段闸门为准。
 
 ## 核心工件
 
@@ -45,8 +46,8 @@ Plan 是一次连续动作：**在同一阶段内一口气产出整份 Spec 的�
 
 一次产出的设计工件是：`context.md`、`requirements.md`、`technical-plan.md`、`scenario-spec.md`、
 `validation.md` 骨架，以及 `spec-run.md` 的静态头。**禁止“写一个文件就停下来问用户”**；只有遇到
-产品互斥选择、不可逆授权或真实外部阻塞时才在阶段内暂停。不要创建执行步骤图、独立执行合同、
-恢复指针或要求用户逐步启动；内部并行只隔离 owner 和 Workspace，不改变 Spec 是唯一交付单位的事实。
+产品互斥选择、不可逆授权或真实外部阻塞时才在阶段内暂停。内部并行只隔离 owner 和 Workspace，
+不改变 Spec 是唯一交付单位的事实。
 
 阶段边界语义（何时连续、何时暂停、跨阶段如何总结与批准）以
 [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md) 为唯一真源。Plan 阶段全部工件

@@ -25,6 +25,7 @@ description: >-
 - 只需要用户决定的互斥或不可逆事项。
 
 Shape 禁止创建实施 Spec、修改业务代码、部署或把技术偏好冒充产品决定。
+写代码前硬闸与常见误判话术 → [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)。
 
 ## 工作方式
 
@@ -83,7 +84,7 @@ docs/product/modules/<slug>/
 | Product model | 能力、对象、状态、权限、冻结决策 | UI 配置、实现代码 |
 | Presentation | IA、入口、文案和视觉语义 | 数据库和 API 细节 |
 | Runtime intent | 运行边界和关键路径意图 | 完整技术设计 |
-| Delivery | 首切片、后续切片、风险和指标 | 执行步骤 拆解 |
+| Delivery | 首切片、后续切片、风险和指标 | Spec 切片 / Plan |
 
 简单诉求可以只写 demand pool 或单页设计，不强制五层产品包。
 

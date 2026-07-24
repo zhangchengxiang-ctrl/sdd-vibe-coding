@@ -24,16 +24,16 @@ Repair 只在 Verify 汇总全部 Fail 并形成统一方案后开始：
 - Spec Scenario；
 - 用户可见变化的真实通道；
 - 单向门附加验证；
-- diff 与 执行步骤 In / Out 自检。
+- diff 与 Spec In / Out 自检。
 
 ### Version Acceptance
 
-Verify 证明多个 执行步骤 集成后：
+Verify 证明整份 Spec 集成后：
 
 - 核心成功路径；
 - 关键失败和降级；
 - 角色与权限；
-- 跨 执行步骤 集成；
+- 跨入口 / 跨模块集成；
 - 用户真实通道；
 - 适用回归和 UX Job。
 
@@ -83,6 +83,10 @@ API 成功、控件存在、Toast 出现或脚本旁路均不能单独证明用�
 至少需要一次 V2；截图应能让读者判断场景和结果。
 
 UX 详细标准见 testing Skill 的 `references/ux-standards.md`。
+
+生产/测试环境需要登录时：宿主 `AGENTS.md` 或项目约定中**已有可复用测试凭据**的，Agent
+应自行切换账号继续验收，不得默认停下来等人工登录。只有需要**用户个人账号**、OAuth 本人授权、
+或生产密钥时，才记为真实外部阻塞（`Blocked` / `needs-authorization`）。
 
 ## 7. 完成声明
 
