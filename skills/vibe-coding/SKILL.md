@@ -2,9 +2,10 @@
 name: vibe-coding
 description: >-
   Spec-Driven Delivery 跨端主入口（Cursor / Claude / Codex）。触发：我希望 / 优化体验 /
-  排期 / 准备实施 / 开始做 / 实现 / 构建 / 验收 / 修复 / 排障 / vibe。先读宿主 AGENTS.md；
-  未明示开始做且无已确认 Spec → 只写 docs/product/，不改业务代码。一个已确认 Spec 是持续
-  完成的 Build，直到完整交付、真实阻塞或必须授权。
+  讨论产品 / 聊聊方向 / 拆解 / 学习这个 repo / 排期 / 准备实施 / 开始做 / 实现 / 构建 /
+  验收 / UX走查 / 修复 / 排障 / vibe。先读宿主 AGENTS.md；未明示开始做且无已确认 Spec →
+  只写 docs/product/，不改业务代码。一个已确认 Spec 是持续完成的 Build，直到完整交付、
+  真实阻塞或必须授权。
 ---
 
 # Vibe Coding
@@ -25,10 +26,10 @@ description: >-
 
 | 用户目标 | 当前模式 |
 |---|---|
-| 澄清愿望、体验和产品方向 | Shape |
-| 形成技术方案和完整执行合同 | Plan |
+| 澄清愿望、体验和产品方向（含聊聊/辩论、拆解 repo） | Shape → Skill `design` |
+| 形成技术方案和完整执行合同 | Plan → Skill `spec` |
 | 实施、修复并验收一个已确认 Spec | Build |
-| 只验收既有实现 | Verify |
+| 只验收既有实现（含 UX 走查 / 体验审计） | Verify → Skill `testing` |
 | 只定位复杂或线上问题 | Diagnose |
 | 紧急恢复生产 | Incident |
 

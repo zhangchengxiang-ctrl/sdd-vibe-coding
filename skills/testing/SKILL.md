@@ -2,15 +2,17 @@
 name: testing
 description: >-
   面向略懂技术产品经理的 Verify 专项 Skill：按真实用户旅程执行 Spec / Version
-  或 Production 验证，先用交付卡给出可否交付的中文结论、证据和限制，再维护工程证据链。
-  仅在 vibe-coding 已路由到 Verify，或用户显式调用本 Skill 时使用；不修改实现。
+  或 Production 验证；亦覆盖 UX 走查 / 体验审计。先用交付卡给出可否交付的中文结论、
+  证据和限制，再维护工程证据链。仅在 vibe-coding 已路由到 Verify，或用户显式调用
+  本 Skill 时使用；不修改实现。
 ---
 
 # Testing：Verify 与证据
 
 本 Skill 只运行在已确认的 Verify Rail，不修改业务代码。先读宿主 `AGENTS.md`、当前声明范围、
 [`evidence-contract.md`](../vibe-coding/references/evidence-contract.md) 和适用 Scenario。
-用户体验场景再读 [UX Standards](./references/ux-standards.md)。
+用户体验场景再读 [UX Standards](./references/ux-standards.md)；用户要 **UX 走查 / 体验审计**
+或需分级启发式发现时，加读 [UX 走查](./references/ux-walkthrough.md)。
 
 ## 先声明验收层次
 
@@ -29,8 +31,9 @@ description: >-
 3. 从宿主 `AGENTS.md` 取得真实命令、URL、账号和工具；有可复用测试凭据时自行切换角色/账号
    继续跑矩阵，勿默认停等人工登录（个人账号 / OAuth / 生产密钥才算外部阻塞，见
    `evidence-contract.md`）；
-4. 按风险选择 V0–V3 的最小充分组合；
-5. 实际执行每个适用 Scenario，记录 `Pass | Fail | Blocked`；
+4. 按风险选择 V0–V3 的最小充分组合；走查变体按 [ux-walkthrough](./references/ux-walkthrough.md)
+   扩检查面，仍记录 `Pass | Fail | Blocked`；
+5. 实际执行每个适用 Scenario，记录结果；
 6. 记录命令、时间、环境、版本、观察值和证据路径；
 7. 对全部 Fail 统一归因、聚类并形成一份 Repair 方案；Verify 中禁止修改代码；
 8. 给出实际 Delivery Target、下一 Rail 建议和阶段总结，并等待用户批准后才转换。
@@ -51,9 +54,9 @@ UI/人工 Scenario 至少需要一次真实通道 V2。API 成功、DOM 存在�
 - **需要用户做什么**：体验确认、批准下一动作或无需动作；
 
 聊天前台默认不显示 Requirement、Scenario、Oracle、V0–V3、Rail、Delivery Target、
-Matrix、commit、Workspace 等工程术语。正式报告仍保存完整工程证据；用户明确要求时，在
-交付卡之后展开“技术详情（可选）”。交付卡之后单列且只列一个“下一步”，用普通中文
-给出最小可执行动作。
+Matrix、commit、Workspace 等工程术语。正式报告仍保存完整工程证据；用户明确要求或走查变体
+需要分级发现时，在交付卡之后展开“技术详情（可选）”或 P0/P1/P2 列表。交付卡之后单列且只列
+一个“下一步”，用普通中文给出最小可执行动作。
 
 ## Fail 路由
 

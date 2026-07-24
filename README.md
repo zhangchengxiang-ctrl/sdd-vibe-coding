@@ -83,12 +83,12 @@ make scaffold HOST=/path/to/host-repo
 | Skill | 职责 |
 |-------|------|
 | `vibe-coding` | 宽入口；路由 Shape/Plan/Build/Verify/Diagnose/Incident |
-| `design` | Shape |
+| `design` | Shape（含探索对话、代码库 grounding、产品包） |
 | `spec` | Plan |
-| `testing` | Verify / 证据 |
+| `testing` | Verify / 证据（含 UX 走查变体） |
 | `debug` | Diagnose / Incident |
 
-只有 `vibe-coding` 默认可隐式触发。
+只有 `vibe-coding` 默认可隐式触发；其余由主入口路由或显式调用。能力进 references，不另开平行 Skill。
 
 ## 维护者
 
