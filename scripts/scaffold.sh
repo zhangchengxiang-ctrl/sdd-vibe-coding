@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
-# Explicitly initialize a host repository with Codex SDD delivery memory.
+# Initialize a host repository with AGENTS.md + docs/ delivery memory.
+# Does not copy harness dirs, rules, hooks, or check-docs.
 set -euo pipefail
 
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TEMPLATES="$PLUGIN_ROOT/templates"
-TARGET_INPUT="."
-
 TARGET_INPUT="${1:-.}"
 
 if [[ ! -d "$TARGET_INPUT" ]]; then
   echo "ERROR: target directory does not exist: $TARGET_INPUT" >&2
   exit 1
 fi
+if [[ ! -d "$TEMPLATES" ]]; then
+  echo "ERROR: templates not found at $TEMPLATES" >&2
+  exit 1
+fi
+
 TARGET="$(cd "$TARGET_INPUT" && pwd)"
 echo "scaffold: target=$TARGET"
 
@@ -20,11 +24,15 @@ if [[ ! -f "$TARGET/AGENTS.md" ]]; then
   echo "  + AGENTS.md"
 fi
 
+if [[ ! -f "$TARGET/CLAUDE.md" ]]; then
+  printf '%s\n' '@AGENTS.md' > "$TARGET/CLAUDE.md"
+  echo "  + CLAUDE.md"
+fi
+
 mkdir -p "$TARGET/docs"
 while IFS= read -r -d '' file; do
   rel="${file#"$TEMPLATES/docs/"}"
   case "$rel" in
-    # 按需再建：不随 scaffold 默认拷贝，模板仍留在插件仓
     specs/_template/optional/problem-map.md|\
     specs/_template/optional/research.md|\
     specs/_template/optional/commit-checklist.md|\
@@ -41,14 +49,5 @@ while IFS= read -r -d '' file; do
     echo "  + docs/$rel"
   fi
 done < <(find "$TEMPLATES/docs" -type f -print0)
-
-mkdir -p "$TARGET/scripts"
-for checker in check-docs.sh check-docs.py; do
-  if [[ ! -e "$TARGET/scripts/$checker" ]]; then
-    cp "$PLUGIN_ROOT/scripts/$checker" "$TARGET/scripts/$checker"
-    chmod +x "$TARGET/scripts/$checker"
-    echo "  + scripts/$checker"
-  fi
-done
 
 echo "scaffold: done"

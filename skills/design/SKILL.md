@@ -1,7 +1,7 @@
 ---
 name: design
 description: >-
-  面向略懂技术产品经理的 Codex Shape 专项 Skill：用中文澄清用户问题、体验边界与首个
+  面向略懂技术产品经理的 Shape 专项 Skill：用中文澄清用户问题、体验边界与首个
   价值切片，以理解卡和必要的决策卡呈现。仅在 vibe-coding 已路由到 Shape，或用户显式调用
   本 Skill 时使用；不隐式接管普通产品诉求，不写业务代码。
 ---

@@ -7,3 +7,9 @@ __pycache__/
 .tmp/
 docs/.sdd-scaffold
 **/.sdd-scaffold
+
+# Protocol dirs are install-stage only — never commit
+.cursor-plugin/
+.claude-plugin/
+.codex-plugin/
+.agents/

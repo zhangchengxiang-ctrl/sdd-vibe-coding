@@ -1,7 +1,7 @@
 ---
 name: debug
 description: >-
-  Codex 的 Diagnose 与 Incident 专项 Skill。用于复杂 bug、线上排障、生产故障、
+  Diagnose 与 Incident 专项 Skill。用于复杂 bug、线上排障、生产故障、
   日志/监控定位、止血和 Hotfix。仅在 vibe-coding 已路由到 Diagnose/Incident，
   或用户显式调用本 Skill 时使用；不隐式接管普通 bug 请求，诊断不自动授权修改或部署。
 ---

@@ -1,13 +1,13 @@
 # Workspace Contract
 
-> Local、Worktree、Branch、PR、并行和共享资源的唯一真源。Codex / CLI Worktree 细则见文末。
+> Local、Worktree、Branch、PR、并行和共享资源的唯一真源。托管 / CLI Worktree 细则见文末。
 
 ## 1. 默认决策
 
-Plan 为每个 Spec Build 选择 `local | codex-worktree | git-worktree`。选择依据是隔离收益、
+Plan 为每个 Spec Build 选择 `local | managed-worktree | git-worktree`。选择依据是隔离收益、
 并行收益、冲突风险和环境成本。
 
-先探测当前 Codex surface：有 Subagent、托管 Worktree 或 Handoff 时按其真实语义使用；
+先探测当前 agent surface：有 Subagent、托管 Worktree 或 Handoff 时按其真实语义使用；
 能力不存在、不可调用或不适合当前授权时，保留 Local 与 CLI Git Worktree。Subagent 是
 内部委派，用户任务是用户拥有的独立对话；二者不能互换。原生运行时负责执行上下文，文件
 恢复指针 / 项目 handoff 索引负责跨任务、跨 surface 的持久恢复。
@@ -33,9 +33,9 @@ Plan 为每个 Spec Build 选择 `local | codex-worktree | git-worktree`。选�
 - 独立分支和 PR；
 - 高风险实验需要隔离。
 
-Codex 托管 Worktree 可用时，用户可在新任务入口为该用户任务选择 Worktree；已有任务需要
+托管 Worktree 可用时，用户可在新任务入口为该用户任务选择 Worktree；已有任务需要
 在 Local 与其关联 Worktree 间移动时使用原生 Handoff。Subagent 不自动获得独立 Worktree。
-其他 Codex 表面可在计划明确且目标路径安全时使用 Git worktree。基础分支或本地状态不清
+托管能力不可用时，可在计划明确且目标路径安全时使用 Git worktree。基础分支或本地状态不清
 时先停止并确认。
 
 ## 4. Owner 与并行
@@ -70,10 +70,10 @@ owner:
   id: "<native-id-or-local>"
 
 workspace:
-  mode: local | codex-worktree | git-worktree
+  mode: local | managed-worktree | git-worktree
   base_ref: "<host-default-branch>"
   base_sha: "<confirmed-sha>"
-  branch: codex/<spec>
+  branch: sdd/<spec>
   setup: "<host-defined>"
   shared_resources: []
   claims: []
@@ -109,7 +109,7 @@ delivery:
 - 公共合同先合并，依赖分支 rebase 后重新验证；
 - 分别绿灯不等于集成验收通过。
 
-分支默认使用 `codex/<spec>`，宿主另有规则时服从宿主。
+分支默认使用 `sdd/<spec>`，宿主另有规则时服从宿主。
 
 ## 8. Handoff 与清理
 
@@ -121,14 +121,14 @@ PM 不需要输入恢复指针路径、线程 ID 或 Worktree 目录。
 任务结束后：
 
 - 在证据与 handoff 回填后释放外部资源 Claim；
-- 保留或清理 Worktree 按 Codex/宿主策略；
+- 保留或清理 Worktree 按当前 surface / 宿主策略；
 - 不删除含未合并改动的 Worktree；
 - PR 合并后安排 integration retest；
 - 不长期累积无主 Worktree。
 
-## 9. Codex / CLI Worktree 执行
+## 9. 托管 / CLI Worktree 执行
 
-> 仅当 Workspace Strategy 选择 `codex-worktree` 或 `git-worktree` 时读取本节。
+> 仅当 Workspace Strategy 选择 `managed-worktree` 或 `git-worktree` 时读取本节。
 
 ### 9.1 共同前置
 
@@ -143,14 +143,14 @@ PM 不需要输入恢复指针路径、线程 ID 或 Worktree 目录。
 
 未满足时保持 Local 或标记 Blocked，不猜 base、不搬运未知改动。
 
-### 9.2 Codex 托管 Worktree
+### 9.2 托管 Worktree
 
-当前 Codex surface 暴露 Subagent、托管 Worktree 或 **Hand off** 时，只按实际语义使用，
+当前 agent surface 暴露 Subagent、托管 Worktree 或 **Handoff** 时，只按实际语义使用，
 不根据文档名称猜测工具存在。用户任务与 Subagent 是不同 owner；一个写入面绑定一个 owner
 和一个 Workspace。执行顺序：
 
 1. 建立机器恢复指针，在 handoff 登记 objective、source、stop condition 和推荐 Workspace；
-2. 用户已授权实施且任务可独立时，可分派一个 Subagent；用户拥有的新 Codex 任务仅在用户
+2. 用户已授权实施且任务可独立时，可分派一个 Subagent；用户拥有的新任务仅在用户
    明确要求时创建，否则用户可在新任务中用自然语言启动；
 3. 托管 Worktree 由用户在新任务入口选择。Subagent 默认使用父任务当前 Workspace；
 4. 父任务把 `$vibe-coding`、objective 和 source 直接传给 Subagent；PM 不输入恢复指针路径；
@@ -164,7 +164,7 @@ PM 不需要输入恢复指针路径、线程 ID 或 Worktree 目录。
     恢复，禁止两个 Worktree 同时 checkout 同一分支；
 11. 回填 handoff、PR、证据并释放外部资源 Claim。
 
-Codex 托管 Worktree 初始通常是 detached HEAD。“已有 Worktree”不等于“已有分支”。被
+托管 Worktree 初始通常是 detached HEAD。“已有 Worktree”不等于“已有分支”。被
 `.gitignore` 忽略的本地文件不会自动随 Handoff 移动；宿主确有需要时才配置
 `.worktreeinclude`，不得借此传播密钥。
 
@@ -176,7 +176,7 @@ Codex 托管 Worktree 初始通常是 detached HEAD。“已有 Worktree”不�
    `git worktree list --porcelain`；
 2. 将 `base_ref` 解析为确定的 `base_sha`；
 3. 使用明确、专用且不存在的目标目录创建 detached Worktree；
-4. Delivery 需要分支时，在该 Worktree 创建 `codex/<spec>`；
+4. Delivery 需要分支时，在该 Worktree 创建 `sdd/<spec>`（或宿主 `AGENTS.md` 规定的前缀）；
 5. 执行宿主 setup 与本 Spec 工作；
 6. push / PR 只按单独授权执行；
 7. 未合并改动、活跃 PR 或未保存证据存在时不得删除 Worktree。
@@ -195,5 +195,5 @@ Codex 托管 Worktree 初始通常是 detached HEAD。“已有 Worktree”不�
 ### 9.5 收尾
 
 handoff 必须记录真实 owner / 原生 ID、Workspace、base SHA、Branch、PR、外部资源 Claims、
-状态和下一动作。恢复指针是机器恢复指针，不作为 PM 操作说明。Codex 托管 Worktree 的清理
-由产品管理；永久或 CLI Worktree 按宿主规则清理，永不删除仍含未交付改动的工作区。
+状态和下一动作。恢复指针是机器恢复指针，不作为 PM 操作说明。托管 Worktree 的清理
+由当前 surface / 产品策略管理；永久或 CLI Worktree 按宿主规则清理，永不删除仍含未交付改动的工作区。

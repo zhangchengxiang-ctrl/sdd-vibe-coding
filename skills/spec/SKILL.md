@@ -1,7 +1,7 @@
 ---
 name: spec
 description: >-
-  Codex 的 Plan 专项 Skill：将已确认产品切片转成一份完整 Spec 执行合同、Scenario 与验收计划。
+  Plan 专项 Skill：将已确认产品切片转成一份完整 Spec 执行合同、Scenario 与验收计划。
   一个 Spec 是一个完整 Build；仅在 vibe-coding 已路由到 Plan，或用户显式调用本 Skill 时使用。
 ---
 

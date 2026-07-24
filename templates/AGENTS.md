@@ -1,7 +1,13 @@
 # AGENTS.md — 项目事实
 
-> 由 Vibe Coding 显式初始化。只填写本仓可核验的事实、命令和约束；可复用 SDD
-> 工作流由插件 Skill 负责，不在本文件复制。
+> 由 Vibe Coding scaffold 显式初始化。只填写本仓可核验的事实、命令和约束。
+> 跨仓 SDD 流程以已安装插件 **skills**（入口 `vibe-coding`）为准，不在本文件复制全文。
+
+## SDD
+
+- 未明示「开始做 / 实现 / 按这个来 / 构建」、且无已确认 `docs/specs/<id>/` → 只写 `docs/product/`，**不改业务代码**。
+- 空仓先跑插件 `scripts/scaffold.sh`；scaffold **不算**编码许可。
+- 本仓命令、环境、单向门以下文为准。
 
 ## 项目
 
@@ -29,7 +35,6 @@
 # 全量测试：
 # lint / typecheck：
 # build：
-# docs check：bash scripts/check-docs.sh
 ```
 
 ## 架构与写入边界

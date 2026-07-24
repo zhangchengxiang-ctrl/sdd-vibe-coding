@@ -1,7 +1,7 @@
 ---
 name: testing
 description: >-
-  面向略懂技术产品经理的 Codex Verify 专项 Skill：按真实用户旅程执行 Spec / Version
+  面向略懂技术产品经理的 Verify 专项 Skill：按真实用户旅程执行 Spec / Version
   或 Production 验证，先用交付卡给出可否交付的中文结论、证据和限制，再维护工程证据链。
   仅在 vibe-coding 已路由到 Verify，或用户显式调用本 Skill 时使用；不修改实现。
 ---

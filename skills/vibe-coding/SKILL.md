@@ -1,8 +1,10 @@
 ---
 name: vibe-coding
 description: >-
-  面向略懂技术产品经理的中文交付入口。用自然语言提出澄清、方案、实施、修复、验收或排障
-  请求即可进入；一个已确认 Spec 是一个持续完成的 Build，直到完整交付、真实阻塞或必须授权。
+  Spec-Driven Delivery 跨端主入口（Cursor / Claude / Codex）。触发：我希望 / 优化体验 /
+  排期 / 准备实施 / 开始做 / 实现 / 构建 / 验收 / 修复 / 排障 / vibe。先读宿主 AGENTS.md；
+  未明示开始做且无已确认 Spec → 只写 docs/product/，不改业务代码。一个已确认 Spec 是持续
+  完成的 Build，直到完整交付、真实阻塞或必须授权。
 ---
 
 # Vibe Coding
@@ -15,7 +17,7 @@ description: >-
 先读宿主 `AGENTS.md`，再按当前问题读取：
 
 - [Workflow Contract](./references/workflow-contract.md)：目标、授权、推进和完成语义；
-- [Workspace Contract](./references/workspace-contract.md)：Local、Worktree、分支和 PR（含 Codex 执行）；
+- [Workspace Contract](./references/workspace-contract.md)：Local、Worktree、分支和 PR（含托管 / CLI Worktree）；
 - [Evidence Contract](./references/evidence-contract.md)：验证层次和完成声明；
 - Diagnose / Incident → Skill `debug`。
 

@@ -71,10 +71,12 @@ Shape → Plan → Build(Spec) → Verify
 
 ## 检查
 
+可选：从插件仓维护者工具校验宿主 docs（非 scaffold 默认拷贝）：
+
 ```bash
-bash scripts/check-docs.sh
-# 本仓需要限制活跃 Spec 时：
-WIP_CAP=<positive-number> bash scripts/check-docs.sh
+bash <plugin>/evals/tools/check_docs.sh .
+# 限制活跃 Spec：
+WIP_CAP=<positive-number> bash <plugin>/evals/tools/check_docs.sh .
 ```
 
 脚手架只在用户明确要求时运行，不因缺少目录自动写入宿主仓库。
