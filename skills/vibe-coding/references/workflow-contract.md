@@ -36,7 +36,7 @@
 
 | 级别 | 含义 | 允许用途 |
 |---|---|---|
-| `Verified` | 有当前代码、Schema/约束、配置或运行证据 | Requirement、Scenario、Lock、Blocker、DDL 条件、宣称可实施 |
+| `Verified` | 有当前代码、Schema/约束、配置或运行证据 | Requirement、Test、Lock、Blocker、DDL 条件、宣称可实施 |
 | `Unverified` / `Assumption` | 尚未证明 | 仅可写在「待验证」；**禁止**进入 P0 Requirement、Requirements Lock、实施阻断、DDL 默认条件 |
 
 冲突规则：代码与数据库事实与 Spec 冲突时，先判定为 **Spec 缺陷**；不得为维护 Spec 权威而臆造新表、扩大阻塞或停止整个 Build。
@@ -144,7 +144,7 @@ trivial 豁免（跳过完整 Shape→Plan）见 [`vibe-coding/SKILL.md`](../SKI
 
 `draft | ready | in-progress | verifying | blocked | done | archived | cancelled`
 
-### 2. Delivery Target（`VERSION.md` / `validation.md` 声明目标）
+### 2. Delivery Target（`VERSION.md` / `run.md` 声明目标）
 
 | Target | 含义 |
 |---|---|
@@ -154,7 +154,7 @@ trivial 豁免（跳过完整 Shape→Plan）见 [`vibe-coding/SKILL.md`](../SKI
 
 细则与铁律见 [`evidence-contract.md`](./evidence-contract.md) Deliver Gate。
 
-### 3. Spec Run 持久态（`spec-run.md` / `handoff.md`）
+### 3. Spec Run 持久态（`run.md` / `handoff.md`）
 
 `ready | building | unit-testing | verifying | repairing | blocked | acceptance-passed`
 
@@ -168,10 +168,13 @@ trivial 豁免（跳过完整 Shape→Plan）见 [`vibe-coding/SKILL.md`](../SKI
 
 | 词 | 落盘 | 含义 |
 |---|---|---|
-| `matrix-accounted` | `validation.md` → Matrix | 所有适用 Scenario 已有终态 |
+| `matrix-accounted` | `run.md` → 终态 Matrix | 所有适用 Test 已有终态 |
 | `design-ready` | 产品包 / demand-pool | Shape 切片已确认，尚未 Plan |
 | `production-restored` | Incident 记录 | 生产已止血恢复，≠ 长期根因已修 |
-| 产品能力态 | `product/README` | `shaping \| design-ready \| planned \| …` |
+| 产品能力态 | `product/README` 能力地图 | `shaping \| design-ready \| planned \| partially-delivered \| accepted \| archived` |
+| demand 条目态 | `demand-pool.md` | `draft \| shaping \| design-ready \| planned \| delivered \| parked` |
+
+能力态与 demand 条目态分表维护，禁止混写同一行；勿使用已废弃的 `ready-for-plan`。
 
 ### 仅评测（不写入交付工件）
 

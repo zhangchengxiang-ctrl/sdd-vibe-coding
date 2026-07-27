@@ -8,7 +8,7 @@
 1. **理解**：Spec requirements / Jobs（若有）· `docs/product/` · 角色旅程 · 入口（宿主探测）
 2. **定范围**：按用户 Job 列流程与优先级
 3. **走查**：每个 Job 问有效 / 高效 / 满意障碍；用 Nielsen H1–H10（严重度 0–4；4 → Job Fail）
-4. **证据**：截图进 `docs/specs/<id>/evidence/`（或宿主约定）；禁止仅用 Pass 计数关版
+4. **证据**：截图路径写入 `run.md` Evidence 列（可落 Spec 下任意约定目录）；禁止仅用 Pass 计数关版
 5. **分级发现**：P0 阻断核心 Job · P1 应修 · P2 可改进；含位置、现象、影响、建议
 6. **复验**（修复后）：原问题与回归
 

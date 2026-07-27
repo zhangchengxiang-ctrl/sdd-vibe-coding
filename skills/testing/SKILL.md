@@ -10,7 +10,8 @@ description: >-
 # Testing：Verify 与证据
 
 本 Skill 只运行在已确认的 Verify Rail，不修改业务代码。先读宿主 `AGENTS.md`、当前声明范围、
-[`evidence-contract.md`](../vibe-coding/references/evidence-contract.md) 和适用 Scenario。
+[`evidence-contract.md`](../vibe-coding/references/evidence-contract.md) 和适用
+`tests.md` 用例。
 用户体验场景再读 [UX Standards](./references/ux-standards.md)；UI / 浏览器真实通道再读
 [浏览器验证](./references/browser-verify.md)；用户要 **UX 走查 / 体验审计** 或需分级启发式
 发现时，加读 [UX 走查](./references/ux-walkthrough.md)。
@@ -28,19 +29,20 @@ description: >-
 ## 执行
 
 1. 固定环境、版本、角色、数据和声明范围；
-2. 建立 Requirement → Scenario → Implementation → Evidence 追踪；
+2. 建立 Requirement → Test → Implementation → Evidence 追踪；
 3. 从宿主 `AGENTS.md` 取得真实命令、URL、账号和工具；有可复用测试凭据时自行切换角色/账号
    继续跑矩阵，勿默认停等人工登录（个人账号 / OAuth / 生产密钥才算外部阻塞，见
    `evidence-contract.md`）；
 4. 按风险选择 V0–V3 的最小充分组合；走查变体按 [ux-walkthrough](./references/ux-walkthrough.md)
    扩检查面，仍记录 `Pass | Fail | Blocked`；
-5. 实际执行每个适用 Scenario，记录结果；
+5. 按 `tests.md` 实际执行每个适用用例（Given/When/Then），记录结果；
 6. 记录命令、时间、环境、版本、观察值和证据路径；
 7. 对全部 Fail 统一归因、聚类并形成一份 Repair 方案；Verify 中禁止修改代码；
 8. 给出实际 Delivery Target、下一 Rail 建议和阶段总结，并等待用户批准后才转换。
 
-UI/人工 Scenario 至少需要一次真实通道 V2（见 [browser-verify](./references/browser-verify.md)）。
+UI/人工 Test 至少需要一次真实通道 V2（见 [browser-verify](./references/browser-verify.md)）。
 API 成功、DOM 存在、Toast 出现、`/health` 或脚本旁路都不能单独证明用户 Job 通过。
+**禁止**把 `tests.md` 的 Oracle 改成实际观察；结果只写 `run.md`。
 
 ## 用户前台输出
 
@@ -54,7 +56,7 @@ API 成功、DOM 存在、Toast 出现、`/health` 或脚本旁路都不能单�
 - **上线状态**：未上线、已上线、未知或不适用；
 - **需要用户做什么**：体验确认、批准下一动作或无需动作；
 
-聊天前台默认不显示 Requirement、Scenario、Oracle、V0–V3、Rail、Delivery Target、
+聊天前台默认不显示 Requirement、Test、Oracle、V0–V3、Rail、Delivery Target、
 Matrix、commit、Workspace 等工程术语。正式报告仍保存完整工程证据；用户明确要求或走查变体
 需要分级发现时，在交付卡之后展开“技术详情（可选）”或 P0/P1/P2 列表。交付卡之后单列且只列
 一个“下一步”，用普通中文给出最小可执行动作。
@@ -64,13 +66,17 @@ Matrix、commit、Workspace 等工程术语。正式报告仍保存完整工程�
 分类与下一 Rail 以 [`evidence-contract.md`](../vibe-coding/references/evidence-contract.md)
 §5 为唯一真源；本 Skill 不另维护表。
 
-不得在单个 Scenario 失败后立即修代码；所有适用 Scenario 都有结果后，才设计并执行统一 Repair。
+不得在单个 Test 失败后立即修代码；所有适用 Test 都有结果后，才设计并执行统一 Repair。
 
 ## 声明
 
-所有 Scenario 有终态，只能说明 `matrix-accounted`；关版条件全部满足才是
+所有适用 Test 有终态，只能说明 `matrix-accounted`；关版条件全部满足才是
 `acceptance-passed`（二者都不是 Delivery Target，见 workflow-contract「状态词汇」）。
-正式结果写入当前 Spec 的 `validation.md`（结构见 scaffold 模板；说明见
+正式结果写入当前 Spec 的 `run.md`（结构见 scaffold 模板；说明见
 [Validation Report](./references/validation-report.md)），必须同时写通过证据、失败、
-Blocked、未覆盖项和限制。报告必须先写 PM 验收摘要，再写工程矩阵；内部状态不能替代
+Blocked、未覆盖项和限制。报告必须先写 PM 验收摘要（关版结论），再写工程矩阵；内部状态不能替代
 “可交付 / 不可交付 / 受阻”的前台结论。
+
+长期产品回归（可选）合同见
+[product-regression](./references/product-regression.md)；启用后维护
+`docs/product/regression-register.md`。

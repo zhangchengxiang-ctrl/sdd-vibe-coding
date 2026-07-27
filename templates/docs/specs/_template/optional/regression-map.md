@@ -1,9 +1,11 @@
 # Regression Map · <surface-or-spec-title>
 
-> **产品回归地图**（长期可跑子集）。合同：[`docs/product/foundation/product-regression.md`](../../../product/foundation/product-regression.md)  
-> 关版后登记 [`docs/product/regression-register.md`](../../../product/regression-register.md)；正文留 Spec / `_archive`（方案 A，勿拷 modules）。
+> **产品回归地图**（长期可跑子集）。合同：插件
+> `skills/testing/references/product-regression.md`  
+> 关版后登记 [`docs/product/regression-register.md`](../../../product/regression-register.md)；
+> 正文留 Spec（勿拷 modules）。
 
-**范围：** （从 scenario-spec 晋升的关键旅程）  
+**范围：** （从 `tests.md` 晋升的关键旅程）  
 **Out：** （不挡绿；可链 GAP）  
 **入口：** 宿主 `AGENTS.md` 中的回归命令（若宿主未启用产品回归，可不创建本文件）
 
@@ -15,14 +17,14 @@
 | product | 真浏览器用户主路径 | |
 | manual | 人工 | （不挡自动绿） |
 
-## SC 覆盖表
+## Test 覆盖表
 
-| SC | 旅程 | 层 | 证据 | 状态 |
+| Test | 旅程 | 层 | 证据 | 状态 |
 |----|------|-----|------|------|
-| SC-n | | contract / product / manual | | 回归 · Out |
+| T-n | | contract / product / manual | | 回归 · Out |
 
 ## 维护
 
-- 先改本表，再改测试标题（须含 `SC-N`）  
+- 先改本表，再改测试标题（须含 `T-N`）  
 - Out 禁止假 Pass  
-- 晋升后更新 `regression-register`；宿主有机读 runner 时再更新 `surfaces.json`
+- 晋升后更新 `regression-register`；宿主有机读 runner 时再创建/更新 `regression/surfaces.json`

@@ -2,7 +2,8 @@
 
 最后更新：YYYY-MM-DD
 
-本文件是跨 surface 的机器恢复索引，不替代用户任务、Subagent 或 Worktree 的运行状态。
+本文件是跨 surface 的机器恢复索引，不替代用户任务、Subagent 或 Worktree 的运行状态，
+也不复制 `plan.md` Workspace Strategy 或 Spec 合同正文。
 原生能力可用时，`Owner` 写 `user-thread:<id>` 或 `subagent:<id>`，`Workspace` 写实际
 工作区；不可用时写稳定的本地 owner。原生 Handoff 只移动同一用户任务的 Local /
 Worktree 状态，不在本索引中伪造 Handoff ID。`恢复指针` 始终指向机器恢复文件，`Claims`

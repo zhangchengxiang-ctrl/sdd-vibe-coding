@@ -59,8 +59,8 @@ description: >-
 6. 每个阶段完成后记录目标、完成内容、证据与限制，先向用户总结并取得明确批准，再进入下一
    阶段；阶段内只在完成单元达成、剩余步骤真实外部阻塞，或下一动作需要不可逆授权时才暂停。
 
-Spec 范围以 `VERSION.md`、`context.md`（含事实映射）、`requirements.md`、`technical-plan.md`、
-`scenario-spec.md`、`validation.md`、`spec-run.md` 与代码共同确定；先读这些文件，按需再读其他材料。
+Spec 范围以 `VERSION.md`、`contract.md`（含事实映射）、`tests.md`（完整用例）、`plan.md`、
+`run.md` 与代码共同确定；先读这些文件，按需再读其他材料。
 
 不得把局部证据、未部署、普通 WIP、检查点、内部编号、盘点结论、缺少新对话/子代理或“需要汇报进度”
 作为暂停理由。生产授权只限制生产动作，不限制当前阶段内其余实现和测试。

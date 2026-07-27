@@ -3,14 +3,14 @@
 > 跨仓通则。宿主 URL、前端根、reload / E2E 命令以 `AGENTS.md` 为准；本文件不写死单仓路径。
 
 改用户可见前端后，在声称完成前必须做一次**真实浏览器通道**验证。输入是当前切片的用户
-Job、Scenario、Effective Channel 和 Oracle。
+Job、Test（`tests.md`）、Effective Channel 和 Oracle。
 
 ## 探测（先读宿主）
 
 | 项 | 如何确定 |
 |----|----------|
 | 前端根 | 读 `AGENTS.md` 代码入口；再按仓内约定探测（勿写死单仓目录名） |
-| Dev / 目标 URL | **先读** `AGENTS.md` 环境表；再扫 handoff / 近期 `validation.md` |
+| Dev / 目标 URL | **先读** `AGENTS.md` 环境表；再扫 handoff / 近期 `run.md` |
 | 静态刷新 | `AGENTS.md` 或宿主 Makefile / 脚本中的 reload 目标 |
 | E2E / 无头冒烟 | 宿主约定的 verify / e2e 命令；或仓内测试目录 |
 
@@ -56,8 +56,7 @@ Job、Scenario、Effective Channel 和 Oracle。
 
 ## 证据落盘
 
-关键屏截图复制进宿主约定目录（默认 `docs/specs/<id>/evidence/screenshots/`），并写
-`evidence/README.md`（建议另有 `user-review.md`）。
+关键屏截图复制进宿主约定目录，路径写入 `run.md` 追踪矩阵 / 批次结果的 Evidence 列。
 
 **禁止**只在对话里贴图、或留在工具临时目录就算验完；仓库内禁止把临时截图目录当正册。
 

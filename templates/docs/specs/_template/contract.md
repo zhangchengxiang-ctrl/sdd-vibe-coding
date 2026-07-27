@@ -1,4 +1,4 @@
-# Context · <version-id>
+# Contract · <version-id>
 
 ## 一句话目标
 
@@ -12,21 +12,32 @@
 |---|---|---|---|---|---|---|
 | | | | | | | Verified / Unverified |
 
-## 当前问题与事实
+## 用户 Job
 
-- 当前行为：
-- 用户影响：
-- 已确认事实（Verified）：
-- 假设 / 未知（Unverified，不得进硬闸）：
+作为 `<角色>`，在 `<情境>` 下，我要 `<完成的事>`，从而 `<价值>`。
 
-## 当前价值切片
+## Requirements
+
+| ID | 需求 | 优先级 | 证据级 | AC 摘要（行为） | Tests |
+|---|---|---|---|---|---|
+| R-001 | | P0 | Verified / Unverified | | T-001, T-002 |
+
+> `Unverified` 不得作为 P0 实施阻断或 Requirements Lock 条件；先补证据或降级。
+> 完整 Given / When / Then 只写在 `tests.md`，此处不重复步骤。
+
+## 非功能与约束
+
+| ID | 约束 | 可观察判据 | Tests |
+|---|---|---|---|
+| NF-001 | | | |
+
+## In / Out
 
 - In：
 - Out：
 - 非目标：
 - 用户入口：
 - Target Environment：
-- 成功 Oracle（行为，非文档对齐）：
 
 ## 产品不变量
 
@@ -43,8 +54,3 @@
 - 产品蓝图 / demand：
 - 决策记录：
 - 相关现状代码：
-
-## 下一步
-
-完成 Plan 后进入 Build。Codex 上整份 Spec 长程交付须 Goal；普通回合按纵向切片推进。
-不得为普通推进创建任务、路线或额外执行合同。

@@ -57,10 +57,10 @@
 | 工件 | 角色 |
 |------|------|
 | 本文（插件） | 定义 · ISO · Nielsen · 反模式 |
-| `docs/specs/<id>/ux-standards.md` | 本版 Jobs + 通道约束；声明服从本文 |
-| `ux-test-results.md` / evidence | 实测账本（Jobs + H# findings） |
+| `docs/specs/<id>/tests.md` | 本版 Jobs / Then Oracle + 通道；声明服从本文 |
+| `run.md`（Evidence 列 / 附件路径） | 实测账本（Jobs + H# findings） |
 
-不适用：纯后端无 UI、纯文档、纯 CI（validation 写 UX: N/A + 理由）。
+不适用：纯后端无 UI、纯文档、纯 CI（`run.md` 写 UX: N/A + 理由）。
 
 ## 反模式
 

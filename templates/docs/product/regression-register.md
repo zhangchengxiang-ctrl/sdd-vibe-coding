@@ -1,7 +1,8 @@
 # 产品回归 · 活索引
 
-> 合同：[`foundation/product-regression.md`](./foundation/product-regression.md)  
-> 可选机读：[`regression/surfaces.json`](./regression/surfaces.json)（仅宿主有自动化 runner 时维护）
+> 合同（插件）：`skills/testing/references/product-regression.md`  
+> 未满足启用条件时保持空表，不声明“产品回归已落地”。  
+> 有自动化 runner 时，可另建 `regression/surfaces.json`（非默认 scaffold）。
 
 ## 活跃面
 

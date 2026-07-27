@@ -1,12 +1,8 @@
-# Technical Plan · <version-id>
+# Plan · <version-id>
 
-## 现状
+## 方案差量
 
-- 代码入口：
-- 当前数据流 / 状态：
-- 现有约束：
-
-## 方案
+> 相对 `contract.md` 事实映射：只写本版要改什么，不复述已 Verified 现状。
 
 - 核心机制：
 - 组件 / 模块影响：
@@ -18,9 +14,9 @@
 
 > 按入口拆，不按 root/resolver/ACL 等横向层拆。Codex 普通回合默认一次只交付一个切片。
 
-| 切片 ID | 入口 | 完成定义（行为） | 依赖 | 备注 |
+| 切片 ID | 入口 | 完成定义（链 T-xxx） | 依赖 | 备注 |
 |---|---|---|---|---|
-| S1 | | 成功路径 + 越权失败 | | |
+| S1 | | T-001, T-002 | | |
 
 共享 helper / 迁移：仅当 ≥2 切片 Verified 重复同一逻辑，或某切片证明现有关系无法解析时才新增。
 
@@ -46,6 +42,8 @@
 - 发布顺序：
 - 回滚点：
 - 数据恢复：
+
+> 复杂度高时另建 `optional/migration-design.md`；此处保留摘要与链接。
 
 ## Workspace Strategy
 
@@ -78,17 +76,13 @@ delivery:
   integration_retest: required | n/a
 ```
 
-## 连续执行策略
+## 真实 Blocker 与授权
 
-> Plan 阶段只写静态执行意图。Build / Verify / Repair 的运行时状态（实现冻结、测试批次结果、
-> Fail 汇总与统一 Repair 方案）记录在 `spec-run.md`，此处不复制。阶段闸门与宿主完成单元以
-> `workflow-contract.md`（含 Harness 适配）为唯一真源。
+> 仅 Verified。运行态与批次结果写在 `run.md`，此处不复制。
 
 - 纵向切片实施顺序：
-- 完成定义（每切片行为 Oracle + 整包集成判据）：
-- 场景覆盖：
-- 共享合同与资源：
-- 真实 Blocker 与外部授权（仅 Verified；阶段内仅可在此暂停）：
+- 外部授权：
+- 真实 Blocker：
 
 ## 未决技术问题
 

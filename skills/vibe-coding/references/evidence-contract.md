@@ -8,7 +8,7 @@
 |---|---|---|
 | V0 | 静态合同成立 | diff、lint、类型、确定性检查 |
 | V1 | 实现逻辑正确 | 单元、集成、API、migration 测试 |
-| V2 | Scenario 在真实通道有效 | 浏览器、运行时 Job、目标环境、**跨用户越权拒绝** |
+| V2 | Test 在真实通道有效 | 浏览器、运行时 Job、目标环境、**跨用户越权拒绝** |
 | V3 | 全局消费者或发布稳定 | 全量回归、CI、生产检查 |
 
 按当前风险选择最小充分组合，不把 V0–V3 当固定工具清单。
@@ -29,7 +29,7 @@ Build 先证明整个 Spec 的实现状态；完成实现后运行完整单元�
 Repair 只在 Verify 汇总全部 Fail 并形成统一方案后开始：
 
 - 直接相关检查；
-- Spec Scenario；
+- Spec `tests.md` 用例；
 - 用户可见变化的真实通道；
 - 单向门附加验证；
 - diff 与 Spec In / Out 自检。
@@ -70,7 +70,7 @@ Verify 证明整份 Spec 集成后：
 
 完成声明须带冒烟态（通过 / 未过 / Blocked+原因），不得用「已上线」单独收束。
 
-#### Deliver Gate 回写（`validation.md`）
+#### Deliver Gate 回写（`run.md`）
 
 生产或目标环境交付后，至少回写：
 
@@ -95,7 +95,7 @@ Observe 结果：
 
 ```text
 Requirement
-→ Scenario
+→ Test（tests.md）
 → Implementation
 → Build Evidence
 → Version Evidence
@@ -104,13 +104,13 @@ Requirement
 
 任一适用节点断链时，不得提高对应 Delivery Target。
 
-## 4. Scenario 终态
+## 4. Test 终态
 
 - `Pass`：实际执行并达到 Oracle；
 - `Fail`：实际执行但未达到；
 - `Blocked`：无法执行，必须写原因。
 
-所有 Scenario 有终态时只能声明 `matrix-accounted`。只有关版条件满足时才能声明
+所有适用 Test 有终态时只能声明 `matrix-accounted`。只有关版条件满足时才能声明
 `acceptance-passed`。
 
 ## 5. Fail 分类
@@ -118,18 +118,18 @@ Requirement
 | 类型 | 下一 Rail |
 |---|---|
 | implementation | 汇总全部实现 Fail，形成统一 Repair 方案后集中修复并回验 |
-| product / ux | Shape |
-| technical-plan | Plan |
-| test-oracle | 测试合同修订 |
+| product / ux | Shape（回写 `docs/product/`，不另建 Spec 体验文件） |
+| plan | Plan |
+| test-oracle | 修订 `tests.md` 测试合同 |
 | environment / account / data | Blocked |
 | new-request | demand pool / Shape |
 | unknown-root-cause | Diagnose |
 
-单个 Fail 不得触发立即修复。所有适用测试结果齐备后才能创建 Repair 方案；只有产品或体验问题才要求 `experience-design.md`。
+单个 Fail 不得触发立即修复。所有适用测试结果齐备后才能创建 Repair 方案。
 
 ## 6. UI 与用户体验
 
-API 成功、控件存在、Toast 出现或脚本旁路均不能单独证明用户 Job 通过。UI/人工 Scenario
+API 成功、控件存在、Toast 出现或脚本旁路均不能单独证明用户 Job 通过。UI/人工 Test
 至少需要一次 V2；截图应能让读者判断场景和结果。
 
 浏览器通道选型、证据落盘与身份切换细则见 testing Skill 的
@@ -145,7 +145,7 @@ UX 判定标准见 [`ux-standards.md`](../../testing/references/ux-standards.md)
 完成报告必须写：
 
 - Rail；
-- Spec / Scenario / 声明范围；
+- Spec / Test / 声明范围；
 - 实际 Delivery Target；
 - 真实运行的命令和步骤；
 - 证据路径；

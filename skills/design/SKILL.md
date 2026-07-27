@@ -91,8 +91,8 @@ docs/product/modules/<slug>/
 └── 05-delivery.md
 ```
 
-只创建当前问题需要的层，不为空目录凑文档。宿主存在
-`docs/product/foundation/product-package-contract.md` 时服从其章节合同。
+只创建当前问题需要的层，不为空目录凑文档。章节合同与剪枝以
+[`product-package.md`](./references/product-package.md) 为唯一真源。
 
 | 层 | 负责 | 不负责 |
 |---|---|---|

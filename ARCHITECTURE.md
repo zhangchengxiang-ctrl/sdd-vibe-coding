@@ -13,6 +13,8 @@
   skills/vibe-coding/references/workflow-contract.md
   skills/vibe-coding/references/evidence-contract.md
   skills/vibe-coding/references/workspace-contract.md
+  skills/design/references/product-package.md
+  skills/testing/references/product-regression.md
 
 执行层（按 Rail）
   skills/design
@@ -21,8 +23,8 @@
   skills/debug
 
 宿主脚手架层（可被 scaffold 复制）
-  templates/AGENTS.md
-  templates/docs/**
+  templates/AGENTS.md          # 唯一宿主项目事实面
+  templates/docs/**            # 槽位与空表，不复制合同正文
 
 校验层（维护者工具）
   evals/tools/check_docs.py
@@ -35,7 +37,9 @@
 - 流程、状态词、完成声明、Harness 适配、证据分级：只改 `workflow-contract.md`
 - 验证层次、行为优先、Deliver Gate、Fail 分类：只改 `evidence-contract.md`
 - Workspace / Worktree / Claim：只改 `workspace-contract.md`
-- 事实映射门、纵向切片、Plan 流程：只改 `skills/spec/SKILL.md`（模板只留槽位）
+- 产品包章节与剪枝：只改 `skills/design/references/product-package.md`
+- 产品回归启用条件与分层：只改 `skills/testing/references/product-regression.md`
+- 事实映射门、纵向切片、测试合同门、Plan 流程：只改 `skills/spec/SKILL.md`（模板只留槽位）
 - 单个 Rail 的前台话术与执行约束：改对应 `skills/<rail>/SKILL.md`
 - 宿主填写槽位与文档模板：改 `templates/docs/**` 与 `templates/AGENTS.md`
 - 结构校验规则：改 `evals/tools/check_docs.py`
@@ -46,11 +50,22 @@
 
 | 目标 | 首选修改点 | 联动检查 |
 |---|---|---|
-| 新增状态词或调整语义 | `workflow-contract.md` | `templates/docs/README.md`, `VERSION.md`, `check_docs.py` |
-| 调整 Fail 分类 | `evidence-contract.md` | `templates/docs/specs/_template/validation.md` |
-| 调整 Workspace 字段 | `workspace-contract.md` | `technical-plan.md`, `spec/SKILL.md`, `check_docs.py` |
-| 调整 optional 文档策略 | `VERSION.md` + `optional/README.md` | 对应 optional 模板 |
-| 调整产品回归策略 | `product-regression.md` | `regression-register.md`, `regression-map.md` |
+| 新增状态词或调整语义 | `workflow-contract.md` | `templates/docs/product/*`, `VERSION.md`, `check_docs.py` |
+| 调整 Fail 分类 | `evidence-contract.md` | `templates/docs/specs/_template/run.md` |
+| 调整 Workspace 字段 | `workspace-contract.md` | `plan.md`, `spec/SKILL.md`, `check_docs.py` |
+| 调整 optional 文档策略 | `optional/README.md` | 对应 optional 模板 |
+| 调整产品回归策略 | `skills/testing/references/product-regression.md` | `regression-register.md`, `regression-map.md` |
+| 调整产品包骨架 | `skills/design/references/product-package.md` | `design/SKILL.md` |
+| 调整测试合同结构 | `tests.md` 模板 + `spec/SKILL.md` | `check_docs.py`, `testing/SKILL.md` |
+
+## Spec 文件名迁移（历史对照）
+
+| 旧 | 新 |
+|---|---|
+| `context.md` + `requirements.md` | `contract.md` |
+| `scenario-spec.md` | `tests.md` |
+| `technical-plan.md` | `plan.md` |
+| `spec-run.md` + `validation.md` | `run.md` |
 
 ## 防双写清单
 
@@ -58,6 +73,11 @@
 
 1. 一个概念只在一个合同文件定义；
 2. 模板没有复制同一合同大段正文；
-3. `make verify` 通过；
-4. 文档中的状态词与 `workflow-contract.md` 一致。
+3. `AGENTS.md` 是宿主唯一项目事实面（无 `docs/guides/` 第二份）；
+4. `make verify` 通过；
+5. 文档中的状态词与 `workflow-contract.md` 一致。
 
+## 维护者附录：外借实践（BORROW）
+
+记录外项目吸收决策时，可在插件仓或宿主 `docs/product/decisions/` 自建笔记；
+不进入默认 scaffold。建议字段：状态、日期、来源、吸收层、明确不吸收、撤销条件。

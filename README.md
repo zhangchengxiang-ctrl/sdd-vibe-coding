@@ -4,7 +4,7 @@
 
 用户表达诉求、判断关键取舍、授权实施并验收真实成果。跨仓工作流在 **skills**；本仓命令与红线在宿主 **AGENTS.md** / `docs/`。不依赖 rules / hooks。
 
-> 用户前台保持简单；`docs/`、Spec、handoff、evidence 是 Agent 的内部交付记忆。
+> 用户前台保持简单；`docs/`、Spec、handoff 是 Agent 的内部交付记忆。
 
 ## 用户会看到什么
 

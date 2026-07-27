@@ -1,5 +1,0 @@
-{
-  "version": 1,
-  "description": "Optional host-specific machine-readable regression surfaces. Maintain only when host has an automation runner.",
-  "surfaces": []
-}

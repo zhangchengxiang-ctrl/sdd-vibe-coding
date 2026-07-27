@@ -1,7 +1,8 @@
 # Clarify · <version-id>
 
 > 仅记录阻断当前价值切片的高价值产品决策。内部事实由 Agent 调查，可逆细节使用
-> 合理默认，未来切片未知项不阻塞当前 Plan。
+> 合理默认，未来切片未知项不阻塞当前 Plan。  
+> Requirements Lock **状态**只写在 `VERSION.md`；本文不另立权威状态。
 
 ---
 
@@ -31,19 +32,10 @@
   - 选项与代价：
   - 无回复默认值：
   - 结论：
-  - 影响的 SC：
+  - 影响的 Requirement / Test：
 
 每轮最多集中询问 1–3 个问题；禁止让用户补写完整需求。
 
----
-
-## Requirements Lock
-
-- **状态**：`open / locked / reopened`
-- **锁定内容**：问题框定、当前切片、关键取舍、Delivery Target
-- **确认依据 / 日期**：
-- **允许执行期中断的事项**：用户外部动作、新单向门/破坏性操作、证据推翻合同、
-  无法自主解除的 blocker
-
-锁定后，技术选型和可逆细节由体系自主决定；非阻断问题集中到下一次 Demo /
-Decision Card。用户主动改变目标时设为 `reopened` 并回到 Shape。
+锁定内容确认后，将 `VERSION.md` 的 Requirements Lock 设为 `locked`（或用户改目标时
+`reopened`）。锁定后技术选型和可逆细节由体系自主决定；非阻断问题集中到下一次 Demo /
+Decision Card。

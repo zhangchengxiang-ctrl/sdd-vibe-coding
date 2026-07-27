@@ -1,7 +1,8 @@
-# 产品包章节合同与剪枝（通用）
+# 产品包章节合同与剪枝
 
 > 统一 `docs/product/modules/<slug>/` 层内写法。建包 → skill `design`。  
-> 旧包不强制回填；新写/大改某层时对齐本合同。
+> 旧包不强制回填；新写/大改某层时对齐本合同。  
+> 宿主模板不复制本文；仅 skills 为真源。
 
 ## 1. 骨架
 
@@ -11,7 +12,7 @@ docs/product/modules/<slug>/
 ├── 01-experience.md
 ├── 02-product-model.md
 ├── 03-presentation.md   # 可同号改名
-├── 04-runtime.md          # 薄：产品级约束
+├── 04-runtime.md        # 薄：产品级约束
 └── 05-delivery.md
 ```
 
@@ -22,11 +23,11 @@ docs/product/modules/<slug>/
 
 | 真源 | 写什么 | 不写什么 |
 |------|--------|----------|
-| `modules/<slug>/` | 产品决策（可超前） | 本版实现细节、关版 SC 全文 |
-| `specs/<id>/` | 本版实施 + scenario 阅卷 | 只改 Spec 不改产品语义 |
+| `modules/<slug>/` | 产品决策（可超前） | 本版实现细节、关版 Test 全文 |
+| `specs/<id>/` | 本版实施 + `tests.md` 阅卷 | 只改 Spec 不改产品语义 |
 | system-map + 代码 | as-built | 愿景蓝图 |
 
-**05 可索引** Spec SC；**禁止** modules 与 Spec 双写同一套 SC 正文。
+**05 可索引** Spec `T-xxx`；**禁止** modules 与 Spec 双写同一套 Test / Oracle 正文。
 
 ## 3. 全集章节（适用则写；否则 N/A+理由或省略整层）
 
@@ -44,10 +45,10 @@ IA · 文案/视觉语义 · 组件/表面规格（无 UI → 整篇省略）
 
 ### 04 运行时意图（薄）
 进程/边界意图 · 关键路径语义 · 安全/观测约束  
-**禁止：** 表结构、长锚点、API 字段全集 → Spec `technical-plan.md`
+**禁止：** 表结构、长锚点、API 字段全集 → Spec `plan.md`
 
 ### 05 交付
-分期 · 配置/环境 · 联调检查 · 风险 · 关版 SC **索引**（正文在 Spec）
+分期 · 配置/环境 · 联调检查 · 风险 · 关版 Test **索引**（正文在 Spec `tests.md`）
 
 ## 4. 剪枝表
 
@@ -66,4 +67,4 @@ IA · 文案/视觉语义 · 组件/表面规格（无 UI → 整篇省略）
 - [ ] README 地图与真源边界齐全  
 - [ ] 适用层含合同章节或 N/A+理由；空层已省略  
 - [ ] 04 只有产品级约束  
-- [ ] 关版 SC 以 Spec 为阅卷真源；05 不双写  
+- [ ] 关版 Test 以 Spec `tests.md` 为阅卷真源；05 不双写  
