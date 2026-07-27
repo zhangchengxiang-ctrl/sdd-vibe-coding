@@ -14,7 +14,8 @@ description: >-
 用户只需表达**意图**和关键选择；质量条、调查顺序、切片方式与验收标准由插件默认执行。
 内部步骤只用于推进工作，不能成为最终回复、要求用户重新发起或中止当前交付的理由。
 薄提示词对照见 [`workflow-contract.md`](./references/workflow-contract.md)「薄提示词原则」。
-可选成本路径见同文件「指挥施工 Harness」与 Skill [`dispatch-codex`](../dispatch-codex/SKILL.md)。
+可选指挥施工见同文件「指挥施工 Harness」与 Skill [`dispatch-codex`](../dispatch-codex/SKILL.md)
+（仅 `gpt-5.6-sol` × medium/high；非 Terra/Luna 外包）。
 
 ## 必读
 
@@ -30,7 +31,7 @@ description: >-
 | 用户意图（自然语言即可） | 当前模式 |
 |---|---|
 | 澄清愿望、体验和产品方向（含聊聊/辩论、拆解 repo） | Shape → Skill `design` |
-| **派 Codex / 用 Codex 做 / 让 Codex 施工**（且当前在 Cursor/Claude） | **指挥施工** → Skill `dispatch-codex`（一次一个完成单元） |
+| **派 Codex / 用 Codex 做 / 让 Codex 施工**（且当前在 Cursor/Claude） | **指挥施工** → Skill `dispatch-codex`（一次一单元；**仅 sol×medium/high**） |
 | 切 Spec / Plan / 按产品包拆到能编码 | Plan → Skill `spec`（**直接落盘**，勿再要落盘批准） |
 | Spec 批准了 / 开始做 / 实现 | Build（Codex 默认首个纵向切片；指挥模式下改派 Codex） |
 | 验收 / UX 走查 | Verify → Skill `testing`（指挥模式下建议指挥侧验收，maker ≠ grader） |

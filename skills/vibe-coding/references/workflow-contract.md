@@ -32,27 +32,29 @@
 
 ### 指挥施工 Harness（可选 · Cursor / Claude → Codex）
 
-> **定位：** 成本与交互优化路径——指挥侧（Cursor / Claude Code）对人说话并验收；
-> Codex 按订阅施工。这是**可选**模式，不是纯 Codex 单宿主的替代终局。
-> 执行细则见 Skill `dispatch-codex`。产品语义（Spec / 纵向切片 / Oracle）不变。
+> **定位：** 指挥侧（Cursor / Claude Code，含 Auto）做人机交互、产品拍板与验收；
+> 施工侧 Codex 用 **`gpt-5.6-sol` × medium/high** 跑有界完成单元。这是**可选**模式，
+> 不是「便宜模型外包一切」，也不是纯 Codex 单宿主的替代终局。
+> 执行细则与模型硬表见 Skill `dispatch-codex`。产品语义（Spec / 纵向切片 / Oracle）不变。
 
 **触发（指挥侧用户明示其一即可）：**
 
 - 派 Codex / 用 Codex 做 / 让 Codex 施工 / 省成本用 Codex 跑
 
-**未触发时：** 当前宿主按上表自行完成，不自动外包。
+**未触发时：** 当前宿主按上表自行完成，**不自动外包**。复杂 Plan 默认指挥侧自做。
 
 **规则：**
 
 1. **一次只派一个完成单元**：Plan（整份 Spec 落盘）或 Build **一个**纵向切片；禁止把整包多片塞进一次普通 Codex 派单。
-2. **派单必须薄**：只含 cwd、单元类型、输入路径、完成定义指针（如 `S1 → T-001/T-002`）；**禁止**把本合同大段粘进派单。质量条由施工侧已装插件默认执行。
-3. **无 Oracle 不准派 Build**：该片缺少可观察的 success + failure/permission（`tests.md`）→ 指挥侧先补 Plan 或打回，不得派编码。
-4. **maker ≠ grader**：Codex 施工自评不算通过；指挥侧必须对照仓库产物（Spec 文件 / `run.md` / diff / 测试）验收后再向用户交付。
-5. **失败打回同一 thread**（`codex-reply`）或新开派单修正；不得用催促词掩盖坏 Spec。
-6. **多片长程**：可派「对该 Spec 开 Goal，完成条件=剩余切片+验证命令」；指挥只盯里程碑与证据，不逐工具盯梢。
-7. **工具降级**：优先 Codex MCP（`codex` / `codex-reply`）；不可用则 `codex exec`；两者皆失败 → 对人说明 Blocked，禁止谎报已派单成功。
+2. **派单必须薄**：只含 cwd、单元类型、输入路径、完成定义指针（如 `S1 → T-001/T-002`）、**model/effort**；**禁止**把本合同大段粘进派单。质量条由施工侧已装插件默认执行。
+3. **模型硬约束**：Plan / Build / Goal 仅允许 `gpt-5.6-sol`，effort 仅 `medium`（默认）或 `high`（加码）。**禁止** `gpt-5.6-terra` / `gpt-5.6-luna` / sol×`low`（评测：旧骨架或无产物）。
+4. **无 Oracle 不准派 Build**：该片缺少可观察的 success + failure/permission（`tests.md`）→ 指挥侧先补 Plan 或打回，不得派编码。
+5. **maker ≠ grader**：Codex 施工自评不算通过；指挥侧必须对照仓库产物（Spec 文件 / `run.md` / diff / 测试）验收后再向用户交付。Plan 若落成旧骨架（`context`/`requirements`/`tasks`/`validation` 等而无 `contract.md`）→ **否决打回**，不得改派 Terra/Luna。
+6. **失败打回同一 thread**（`codex-reply`，可升 high）或新开派单修正；不得用催促词掩盖坏 Spec。
+7. **多片长程**：可派「对该 Spec 开 Goal，完成条件=剩余切片+验证命令」；effort=**high**；指挥只盯里程碑与证据，不逐工具盯梢。
+8. **工具降级**：优先 Codex MCP（`codex` / `codex-reply`）；不可用则 `codex exec`（须带 `-m gpt-5.6-sol` 与 effort）；两者皆失败 → 对人说明 Blocked，禁止谎报已派单成功。
 
-**对人前台：** 只说目标、进展、证据、要你决定；不暴露 threadId、MCP、Goal 内部词，除非用户追问。
+**对人前台：** 只说目标、进展、证据、要你决定；可简说「复杂活用 Codex Sol」。不暴露 threadId、MCP、Goal 内部词，除非用户追问。
 
 ## 证据分级（Unverified 禁入硬闸）
 
@@ -111,7 +113,7 @@ trivial 豁免（跳过完整 Shape→Plan）见 [`vibe-coding/SKILL.md`](../SKI
 |---|---|
 | 「按这个产品包切 Spec / Plan / 拆到能编码」 | Plan：先事实映射 → 纵向切片 → 完整 `tests.md` G/W/T → 落盘整份 Spec；不改业务代码 |
 | 「批准了，开始做 / 实现」 | Build：Codex 默认只做**第一个**纵向切片（含行为验收）；Cursor/Claude 可连续整份 Spec |
-| 「派 Codex / 用 Codex 做」 | Cursor/Claude：走可选**指挥施工**（Skill `dispatch-codex`）；一次一单元 |
+| 「派 Codex / 用 Codex 做」 | Cursor/Claude：走可选**指挥施工**（Skill `dispatch-codex`）；一次一单元；**仅 sol×medium/high** |
 | 「完整实施 / 不要中途停 / 把整份 Spec 做完」 | Codex：立即 Goal；禁止普通单轮硬扛整包 |
 | 「验收一下」 | Verify：行为/权限 Oracle 优先于文档自洽 |
 

@@ -194,13 +194,36 @@ PY
   esac
 }
 
+# Cursor `/skill-name` and filesystem discovery only scan ~/.cursor/skills (and
+# project/.cursor/skills), NOT ~/.cursor/plugins/local/.../skills. Dual-link so
+# slash commands and Agent Decides both see the same SDD skills.
+link_cursor_user_skills() {
+  local skill_src_root="$1"
+  local user_skills="${HOME}/.cursor/skills"
+  mkdir -p "$user_skills"
+  local skill_md name dst abs
+  shopt -s nullglob
+  for skill_md in "$skill_src_root"/*/SKILL.md; do
+    name="$(basename "$(dirname "$skill_md")")"
+    dst="$user_skills/$name"
+    abs="$(cd "$(dirname "$skill_md")" && pwd)"
+    if [[ -e "$dst" && ! -L "$dst" ]]; then
+      echo "  WARN: skip ~/.cursor/skills/$name (exists, not a symlink)" >&2
+      continue
+    fi
+    ln -sfn "$abs" "$dst"
+    echo "  linked ~/.cursor/skills/$name → $abs"
+  done
+  shopt -u nullglob
+}
+
 install_cursor() {
   if ! command -v rsync >/dev/null 2>&1; then
     echo "SKIP Cursor: rsync not found" >&2
     return 0
   fi
   populate_stage cursor
-  local stage dst
+  local stage dst skill_src
   stage="$(stage_dir cursor)"
   dst="${HOME}/.cursor/plugins/local/${PLUGIN_NAME}"
   mkdir -p "$(dirname "$dst")"
@@ -211,8 +234,15 @@ install_cursor() {
   rsync -a --delete \
     --exclude '.git' \
     "$stage/" "$dst/"
+  # Prefer repo paths under --dev so skill edits are live for `/` discovery.
+  if [[ "$DEV" == "1" ]]; then
+    skill_src="$ROOT/skills"
+  else
+    skill_src="$dst/skills"
+  fi
+  link_cursor_user_skills "$skill_src"
   echo "OK Cursor: $dst (v$version)"
-  echo "  Next: Developer: Reload Window → Plugins 见 ${PLUGIN_NAME}"
+  echo "  Next: Developer: Reload Window → Plugins 见 ${PLUGIN_NAME}；Agent 输入 /vibe-coding"
 }
 
 install_claude() {

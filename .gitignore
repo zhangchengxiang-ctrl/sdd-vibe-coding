@@ -8,6 +8,9 @@ __pycache__/
 docs/.sdd-scaffold
 **/.sdd-scaffold
 
+# Capability eval worktrees (large / ephemeral)
+evals/fixtures/codex-live/artifacts/
+
 # Protocol dirs are install-stage only — never commit
 .cursor-plugin/
 .claude-plugin/

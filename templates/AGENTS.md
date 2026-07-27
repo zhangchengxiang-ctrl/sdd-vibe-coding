@@ -11,7 +11,8 @@
 - 未经当前代码、Schema/约束、配置或运行证据验证的关键技术判断，必须标为 `Unverified`；**不得**写成事实、P0 Requirement、Lock、Blocker、DDL 条件，也不得据此宣称可实施。
 - Codex：整份 Spec 长程「不要中途停止」→ 使用持久 Goal；普通回合只承诺一个纵向切片。
 - 用户自然语言意图即可触发 Plan/Build；质量条（事实映射、纵向切片、TDD 用例）由插件默认执行，不要求用户复述。
-- Cursor/Claude 上可说「派 Codex」走可选指挥施工（Skill `dispatch-codex`）；纯 Codex 会话不需要。
+- Cursor/Claude 上可说「派 Codex」走可选指挥施工（Skill `dispatch-codex`）；默认
+  `gpt-5.6-sol` × medium（加码 high）；禁止 Terra/Luna 做 Plan/Build。纯 Codex 会话不需要派单。
 - 本仓命令、环境、单向门以下文为准。
 
 ## 项目

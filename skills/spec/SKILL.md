@@ -24,7 +24,10 @@ description: >-
 4. `tests.md` 每个 P0 至少 1 success + 1 failure/permission，完整 Given/When/Then；
 5. 本阶段只落盘 Spec，**不改业务代码**；
 6. 用户已说切 Spec/Plan → **直接写入** `docs/specs/<id>/`，禁止再问「批准落盘 Spec」；
-7. 齐套后只出一张卡：能否批准进入 Build + Unverified 清单。
+7. 齐套后只出一张卡：能否批准进入 Build + Unverified 清单；
+8. **骨架以本节「核心工件」为准**：只落盘 `VERSION` / `contract` / `tests` / `plan` / `run`。
+   若宿主 `docs/specs/_template/` 仍是旧文件名（`context` / `requirements` / `tasks` /
+   `validation` / `scenario-spec` 等），**忽略模板文件名**，不得照抄旧骨架。
 
 ## 核心工件
 

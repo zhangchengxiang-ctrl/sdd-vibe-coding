@@ -57,9 +57,11 @@ make install         # 推荐：有 CLI 的端都装；缺则 SKIP
 
 | 端 | 装完后 |
 |----|--------|
-| Cursor | **Reload Window** → Plugins 见 **sdd-vibe-coding** |
+| Cursor | **Reload Window** → Plugins 见 **sdd-vibe-coding**；`~/.cursor/skills/` 已链 skill（可用 `/vibe-coding`） |
 | Claude Code | `/reload-plugins` |
 | Codex | 重启或**新开任务** → Plugins |
+
+> Cursor 的 `/skill` 只扫描 `~/.cursor/skills/` 等目录，不扫描 `plugins/local`。`install` / `install-dev` 会把本插件 skills **同时**链到 `~/.cursor/skills/<name>`。若 `/vibe-coding` 仍提示 Create skill，先 Reload Window。
 
 等价裸脚本：`bash scripts/install.sh […]`、`bash scripts/scaffold.sh <host>`。
 
