@@ -32,9 +32,10 @@
 
 ## 真源边界
 
-- 流程、状态词、完成声明：只改 `workflow-contract.md`
-- 验证层次、Deliver Gate、Fail 分类：只改 `evidence-contract.md`
+- 流程、状态词、完成声明、Harness 适配、证据分级：只改 `workflow-contract.md`
+- 验证层次、行为优先、Deliver Gate、Fail 分类：只改 `evidence-contract.md`
 - Workspace / Worktree / Claim：只改 `workspace-contract.md`
+- 事实映射门、纵向切片、Plan 流程：只改 `skills/spec/SKILL.md`（模板只留槽位）
 - 单个 Rail 的前台话术与执行约束：改对应 `skills/<rail>/SKILL.md`
 - 宿主填写槽位与文档模板：改 `templates/docs/**` 与 `templates/AGENTS.md`
 - 结构校验规则：改 `evals/tools/check_docs.py`

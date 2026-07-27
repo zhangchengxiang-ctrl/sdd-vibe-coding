@@ -1,5 +1,7 @@
 # Validation · <version-id>
 
+> 行为 / 权限 Oracle 优先于文档编号对齐。仅 RM/traceability 自洽不得宣称 `code-ready`。
+
 ## PM 验收摘要
 
 ### 结论

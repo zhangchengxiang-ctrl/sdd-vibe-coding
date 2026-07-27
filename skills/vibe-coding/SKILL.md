@@ -4,22 +4,22 @@ description: >-
   Spec-Driven Delivery 跨端主入口（Cursor / Claude / Codex）。触发：我希望 / 优化体验 /
   讨论产品 / 聊聊方向 / 拆解 / 学习这个 repo / 排期 / 准备实施 / 开始做 / 实现 / 构建 /
   验收 / UX走查 / 修复 / 排障 / vibe。先读宿主 AGENTS.md；未明示开始做且无已确认 Spec →
-  只写 docs/product/，不改业务代码。一个已确认 Spec 是持续完成的 Build，直到完整交付、
-  真实阻塞或必须授权。
+  只写 docs/product/，不改业务代码。完成单元见 workflow-contract「Harness 适配」：
+  Codex 整份 Spec 须 Goal；普通回合只承诺一个纵向切片。
 ---
 
 # Vibe Coding
 
-用户表达目标和关键选择；体系负责连续实施与验收。内部步骤只用于推进工作，不能成为最终回复、
+用户表达目标和关键选择；体系负责实施与验收。内部步骤只用于推进工作，不能成为最终回复、
 要求用户重新发起或中止当前交付的理由。
 
 ## 必读
 
 先读宿主 `AGENTS.md`，再按当前问题读取：
 
-- [Workflow Contract](./references/workflow-contract.md)：目标、授权、推进和完成语义；
+- [Workflow Contract](./references/workflow-contract.md)：目标、授权、**Harness 适配**、证据分级、推进和完成语义；
 - [Workspace Contract](./references/workspace-contract.md)：Local、Worktree、分支和 PR（含托管 / CLI Worktree）；
-- [Evidence Contract](./references/evidence-contract.md)：验证层次、Deliver Gate 和完成声明；
+- [Evidence Contract](./references/evidence-contract.md)：验证层次、行为优先、Deliver Gate 和完成声明；
 - Diagnose / Incident → Skill `debug`。
 
 ## 路由
@@ -47,24 +47,25 @@ description: >-
 [`workflow-contract.md`](./references/workflow-contract.md)。
 
 每个阶段在自身范围内连续完成；`Shape → Plan → Build → Verify → Repair` 的跨阶段切换须先总结并
-取得用户明确批准。闸门规则见 [`workflow-contract.md`](./references/workflow-contract.md)。
+取得用户明确批准。闸门与宿主完成单元见 [`workflow-contract.md`](./references/workflow-contract.md)。
 
 ## 持续交付规则
 
-1. 建立一个用户可判断的交付目标、范围和完成条件；
-2. 读取当前事实并执行下一可执行步骤；
-3. Build 完成全部实现后，只运行完整的单元测试批次；测试开始后禁止修改代码；
-4. Verify 统一运行集成、场景与真实通道测试，完整收集 Fail；
+1. 建立一个用户可判断的交付目标、范围和**当前完成单元**（整份 Spec 或一个纵向切片）；
+2. 读取当前事实并执行下一可执行步骤；Codex 上整份 Spec 长程交付须先 Goal（见合同 Harness 节）；
+3. Build 完成当前完成单元的实现后，只运行完整的单元测试批次；测试开始后禁止修改代码；
+4. Verify 统一运行集成、场景与真实通道测试，完整收集 Fail；**行为/权限 Oracle 优先于文档自洽**；
 5. 所有测试结束后先形成一份统一修复方案，再进入 Repair 集中修改并回验；
 6. 每个阶段完成后记录目标、完成内容、证据与限制，先向用户总结并取得明确批准，再进入下一
-   阶段（见 `workflow-contract.md`）；阶段内只在整个目标完成、剩余步骤真实外部阻塞，
-   或下一动作需要不可逆授权时才暂停。
+   阶段；阶段内只在完成单元达成、剩余步骤真实外部阻塞，或下一动作需要不可逆授权时才暂停。
 
-Spec 范围以 `VERSION.md`、`context.md`、`requirements.md`、`technical-plan.md`、
+Spec 范围以 `VERSION.md`、`context.md`（含事实映射）、`requirements.md`、`technical-plan.md`、
 `scenario-spec.md`、`validation.md`、`spec-run.md` 与代码共同确定；先读这些文件，按需再读其他材料。
 
-不得把局部证据、未部署、普通 WIP、检查点、内部编号、缺少新对话/子代理或“需要汇报进度”
+不得把局部证据、未部署、普通 WIP、检查点、内部编号、盘点结论、缺少新对话/子代理或“需要汇报进度”
 作为暂停理由。生产授权只限制生产动作，不限制当前阶段内其余实现和测试。
+
+用户纠错或要求继续时：先改行为再解释；禁止用长篇根因/推责代替下一可执行步骤。
 
 ## 用户前台
 

@@ -27,6 +27,8 @@ description: >-
 
 Shape 禁止创建实施 Spec、修改业务代码、部署或把技术偏好冒充产品决定。
 写代码前硬闸与常见误判话术 → [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)。
+权限 / 数据边界类诉求进入 Plan 前，应先有可读的代码与 Schema 事实（见 Plan「事实映射门」）；
+不得在未查关系时发明平台级抽象。
 
 ## 工作方式
 
