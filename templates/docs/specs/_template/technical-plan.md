@@ -37,6 +37,37 @@
 - 回滚点：
 - 数据恢复：
 
+## Workspace Strategy
+
+> 本 Spec Build 的隔离与交付边界；字段语义以插件 `workspace-contract.md` 为唯一真源。
+> 宿主默认分支、setup、分支保护只读 `AGENTS.md`。`claims` 只列外部共享资源。
+
+```yaml
+owner:
+  kind: current-chat | user-thread | subagent
+  id: "<native-id-or-local>"
+
+workspace:
+  mode: local | managed-worktree | git-worktree
+  base_ref: "<host-default-branch>"
+  base_sha: "<confirmed-sha>"
+  branch: sdd/<spec>
+  setup: "<host-defined>"
+  shared_resources: []
+  claims: []
+
+native:
+  plan_item: null
+  goal_id: null
+
+delivery:
+  target: local-diff | commit | push | draft-pr | ready-pr
+  pr_base: "<host-default-branch>"
+  merge_after: []
+  merge_before: []
+  integration_retest: required | n/a
+```
+
 ## 连续执行策略
 
 > Plan 阶段只写静态执行意图。Build / Verify / Repair 的运行时状态（实现冻结、测试批次结果、

@@ -1,97 +1,18 @@
 # Validation Report
 
-> 正式验收、发布或事故恢复使用；Build 期内可直接在 Spec 执行合同 / `spec-run.md` 中记录证据。
+> 正式验收落盘结构的唯一真源是宿主 Spec 模板
+> `docs/specs/<id>/validation.md`（scaffold 来自插件
+> `templates/docs/specs/_template/validation.md`）。
+>
+> 本文件**不**维护第二份报告骨架。Verify / Incident 写结论时直接编辑对应 Spec 的
+> `validation.md`；Build 期内过程证据可写在 `spec-run.md`，关版与交付声明仍以
+> `validation.md` 为准。
 
-```markdown
-# Validation Report · <scope>
+## 必读约束
 
-## PM 验收摘要
-
-### 结论
-
-- 是否可以交付：`可交付 | 不可交付 | 受阻`
-- 一句话原因：
-- 本次验收覆盖：
-- 验收时间：
-
-### 如何体验
-
-- 环境 / 入口：
-- 适用角色：
-- 代表性数据：
-- 成功时应看到：
-
-### 已验证的用户结果
-
-| 用户要完成的事 | 实际观察 | 证据 | 结论 |
-|---|---|---|---|
-| | | | 已通过 / 未通过 / 无法验证 |
-
-### 未通过或无法验证
-
-| 问题 | 对用户的影响 | 严重度 | 原因或缺少什么 | 建议动作 |
-|---|---|---|---|---|
-| | | 阻断 / 严重 / 一般 / 轻微 | | |
-
-### 限制与上线状态
-
-- 未覆盖内容：
-- 已知限制：
-- 是否已上线：`未上线 | 已上线 | 未知 | 不适用`
-- 上线后的观察：
-
-### 需要用户做什么
-
-- 用户验收动作：
-- 下一步：
-
-## 工程验证明细（按需查看）
-
-### 声明
-
-- Rail：verify | incident
-- 验收层次：Build Validation | Version Acceptance | Production Verification
-- Spec：
-- 声明范围：
-- 目标 Delivery Target：
-- 实际 Delivery Target：
-- 时间：
-
-### 执行上下文
-
-- Environment / URL：
-- Version / commit：
-- Workspace：
-- Branch：
-- PR：
-- Role / account：
-- Test data：
-
-### 追踪矩阵
-
-| Requirement | Scenario | Implementation | Oracle | Evidence | Result |
-|---|---|---|---|---|---|
-| | | | | | Pass / Fail / Blocked |
-
-### 实际验证
-
-| 层 | 命令或步骤 | 结果 | 证据 |
-|---|---|---|---|
-| V0 | | | |
-| V1 | | | |
-| V2 | | | |
-| V3 | | | |
-
-### Fail 汇总
-
-| ID | 分类 | 根因组 | 影响 | 下一动作 |
-|---|---|---|---|---|
-| | | | | |
-
-### 结论
-
-- 实际 Delivery Target：
-- 未覆盖项：
-- 残余风险：
-- 建议下一 Rail：
-```
+- Fail 分类与下一 Rail → [`evidence-contract.md`](../../vibe-coding/references/evidence-contract.md) §5
+- Delivery Target / 完成声明词汇 → [`workflow-contract.md`](../../vibe-coding/references/workflow-contract.md)「状态词汇」
+- 报告必须先写 PM 验收摘要，再写工程矩阵；内部状态不能替代
+  「可交付 / 不可交付 / 受阻」的前台结论
+- 所有适用 Scenario 有终态 → 只能声明 `matrix-accounted`；关版条件满足 →
+  `acceptance-passed`（二者都不是 Delivery Target）

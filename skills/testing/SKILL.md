@@ -11,8 +11,9 @@ description: >-
 
 本 Skill 只运行在已确认的 Verify Rail，不修改业务代码。先读宿主 `AGENTS.md`、当前声明范围、
 [`evidence-contract.md`](../vibe-coding/references/evidence-contract.md) 和适用 Scenario。
-用户体验场景再读 [UX Standards](./references/ux-standards.md)；用户要 **UX 走查 / 体验审计**
-或需分级启发式发现时，加读 [UX 走查](./references/ux-walkthrough.md)。
+用户体验场景再读 [UX Standards](./references/ux-standards.md)；UI / 浏览器真实通道再读
+[浏览器验证](./references/browser-verify.md)；用户要 **UX 走查 / 体验审计** 或需分级启发式
+发现时，加读 [UX 走查](./references/ux-walkthrough.md)。
 
 ## 先声明验收层次
 
@@ -20,7 +21,7 @@ description: >-
 |---|---|
 | Build Validation | 当前 Spec 的实现与集成是否按合同完成？ |
 | Version Acceptance | 当前版本是否满足产品结果？ |
-| Production Verification | 目标版本是否在生产真实生效且健康？ |
+| Production Verification | 目标版本是否在**目标环境**真实生效（含产品冒烟，不只 health）？ |
 
 不得用局部实现证据替代 Version Acceptance，也不得用本地/预览证据声明生产交付。
 
@@ -38,8 +39,8 @@ description: >-
 7. 对全部 Fail 统一归因、聚类并形成一份 Repair 方案；Verify 中禁止修改代码；
 8. 给出实际 Delivery Target、下一 Rail 建议和阶段总结，并等待用户批准后才转换。
 
-UI/人工 Scenario 至少需要一次真实通道 V2。API 成功、DOM 存在、Toast 出现或脚本旁路
-都不能单独证明用户 Job 通过。
+UI/人工 Scenario 至少需要一次真实通道 V2（见 [browser-verify](./references/browser-verify.md)）。
+API 成功、DOM 存在、Toast 出现、`/health` 或脚本旁路都不能单独证明用户 Job 通过。
 
 ## 用户前台输出
 
@@ -60,22 +61,16 @@ Matrix、commit、Workspace 等工程术语。正式报告仍保存完整工程�
 
 ## Fail 路由
 
-| 分类 | 下一步 |
-|---|---|
-| implementation | 纳入统一 Repair 方案，集中修复后重新统一验收 |
-| product / ux | `shape` |
-| technical-plan | `plan` |
-| test-oracle | 修订测试合同 |
-| environment / account / data | `blocked` |
-| new-request | demand pool / `shape` |
-| unknown-root-cause | `diagnose` |
+分类与下一 Rail 以 [`evidence-contract.md`](../vibe-coding/references/evidence-contract.md)
+§5 为唯一真源；本 Skill 不另维护表。
 
 不得在单个 Scenario 失败后立即修代码；所有适用 Scenario 都有结果后，才设计并执行统一 Repair。
 
 ## 声明
 
 所有 Scenario 有终态，只能说明 `matrix-accounted`；关版条件全部满足才是
-`acceptance-passed`。正式结果按
-[Validation Report](./references/validation-report.md) 输出，必须同时写通过证据、失败、
+`acceptance-passed`（二者都不是 Delivery Target，见 workflow-contract「状态词汇」）。
+正式结果写入当前 Spec 的 `validation.md`（结构见 scaffold 模板；说明见
+[Validation Report](./references/validation-report.md)），必须同时写通过证据、失败、
 Blocked、未覆盖项和限制。报告必须先写 PM 验收摘要，再写工程矩阵；内部状态不能替代
 “可交付 / 不可交付 / 受阻”的前台结论。

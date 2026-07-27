@@ -1,6 +1,6 @@
 # SDD 文档地图
 
-这些文档主要是 Codex 跨任务的交付记忆。用户不需要维护内部编号，只需要确认产品方向、
+这些文档主要是 Agent 跨任务的交付记忆。用户不需要维护内部编号，只需要确认产品方向、
 单向门和真实结果。
 
 ## 权威来源
@@ -62,12 +62,18 @@ Shape → Plan → Build(Spec) → Verify
 
 ## 状态
 
-- Version：`draft | ready | in-progress | verifying | blocked | done | archived | cancelled`
-- Delivery Target：
-  `design-ready | code-ready | dev-effective | matrix-accounted | acceptance-passed |
-  production-restored | production-delivered | user-accepted`
+四层词汇（Version / Delivery Target / Spec Run / 完成声明）以插件
+`skills/vibe-coding/references/workflow-contract.md`「状态词汇」为唯一真源。
 
-`matrix-accounted` 不等于 `acceptance-passed`；局部检查通过不等于 Version 通过。
+本仓常用摘要：
+
+- Version：`draft | ready | in-progress | verifying | blocked | done | archived | cancelled`
+- Delivery Target：`code-ready | dev-effective | production-delivered`
+- Spec Run：`ready | building | unit-testing | verifying | repairing | blocked | acceptance-passed`
+- 完成声明：`acceptance-passed | blocked | needs-authorization`
+
+`matrix-accounted`（矩阵终态）与 `design-ready` / `production-restored` **不是**
+Delivery Target；局部检查通过不等于 Version 通过。
 
 ## 检查
 

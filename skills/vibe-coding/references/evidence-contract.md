@@ -39,7 +39,49 @@ Verify 证明整份 Spec 集成后：
 
 ### Production Verification
 
-证明目标版本在生产真实生效：版本、deploy、health、关键路径、数据一致性、监控和回滚点。
+证明目标版本在**目标环境**真实生效：版本、deploy、health（仅过程信号）、**产品冒烟**、数据一致性、监控和回滚点。
+
+#### Delivery Target 闸门
+
+| Target | 含义 | 部署含义 |
+|---|---|---|
+| `code-ready` | 代码与合同就绪 | **不**自动部署 |
+| `dev-effective` | 在开发/预览环境生效 | 默认只交付该环境；若强行上生产须写清风险接受 + 加长版目标环境冒烟 |
+| `production-delivered` | 生产真实生效 | 才是正常生产发布入口 |
+
+未达声明 Target，不得把完成标签写成更高一层。
+`matrix-accounted` / `acceptance-passed` / `design-ready` / `production-restored`
+不是 Delivery Target；分层见 [`workflow-contract.md`](./workflow-contract.md)「状态词汇」。
+
+#### 铁律（违反即不得报交付）
+
+1. **`/health`、进程 active、首页 HTTP 200 ≠ 部署成功。** 有产品影响的发布必须在**目标环境**跑产品冒烟；未过或未跑 → 只能写冒烟未过 / Blocked，禁止单独写「部署成功」。
+2. **开发环境证据 ≠ 生产验收。** 禁止用开发/预览 E2E 或开发 URL 回归冒充生产交付；同 commit 也不行（数据、env、权限、预置通常不同）。
+3. **脚本证据 ≠ 判断。** 路径变更、reload 单元、环境检查清单只提供信号；发布风险定级与冒烟范围由 Agent/人声明理由，禁止把脚本输出当成已定级。
+4. **方案缺产品冒烟 → 禁止执行生产 deploy。** 仅有运维侧动作、没有目标环境用户路径核对 = 方案不合格。
+
+完成声明须带冒烟态（通过 / 未过 / Blocked+原因），不得用「已上线」单独收束。
+
+#### Deliver Gate 回写（`validation.md`）
+
+生产或目标环境交付后，至少回写：
+
+```markdown
+声明目标：
+实际达到：
+环境 / 版本：
+定级 + 理由（若适用）：
+reload / deploy：
+migration / health：
+环境门禁 / 侧车检查：
+产品冒烟（目标环境）：通过 | 未过 | Blocked+原因
+回滚点：
+Observe 结果：
+```
+
+只有**目标环境**产品冒烟通过，才能把交付推进到生产 Observe；不得用「代码已合并 / health ok」冒充已交付。
+
+宿主具体命令、URL、检查清单以 `AGENTS.md`（及产品仓 deploy 适配器，若有）为准。
 
 ## 3. 追踪链
 
@@ -82,7 +124,9 @@ Requirement
 API 成功、控件存在、Toast 出现或脚本旁路均不能单独证明用户 Job 通过。UI/人工 Scenario
 至少需要一次 V2；截图应能让读者判断场景和结果。
 
-UX 详细标准见 testing Skill 的 `references/ux-standards.md`。
+浏览器通道选型、证据落盘与身份切换细则见 testing Skill 的
+[`browser-verify.md`](../../testing/references/browser-verify.md)。
+UX 判定标准见 [`ux-standards.md`](../../testing/references/ux-standards.md)。
 
 生产/测试环境需要登录时：宿主 `AGENTS.md` 或项目约定中**已有可复用测试凭据**的，Agent
 应自行切换账号继续验收，不得默认停下来等人工登录。只有需要**用户个人账号**、OAuth 本人授权、

@@ -46,7 +46,7 @@
 
 - 验收层次：`Build Validation | Version Acceptance | Production Verification`
 - 声明范围：
-- 目标 Delivery Target：
+- 目标 Delivery Target：`code-ready | dev-effective | production-delivered`
 - 实际 Delivery Target：
 - Environment / URL：
 - Version / commit：
@@ -74,8 +74,15 @@
 
 ### Production Verification（适用时）
 
+> `/health` 与进程 active 只是过程信号；目标环境产品冒烟未过不得报生产交付。
+> 通则见 `evidence-contract.md` Deliver Gate。
+
+- 声明目标 / 实际达到：
+- 定级 + 理由（若适用）：
 - Deploy / rollback：
-- Health：
+- Health（过程）：
+- 环境门禁：
+- 产品冒烟（目标环境）：通过 | 未过 | Blocked+原因
 - 原始故障信号：
 - 核心用户路径：
 - 数据一致性：
@@ -91,4 +98,4 @@
 - 下一步：
 
 所有适用 Scenario 有终态只能声明 `matrix-accounted`；只有关版条件满足才是
-`acceptance-passed`。
+`acceptance-passed`。二者都不是 Delivery Target（见 workflow-contract「状态词汇」）。

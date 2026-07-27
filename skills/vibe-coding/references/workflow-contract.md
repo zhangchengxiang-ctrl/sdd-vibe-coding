@@ -98,17 +98,49 @@ trivial 豁免（跳过完整 Shape→Plan）见 [`vibe-coding/SKILL.md`](../SKI
 
 ## 完成声明
 
-最终只能声明以下之一：
-
-- `acceptance-passed`：每项适用验收条件都有直接证据；
-- `blocked`：未完成项、外部阻塞条件、已尝试命令和原始结果清楚可复现；
-- `needs-authorization`：准确说明不可逆动作、目标和影响。
+最终只能声明以下之一（枚举见下方「状态词汇」第 4 层）。
 
 不能用“已完成某一步”“等待用户批准”“需要新任务”“未部署”或单个测试绿灯代替结论。
 
-## 状态词汇
+## 状态词汇（唯一真源）
 
-- **持久状态**（`spec-run.md` / `handoff.md`，`check-docs.py` 校验）：
-  `ready | building | unit-testing | verifying | repairing | blocked | acceptance-passed`
-- **路由评测**（仅 `evals/` 的 `spec_run_state`，不写入交付工件）：
-  `not-started | continuous-build | batch-unit-test | batch-verify | unified-repair | completed | blocked | needs-authorization`
+> 下列四层不得混写。其它文档只引用本节；`matrix-accounted` / `design-ready` /
+> `production-restored` **不是** Delivery Target。
+
+### 1. Version 状态（`VERSION.md`）
+
+`draft | ready | in-progress | verifying | blocked | done | archived | cancelled`
+
+### 2. Delivery Target（`VERSION.md` / `validation.md` 声明目标）
+
+| Target | 含义 |
+|---|---|
+| `code-ready` | 代码与合同就绪；**不**自动部署 |
+| `dev-effective` | 在开发/预览环境真实生效 |
+| `production-delivered` | 生产真实生效 |
+
+细则与铁律见 [`evidence-contract.md`](./evidence-contract.md) Deliver Gate。
+
+### 3. Spec Run 持久态（`spec-run.md` / `handoff.md`）
+
+`ready | building | unit-testing | verifying | repairing | blocked | acceptance-passed`
+
+### 4. 完成声明（阶段结束时只能选其一）
+
+- `acceptance-passed`：每项适用验收条件都有直接证据
+- `blocked`：未完成项与外部阻塞可复现
+- `needs-authorization`：下一步是不可逆授权
+
+### 相邻但不同层（禁止塞进 Delivery Target）
+
+| 词 | 落盘 | 含义 |
+|---|---|---|
+| `matrix-accounted` | `validation.md` → Matrix | 所有适用 Scenario 已有终态 |
+| `design-ready` | 产品包 / demand-pool | Shape 切片已确认，尚未 Plan |
+| `production-restored` | Incident 记录 | 生产已止血恢复，≠ 长期根因已修 |
+| 产品能力态 | `product/README` | `shaping \| design-ready \| planned \| …` |
+
+### 仅评测（不写入交付工件）
+
+`evals/` 路由字段 `spec_run_state`：
+`not-started | continuous-build | batch-unit-test | batch-verify | unified-repair | completed | blocked | needs-authorization`

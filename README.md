@@ -85,7 +85,7 @@ make scaffold HOST=/path/to/host-repo
 | `vibe-coding` | 宽入口；路由 Shape/Plan/Build/Verify/Diagnose/Incident |
 | `design` | Shape（含探索对话、代码库 grounding、产品包） |
 | `spec` | Plan |
-| `testing` | Verify / 证据（含 UX 走查变体） |
+| `testing` | Verify / 证据（含浏览器真实通道、UX 走查变体） |
 | `debug` | Diagnose / Incident |
 
 只有 `vibe-coding` 默认可隐式触发；其余由主入口路由或显式调用。能力进 references，不另开平行 Skill。
@@ -93,6 +93,7 @@ make scaffold HOST=/path/to/host-repo
 ## 维护者
 
 见 [`evals/README.md`](./evals/README.md)。日常优先 `make verify`。
+架构与真源分层见 [`ARCHITECTURE.md`](./ARCHITECTURE.md)。
 
 ## License
 

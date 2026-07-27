@@ -41,7 +41,8 @@ Plan 是一次连续动作：**在同一阶段内一口气产出整份 Spec 的�
 2. 建立 Requirement → Scenario 映射（`requirements.md` + `scenario-spec.md`）；
 3. 形成最小但完整的技术方案与连续执行策略（`technical-plan.md`）；
 4. 写清单向门、外部依赖、授权、回滚与真实 Blocker（`technical-plan.md`）；
-5. 为整个 Spec 选择 Workspace、owner、外部 Claim 和集成重测（`technical-plan.md`）；
+5. 为整个 Spec 选择 Workspace、owner、外部 Claim 和集成重测（写入
+   `technical-plan.md` 的 Workspace Strategy 槽位）；
 6. 写验收计划（`validation.md` 骨架）、初始化 `spec-run.md` 的“交付目标”静态部分，并运行结构自检。
 
 一次产出的设计工件是：`context.md`、`requirements.md`、`technical-plan.md`、`scenario-spec.md`、

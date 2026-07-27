@@ -7,6 +7,6 @@
 | [personas-journeys.md](./personas-journeys.md) | 角色与旅程 |
 | [system-map.md](./system-map.md) | 进程 / 红线 / 代码入口（薄） |
 | [product-package-contract.md](./product-package-contract.md) | modules 层内章节合同 + 剪枝 |
-| [product-regression.md](./product-regression.md) | 产品回归：选型 / 分层 / 晋升 |
+| [product-regression.md](./product-regression.md) | 产品回归（可选）：启用条件 / 分层 / 累积 |
 
 活索引 → [`../regression-register.md`](../regression-register.md) · [`../regression/surfaces.json`](../regression/surfaces.json)

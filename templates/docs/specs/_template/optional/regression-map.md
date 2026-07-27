@@ -5,7 +5,7 @@
 
 **范围：** （从 scenario-spec 晋升的关键旅程）  
 **Out：** （不挡绿；可链 GAP）  
-**入口：** 宿主 `AGENTS.md` 中的 verify-spec / product-regression 命令
+**入口：** 宿主 `AGENTS.md` 中的回归命令（若宿主未启用产品回归，可不创建本文件）
 
 ## 分层
 
@@ -25,4 +25,4 @@
 
 - 先改本表，再改测试标题（须含 `SC-N`）  
 - Out 禁止假 Pass  
-- 晋升后更新 `regression-register` + `surfaces.json`
+- 晋升后更新 `regression-register`；宿主有机读 runner 时再更新 `surfaces.json`

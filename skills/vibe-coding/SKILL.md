@@ -19,7 +19,7 @@ description: >-
 
 - [Workflow Contract](./references/workflow-contract.md)：目标、授权、推进和完成语义；
 - [Workspace Contract](./references/workspace-contract.md)：Local、Worktree、分支和 PR（含托管 / CLI Worktree）；
-- [Evidence Contract](./references/evidence-contract.md)：验证层次和完成声明；
+- [Evidence Contract](./references/evidence-contract.md)：验证层次、Deliver Gate 和完成声明；
 - Diagnose / Incident → Skill `debug`。
 
 ## 路由
