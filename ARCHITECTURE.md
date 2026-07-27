@@ -21,6 +21,7 @@
   skills/spec
   skills/testing
   skills/debug
+  skills/dispatch-codex   # 可选：Cursor/Claude 指挥 → Codex 施工
 
 宿主脚手架层（可被 scaffold 复制）
   templates/AGENTS.md          # 唯一宿主项目事实面
@@ -34,12 +35,13 @@
 
 ## 真源边界
 
-- 流程、状态词、完成声明、Harness 适配、证据分级：只改 `workflow-contract.md`
+- 流程、状态词、完成声明、Harness 适配（含可选指挥施工）、证据分级：只改 `workflow-contract.md`
 - 验证层次、行为优先、Deliver Gate、Fail 分类：只改 `evidence-contract.md`
 - Workspace / Worktree / Claim：只改 `workspace-contract.md`
 - 产品包章节与剪枝：只改 `skills/design/references/product-package.md`
 - 产品回归启用条件与分层：只改 `skills/testing/references/product-regression.md`
 - 事实映射门、纵向切片、测试合同门、Plan 流程：只改 `skills/spec/SKILL.md`（模板只留槽位）
+- Cursor/Claude → Codex 派单与指挥侧验收：只改 `skills/dispatch-codex/SKILL.md`
 - 单个 Rail 的前台话术与执行约束：改对应 `skills/<rail>/SKILL.md`
 - 宿主填写槽位与文档模板：改 `templates/docs/**` 与 `templates/AGENTS.md`
 - 结构校验规则：改 `evals/tools/check_docs.py`
@@ -57,6 +59,7 @@
 | 调整产品回归策略 | `skills/testing/references/product-regression.md` | `regression-register.md`, `regression-map.md` |
 | 调整产品包骨架 | `skills/design/references/product-package.md` | `design/SKILL.md` |
 | 调整测试合同结构 | `tests.md` 模板 + `spec/SKILL.md` | `check_docs.py`, `testing/SKILL.md` |
+| 调整指挥施工派单/验收 | `dispatch-codex/SKILL.md` + workflow「指挥施工」 | `vibe-coding/SKILL.md`, `verify.sh` |
 
 ## Spec 文件名迁移（历史对照）
 

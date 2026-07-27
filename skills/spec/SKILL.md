@@ -2,16 +2,29 @@
 name: spec
 description: >-
   Plan 专项 Skill：将已确认产品切片转成一份完整 Spec 执行合同、测试用例与实施方案。
-  先做入口事实映射；写完 tests.md（Given/When/Then）才算 Plan 可实施；按纵向切片拆分；
-  Unverified 不得进 Lock/P0。仅在 vibe-coding 已路由到 Plan，或用户显式调用本 Skill 时使用。
+  用户说「切 Spec / Plan / 拆到能编码」即授权落盘；先做入口事实映射，纵向切片，写完
+  tests.md（Given/When/Then）才可请求 Build。Unverified 不得进 Lock/P0。质量条默认执行，
+  不要求用户复述硬要求。仅在 vibe-coding 已路由到 Plan，或用户显式调用本 Skill 时使用。
 ---
 
 # Spec：Plan 技术方案
 
 只在 Plan 模式使用。先读宿主 `AGENTS.md`、已确认产品真源、`workflow-contract.md`（含
-**证据分级**与 **Harness 适配**）、`workspace-contract.md` 与 `evidence-contract.md`。
-新建 Spec 与跨阶段批准以 [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)
-硬闸与阶段闸门为准。
+**薄提示词原则**、**证据分级**、**Harness 适配**、**Plan 落盘授权**）、`workspace-contract.md`
+与 `evidence-contract.md`。新建 Spec 与跨阶段批准以
+[`workflow-contract.md`](../vibe-coding/references/workflow-contract.md) 硬闸与阶段闸门为准。
+
+## 默认质量条（用户不必写出）
+
+进入 Plan 后**自动**执行；用户未写「硬要求」也不得降级：
+
+1. 先查真实代码 / Schema / 配置，再写 Requirement；禁止先发明 ManagedRoot / readiness / registry；
+2. 按真实入口**纵向**切片；禁止 root/resolver/ACL/package 横向任务轴；
+3. `Unverified` 不进 P0 / Lock / 实施阻断；
+4. `tests.md` 每个 P0 至少 1 success + 1 failure/permission，完整 Given/When/Then；
+5. 本阶段只落盘 Spec，**不改业务代码**；
+6. 用户已说切 Spec/Plan → **直接写入** `docs/specs/<id>/`，禁止再问「批准落盘 Spec」；
+7. 齐套后只出一张卡：能否批准进入 Build + Unverified 清单。
 
 ## 核心工件
 
@@ -89,13 +102,16 @@ Plan 是一次连续动作：**在同一阶段内一口气产出整份 Spec 的�
 6. 为整个 Spec 选择 Workspace、owner、外部 Claim 和集成重测（Workspace Strategy 槽位）；
 7. 初始化 `run.md` 状态头，并结构自检。
 
-一次产出的设计工件是：`contract.md`、`tests.md`、`plan.md`，以及 `run.md` 的静态头。
+一次产出的设计工件是：`VERSION.md`、`contract.md`、`tests.md`、`plan.md`，以及 `run.md` 的静态头
+（按需 `optional/`）。调查结论边查边写进文件，**禁止**「先口头拟计划 → 请批准落盘 → 再写文件」。
+
 **禁止“写一个文件就停下来问用户”**；只有遇到产品互斥选择、不可逆授权或真实外部阻塞时才在
 阶段内暂停。内部并行只隔离 owner 和 Workspace，不改变 Spec 是唯一交付单位的事实。
 
 **禁止**：同一会话在无独立事实复核的情况下，仅凭文档自洽宣布「完整合理 / 可以实施」。
 **禁止**：`tests.md` 只有索引表、没有 Given/When/Then 正文时宣称可实施。
+**禁止**：因用户提示词未列质量条而跳过事实映射 / 纵向切片 / TDD 用例。
 
 阶段边界语义以 [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md) 为唯一真源。
-Plan 阶段全部工件产出后，按该合同向用户用一张卡汇总技术方案、纵向切片、测试合同、执行边界、
+Plan 阶段全部工件**已落盘**后，按该合同向用户用一张卡汇总技术方案、纵向切片、测试合同、执行边界、
 风险和未决项（区分 Verified / Unverified），取得明确批准后才进入 Build；不得要求用户重新发起任务。

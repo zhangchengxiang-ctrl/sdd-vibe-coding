@@ -2,36 +2,42 @@
 name: vibe-coding
 description: >-
   Spec-Driven Delivery 跨端主入口（Cursor / Claude / Codex）。触发：我希望 / 优化体验 /
-  讨论产品 / 聊聊方向 / 拆解 / 学习这个 repo / 排期 / 准备实施 / 开始做 / 实现 / 构建 /
-  验收 / UX走查 / 修复 / 排障 / vibe。先读宿主 AGENTS.md；未明示开始做且无已确认 Spec →
-  只写 docs/product/，不改业务代码。完成单元见 workflow-contract「Harness 适配」：
-  Codex 整份 Spec 须 Goal；普通回合只承诺一个纵向切片。
+  讨论产品 / 聊聊方向 / 拆解 / 学习这个 repo / 排期 / 准备实施 / 切 Spec / 开始做 /
+  实现 / 构建 / 验收 / UX走查 / 修复 / 排障 / vibe / 派 Codex / 用 Codex 做。先读宿主
+  AGENTS.md；未明示开始做且无已确认 Spec → 只写 docs/product/，不改业务代码。质量条在
+  插件默认执行。Codex：整份 Spec 须 Goal；普通回合只承诺一个纵向切片。Cursor/Claude 上
+  用户明示派 Codex 时走指挥施工（Skill dispatch-codex）。
 ---
 
 # Vibe Coding
 
-用户表达目标和关键选择；体系负责实施与验收。内部步骤只用于推进工作，不能成为最终回复、
-要求用户重新发起或中止当前交付的理由。
+用户只需表达**意图**和关键选择；质量条、调查顺序、切片方式与验收标准由插件默认执行。
+内部步骤只用于推进工作，不能成为最终回复、要求用户重新发起或中止当前交付的理由。
+薄提示词对照见 [`workflow-contract.md`](./references/workflow-contract.md)「薄提示词原则」。
+可选成本路径见同文件「指挥施工 Harness」与 Skill [`dispatch-codex`](../dispatch-codex/SKILL.md)。
 
 ## 必读
 
 先读宿主 `AGENTS.md`，再按当前问题读取：
 
-- [Workflow Contract](./references/workflow-contract.md)：目标、授权、**Harness 适配**、证据分级、推进和完成语义；
+- [Workflow Contract](./references/workflow-contract.md)：目标、授权、**薄提示词**、**Harness 适配**（含可选指挥施工）、证据分级、推进和完成语义；
 - [Workspace Contract](./references/workspace-contract.md)：Local、Worktree、分支和 PR（含托管 / CLI Worktree）；
 - [Evidence Contract](./references/evidence-contract.md)：验证层次、行为优先、Deliver Gate 和完成声明；
 - Diagnose / Incident → Skill `debug`。
 
 ## 路由
 
-| 用户目标 | 当前模式 |
+| 用户意图（自然语言即可） | 当前模式 |
 |---|---|
 | 澄清愿望、体验和产品方向（含聊聊/辩论、拆解 repo） | Shape → Skill `design` |
-| 形成技术方案和完整执行合同 | Plan → Skill `spec` |
-| 实施、修复并验收一个已确认 Spec | Build |
-| 只验收既有实现（含 UX 走查 / 体验审计） | Verify → Skill `testing` |
+| **派 Codex / 用 Codex 做 / 让 Codex 施工**（且当前在 Cursor/Claude） | **指挥施工** → Skill `dispatch-codex`（一次一个完成单元） |
+| 切 Spec / Plan / 按产品包拆到能编码 | Plan → Skill `spec`（**直接落盘**，勿再要落盘批准） |
+| Spec 批准了 / 开始做 / 实现 | Build（Codex 默认首个纵向切片；指挥模式下改派 Codex） |
+| 验收 / UX 走查 | Verify → Skill `testing`（指挥模式下建议指挥侧验收，maker ≠ grader） |
 | 只定位复杂或线上问题 | Diagnose |
 | 紧急恢复生产 | Incident |
+
+已在 **Codex** 会话中时：忽略「派 Codex」，按纯 Codex Harness 自行 Plan/Build，勿调用 `dispatch-codex`。
 
 ### trivial 豁免（可跳过完整 Shape→Plan）
 
@@ -53,6 +59,7 @@ description: >-
 
 1. 建立一个用户可判断的交付目标、范围和**当前完成单元**（整份 Spec 或一个纵向切片）；
 2. 读取当前事实并执行下一可执行步骤；Codex 上整份 Spec 长程交付须先 Goal（见合同 Harness 节）；
+   指挥模式下由 `dispatch-codex` 派单，指挥侧验收后再向用户结案；
 3. Build 完成当前完成单元的实现后，只运行完整的单元测试批次；测试开始后禁止修改代码；
 4. Verify 统一运行集成、场景与真实通道测试，完整收集 Fail；**行为/权限 Oracle 优先于文档自洽**；
 5. 所有测试结束后先形成一份统一修复方案，再进入 Repair 集中修改并回验；

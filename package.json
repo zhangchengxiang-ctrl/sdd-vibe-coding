@@ -1,6 +1,6 @@
 {
   "name": "sdd-vibe-coding",
-  "version": "0.6.0",
+  "version": "0.6.2",
   "description": "Spec-Driven Delivery skills plugin for Cursor, Claude Code, and Codex: Shape, Plan, continuous Spec Build, Verify, Diagnose, Incident.",
   "private": true,
   "license": "MIT",
