@@ -6,7 +6,7 @@
 
 ## 入口事实映射（Plan 硬前置）
 
-> 未填完本表 → 不得把技术假设写入 P0 / Lock / Blocker / DDL。证据级见 `workflow-contract.md`。
+> 填完本表后再把技术假设写入 P0 / Lock / Blocker / DDL。证据级见 `workflow-contract.md`。
 
 | 入口 | actor | 业务实体 / 表关系 | 可信路径如何派生 | 代码调用点 | 越权反例 | 证据级 |
 |---|---|---|---|---|---|---|
@@ -22,7 +22,7 @@
 |---|---|---|---|---|---|
 | R-001 | | P0 | Verified / Unverified | | T-001, T-002 |
 
-> `Unverified` 不得作为 P0 实施阻断或 Requirements Lock 条件；先补证据或降级。
+> 仅 `Verified` 作为 P0 实施阻断或 Requirements Lock 条件；`Unverified` 先补证据或降级。
 > 完整 Given / When / Then 只写在 `tests.md`，此处不重复步骤。
 
 ## 非功能与约束

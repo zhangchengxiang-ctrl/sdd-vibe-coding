@@ -11,7 +11,11 @@ description: >-
 
 本 Skill 只负责已确认的 Shape Rail。先读宿主 `AGENTS.md`、产品真源和
 [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)。
-用户只需能描述产品问题、判断取舍和确认结果；不得要求其理解实现结构或内部交付术语。
+有体验或 UI 诉求时再读
+[`design-standards/ux.md`](../vibe-coding/references/design-standards/ux.md)，有界面时加读
+[`visual.md`](../vibe-coding/references/design-standards/visual.md)（加载合同见
+[design-standards/README.md](../vibe-coding/references/design-standards/README.md)）。
+用户描述产品问题、判断取舍和确认结果即可；实现结构与内部交付术语由插件消化。
 
 ## 目标
 
@@ -25,10 +29,10 @@ description: >-
 - 首个可交付价值切片；
 - 只需要用户决定的互斥或不可逆事项。
 
-Shape 禁止创建实施 Spec、修改业务代码、部署或把技术偏好冒充产品决定。
-写代码前硬闸与常见误判话术 → [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)。
-权限 / 数据边界类诉求进入 Plan 前，应先有可读的代码与 Schema 事实（见 Plan「事实映射门」）；
-不得在未查关系时发明平台级抽象。
+Shape 产出：`docs/product/` 切片与理解卡。  
+**硬门：** 本轨不创建实施 Spec、不改业务代码、不部署；技术偏好不替代产品决定。  
+写代码前硬闸 → [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)。  
+权限 / 数据边界类诉求：进入 Plan 前先有可读的代码与 Schema 事实（见 Plan「事实映射门」）。
 
 ## 工作方式
 
@@ -94,7 +98,7 @@ docs/product/modules/<slug>/
 只创建当前问题需要的层，不为空目录凑文档。章节合同与剪枝以
 [`product-package.md`](./references/product-package.md) 为唯一真源。
 
-| 层 | 负责 | 不负责 |
+| 层 | 负责 | 本层边界外 |
 |---|---|---|
 | Experience | 角色、旅程、操控面、失败体验 | 表结构、算法 |
 | Product model | 能力、对象、状态、权限、冻结决策 | UI 配置、实现代码 |
@@ -103,6 +107,9 @@ docs/product/modules/<slug>/
 | Delivery | 首切片、后续切片、风险和指标 | Spec 切片 / Plan |
 
 简单诉求可以只写 demand pool 或单页设计，不强制五层产品包。
+
+有 UI 时，落盘或确认产品包前按 `ux.md` / `visual.md` 自检（失败与权限路径、状态可见、可访问性底线）；
+违反项写入切片非目标或待决。系统架构分层归 Plan。
 
 ## 交付给 Plan
 
@@ -117,6 +124,5 @@ Shape 结束时在内部工件保存：
 - 产品真源路径；
 - 下一 Rail：`plan`。
 
-用户前台只给理解卡、必要的决策卡、确认后的进度卡和一句明确下一步；阶段结束时必须请求
-用户批准进入 Plan（阶段闸门规则见 `workflow-contract.md` 的“阶段闸门”一节）。不要在同一
-对话继续技术拆解或编码。
+用户前台只给理解卡、必要的决策卡、确认后的进度卡和一句明确下一步；阶段结束时请求
+用户批准进入 Plan（阶段闸门见 `workflow-contract.md`）。下一阶段再做技术拆解或编码。

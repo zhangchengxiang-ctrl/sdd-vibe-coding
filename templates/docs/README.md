@@ -7,6 +7,8 @@
 | 事实 | 唯一真源 |
 |---|---|
 | 项目命令、环境、架构、红线、就绪度 | `AGENTS.md` |
+| 社区设计底线（系统架构 / UX / 视觉） | 插件 `design-standards/`（AGENTS 可覆盖） |
+| 可选 as-built 边界与 ADR | 仓库 `docs/architecture/`（非 SDD 保留路径） |
 | 产品愿望与长期蓝图 | `product/` |
 | 当前版本实施合同 | `specs/<id>/`（`contract` + `tests` + `plan` + `run`） |
 | 活跃任务、Workspace、PR 和下一步 | `reference/handoff.md`（索引，不复制合同正文） |
@@ -15,7 +17,7 @@
 | 验收证据 | `specs/<id>/run.md`（附件路径写在 Evidence 列） |
 | 生产事故 | `operations/incidents/` |
 
-同一规则不要复制到多个层次；其他文档只链接权威来源。
+同一规则只维护一处；其他文档只链接权威来源。
 
 ### SDD 保留路径（独占语义）
 

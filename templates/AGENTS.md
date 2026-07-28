@@ -10,12 +10,13 @@
 - 未明示「开始做 / 实现 / 按这个来 / 构建」、且无已确认 `<SDD docs root>/specs/<id>/` → 只写 `<SDD docs root>/product/`，**不改业务代码**。
 - 无 `AGENTS.md` / SDD 文档树时先跑插件 `scripts/scaffold.sh`（存量推荐 `PROFILE=minimal` 或默认 `detect`；宿主已占用 `docs/product` 时用 `--root=docs/sdd`）；scaffold **不算**编码许可。硬冲突见探测输出的 `BLOCK`。
 - 技能里写的 `docs/product`、`docs/specs` 均相对本文件的 **SDD docs root**（默认 `docs`）。
-- 未经当前代码、Schema/约束、配置或运行证据验证的关键技术判断，必须标为 `Unverified`；**不得**写成事实、P0 Requirement、Lock、Blocker、DDL 条件，也不得据此宣称可实施。
+- 未经当前代码、Schema/约束、配置或运行证据验证的关键技术判断，标为 `Unverified`；仅 `Verified` 可进 P0 Requirement、Lock、Blocker、DDL 条件与可实施宣称。
 - Codex：整份 Spec 长程「不要中途停止」→ 使用持久 Goal；普通回合只承诺一个纵向切片。
-- 用户自然语言意图即可触发 Plan/Build；质量条（事实映射、纵向切片、TDD 用例）由插件默认执行，不要求用户复述。
-- Cursor/Claude 上可说「派 Codex」走可选指挥施工（Skill `dispatch-codex`）；默认
-  `gpt-5.6-sol` × medium（加码 high）；派单必须 `approval-policy=never`（禁 on-request）；
-  Build 默认 `danger-full-access`；禁止 Terra/Luna 做 Plan/Build。纯 Codex 会话不需要派单。
+- 用户自然语言意图即可触发 Plan/Build；质量条（事实映射、纵向切片、TDD 用例）由插件默认执行。
+- Cursor/Claude 上可说「派 Codex」走可选指挥施工（Skill `dispatch-codex`）；经
+  `codex-dispatch.sh` / `make codex-dispatch` 派发；默认 `gpt-5.6-sol` × medium（加码 high）；
+  `approval-policy=never`；Build 默认 `danger-full-access`。  
+  **硬门：** 派发不经 `user-codex` / CallMcpTool。纯 Codex 会话自行 Plan/Build。
 - 本仓命令、环境、单向门以下文为准。
 
 ## 项目
@@ -58,10 +59,18 @@
 
 ## 架构与写入边界
 
+> 默认可执行原则：插件 `design-standards`（system-architecture / ux / visual）。
+> 下列空项 = 沿用插件默认；填写即覆盖。可选站立文档：`docs/architecture/`。
+
 - 进程 / 部署单元：
+- 分层或目录约定：
+- 依赖方向（一句话或箭头）：
 - 公共 API / schema 真源：
 - 生成物及生成命令：
-- 不得修改的区域：
+- 模块 README 约定路径：
+- 写入边界 / 只读区域：
+- 体验 / 视觉 / 无障碍例外（相对插件 ux·visual）：
+- 设计系统 / 品牌真源（若有）：
 
 ## 验证
 
@@ -87,7 +96,7 @@
 
 ## 单向门
 
-只列本仓真实存在、执行前需要批准的事项；不要保留不适用的通用示例。
+只列本仓真实存在、执行前需要批准的事项；空槽删掉不适用的示例行。
 
 - 事项 / 触发条件：
 - 批准人或政策：

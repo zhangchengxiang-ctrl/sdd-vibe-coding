@@ -34,7 +34,7 @@
   - 结论：
   - 影响的 Requirement / Test：
 
-每轮最多集中询问 1–3 个问题；禁止让用户补写完整需求。
+每轮最多集中询问 1–3 个问题；聚焦互斥选择，由 Agent 起草其余。
 
 锁定内容确认后，将 `VERSION.md` 的 Requirements Lock 设为 `locked`（或用户改目标时
 `reopened`）。锁定后技术选型和可逆细节由体系自主决定；非阻断问题集中到下一次 Demo /

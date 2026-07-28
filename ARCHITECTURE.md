@@ -13,6 +13,7 @@
   skills/vibe-coding/references/workflow-contract.md
   skills/vibe-coding/references/evidence-contract.md
   skills/vibe-coding/references/workspace-contract.md
+  skills/vibe-coding/references/design-standards/   # 系统架构 / UX / 视觉社区底线
   skills/design/references/product-package.md
   skills/testing/references/product-regression.md
 
@@ -26,6 +27,7 @@
 宿主脚手架层（可被 scaffold 复制）
   templates/AGENTS.md          # 唯一宿主项目事实面
   templates/docs/**            # 槽位与空表，不复制合同正文
+  templates/architecture/**    # 可选：docs/architecture/ 边界槽位（full profile）
   scripts/scaffold.sh          # detect|minimal|full；--root / SDD_ROOT；探测 OK/SKIP/BLOCK；永不覆盖
   skills/.../docs-root.md      # 宿主 AGENTS「SDD docs root」解析约定
 
@@ -40,14 +42,16 @@
 - 验证层次、行为优先、Deliver Gate、Fail 分类：只改 `evidence-contract.md`
 - Workspace / Worktree / Claim：只改 `workspace-contract.md`
 - 产品包章节与剪枝：只改 `skills/design/references/product-package.md`
+- 系统架构 / UX / 视觉社区底线：只改 `skills/vibe-coding/references/design-standards/`
+  （Verify 接线薄页 `skills/testing/references/ux-standards.md`；启发式正文在 design-standards）
 - 产品回归启用条件与分层：只改 `skills/testing/references/product-regression.md`
-- 事实映射门、纵向切片、测试合同门、Plan 流程：只改 `skills/spec/SKILL.md`（模板只留槽位）
-- Cursor/Claude → Codex 派单与指挥侧验收：只改 `skills/dispatch-codex/SKILL.md`
+- 事实映射门、纵向切片、测试合同门、Plan 流程、**check_spec 机检**：只改 `skills/spec/`（含 `scripts/check_spec.py`）
+- Cursor/Claude → Codex 派单与指挥侧验收：只改 `skills/dispatch-codex/SKILL.md`（CLI 预检同目录 `scripts/`）
 - 单个 Rail 的前台话术与执行约束：改对应 `skills/<rail>/SKILL.md`
 - 宿主填写槽位与文档模板：改 `templates/docs/**` 与 `templates/AGENTS.md`
 - 结构校验规则：改本机 `evals/tools/check_docs.py`（公开仓无此目录）
 
-禁止在 `templates/docs` 复制合同正文；模板只保留最小落盘结构并链接合同真源。
+`templates/docs` 只保留最小落盘结构并链接合同真源；合同正文在 skills。
 
 ## 常见改动路径
 
@@ -59,6 +63,8 @@
 | 调整 optional 文档策略 | `optional/README.md` | 对应 optional 模板 |
 | 调整产品回归策略 | `skills/testing/references/product-regression.md` | `regression-register.md`, `regression-map.md` |
 | 调整产品包骨架 | `skills/design/references/product-package.md` | `design/SKILL.md` |
+| 调整设计规范包 | `skills/vibe-coding/references/design-standards/` | `design`/`spec`/`testing` SKILL、`ux-standards.md`、AGENTS 槽位、`check_spec` |
+| 调整 Spec 机检 | `skills/spec/scripts/check_spec.py` | `verify.sh` fixtures、`dispatch-codex` 预检、Makefile |
 | 调整测试合同结构 | `tests.md` 模板 + `spec/SKILL.md` | `check_docs.py`, `testing/SKILL.md` |
 | 调整指挥施工派单/验收 | `dispatch-codex/SKILL.md` + workflow「指挥施工」 | `vibe-coding/SKILL.md`, `verify.sh` |
 

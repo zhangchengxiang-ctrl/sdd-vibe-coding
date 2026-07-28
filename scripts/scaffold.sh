@@ -284,6 +284,21 @@ for name in AGENTS.md CLAUDE.md; do
   fi
 done
 
+# Optional host architecture slots (full only; always under docs/architecture, not SDD_ROOT)
+if [[ "$EFFECTIVE_PROFILE" == "full" && -d "$TEMPLATES/architecture" ]]; then
+  while IFS= read -r -d '' file; do
+    rel="${file#"$TEMPLATES/architecture/"}"
+    dest="$TARGET/docs/architecture/$rel"
+    if [[ -e "$dest" ]]; then
+      echo "  SKIP docs/architecture/$rel (exists)"
+      WOULD_SKIP=$((WOULD_SKIP + 1))
+    else
+      echo "  OK   + would write docs/architecture/$rel"
+      WOULD_WRITE=$((WOULD_WRITE + 1))
+    fi
+  done < <(find "$TEMPLATES/architecture" -type f -print0 | sort -z)
+fi
+
 if [[ "$SDD_ROOT" != "docs" ]]; then
   echo "  NOTE SDD root is '$SDD_ROOT' — skills must read AGENTS.md «SDD docs root» and map docs/product → $SDD_ROOT/product"
 fi
@@ -340,5 +355,17 @@ while IFS= read -r -d '' file; do
     echo "  + $SDD_ROOT/$rel"
   fi
 done < <(find "$TEMPLATES/docs" -type f -print0 | sort -z)
+
+if [[ "$EFFECTIVE_PROFILE" == "full" && -d "$TEMPLATES/architecture" ]]; then
+  while IFS= read -r -d '' file; do
+    rel="${file#"$TEMPLATES/architecture/"}"
+    dest="$TARGET/docs/architecture/$rel"
+    if [[ ! -e "$dest" ]]; then
+      mkdir -p "$(dirname "$dest")"
+      cp "$file" "$dest"
+      echo "  + docs/architecture/$rel"
+    fi
+  done < <(find "$TEMPLATES/architecture" -type f -print0 | sort -z)
+fi
 
 echo "scaffold: done (profile=$EFFECTIVE_PROFILE sdd_root=$SDD_ROOT)"

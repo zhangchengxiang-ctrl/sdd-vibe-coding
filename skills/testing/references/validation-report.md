@@ -16,4 +16,4 @@
   「可交付 / 不可交付 / 受阻」的前台结论
 - 所有适用 Test 有终态 → 只能声明 `matrix-accounted`；关版条件满足 →
   `acceptance-passed`（二者都不是 Delivery Target）
-- **禁止**回写 `tests.md` 的 Then / Oracle 为实际观察
+- Oracle 写在 `tests.md`；观察结果只写 `run.md`

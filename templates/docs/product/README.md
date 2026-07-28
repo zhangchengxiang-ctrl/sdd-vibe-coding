@@ -22,7 +22,7 @@
 | C-001 | | `modules/<slug>/` | shaping | |
 
 能力态（本表）：`shaping | design-ready | planned | partially-delivered | accepted | archived`。  
-demand 条目态见 `demand-pool.md`，**禁止**与本表混用同一行。
+demand 条目态见 `demand-pool.md`，与本表分表维护（不同行 / 不同文件）。
 
 ## 三池流转
 

@@ -1,7 +1,7 @@
 # Shape：代码库 grounding（只读拆解）
 
 当 Shape 需要从**现有代码**或**参考仓库**建立事实时使用；不是独立 Rail。
-默认只读代码；写入 `docs/product/` 须用户确认。不满足写码硬闸时禁止改业务代码。
+默认只读代码；写入 `docs/product/` 须用户确认。写业务代码须满足 workflow 写码硬闸。
 
 ## 何时启用
 
@@ -10,7 +10,7 @@
 - 研究外部参考实现，准备回填本仓能力 / gap
 - **存量首次接入 SDD**（已有 `docs/` / wiki，刚 scaffold）：走下方 Brownfield bootstrap
 
-## 探测（禁止写死路径）
+## 探测（按宿主约定）
 
 Glob / Read：`AGENTS.md` · `docs/product/` · `docs/_host/` · openapi · `apps|backend|frontend|src`
 
@@ -20,9 +20,9 @@ Glob / Read：`AGENTS.md` · `docs/product/` · `docs/_host/` · openapi · `app
 
 1. 确认已 `scaffold`（`minimal`/`detect`；冲突可用 `--root=docs/sdd`）；有 `BLOCK` 先处理。
 2. 读 `AGENTS.md` 的 **SDD docs root**（缺省 `docs`）；其后 `docs/product` 均相对该根。
-3. 盘点已有文档（宿主 `docs/**`、顶层 README、外部 wiki）→ 产出**链接表**；**默认不整页搬进** product。
+3. 盘点已有文档（宿主 `docs/**`、顶层 README、外部 wiki）→ 产出**链接表**；默认链接优先于整页搬迁。
 4. 填 `AGENTS.md` 中可核验的命令 / URL / 就绪度（空槽才写）。
-5. 用户确认后：只回填**当前切片相关**的 `modules/<slug>/` 与 `gap-register` 必要行；禁止为「整齐」批量空建 `foundation/` 全套。
+5. 用户确认后：只回填**当前切片相关**的 `modules/<slug>/` 与 `gap-register` 必要行。
 
 ## 必做产出（草稿，确认后落盘）
 

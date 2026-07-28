@@ -3,31 +3,40 @@ name: spec
 description: >-
   Plan 专项 Skill：将已确认产品切片转成一份完整 Spec 执行合同、测试用例与实施方案。
   用户说「切 Spec / Plan / 拆到能编码」即授权落盘；先做入口事实映射，纵向切片，写完
-  tests.md（Given/When/Then）才可请求 Build。Unverified 不得进 Lock/P0。质量条默认执行，
-  不要求用户复述硬要求。仅在 vibe-coding 已路由到 Plan，或用户显式调用本 Skill 时使用。
+  tests.md（Given/When/Then）才可请求 Build。仅 Verified 进 Lock/P0。质量条默认执行。
+  仅在 vibe-coding 已路由到 Plan，或用户显式调用本 Skill 时使用。
 ---
 
 # Spec：Plan 技术方案
 
 只在 Plan 模式使用。先读宿主 `AGENTS.md`、已确认产品真源、`workflow-contract.md`（含
 **薄提示词原则**、**证据分级**、**Harness 适配**、**Plan 落盘授权**）、`workspace-contract.md`
-与 `evidence-contract.md`。新建 Spec 与跨阶段批准以
+与 `evidence-contract.md`，以及
+[`design-standards/system-architecture.md`](../vibe-coding/references/design-standards/system-architecture.md)
+（有 UI 时加 [`ux.md`](../vibe-coding/references/design-standards/ux.md) /
+[`visual.md`](../vibe-coding/references/design-standards/visual.md)；加载合同见
+[README](../vibe-coding/references/design-standards/README.md)）。
+新建 Spec 与跨阶段批准以
 [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md) 硬闸与阶段闸门为准。
 
-## 默认质量条（用户不必写出）
+## 默认质量条
 
-进入 Plan 后**自动**执行；用户未写「硬要求」也不得降级：
+进入 Plan 后自动执行：
 
-1. 先查真实代码 / Schema / 配置，再写 Requirement；禁止先发明 ManagedRoot / readiness / registry；
-2. 按真实入口**纵向**切片；禁止 root/resolver/ACL/package 横向任务轴；
-3. `Unverified` 不进 P0 / Lock / 实施阻断；
+1. 先查真实代码 / Schema / 配置，再写 Requirement；
+2. 按真实入口**纵向**切片；
+3. 仅 `Verified` 进 P0 / Lock / 实施阻断；
 4. `tests.md` 每个 P0 至少 1 success + 1 failure/permission，完整 Given/When/Then；
-5. 本阶段只落盘 Spec，**不改业务代码**；
-6. 用户已说切 Spec/Plan → **直接写入** `docs/specs/<id>/`，禁止再问「批准落盘 Spec」；
+5. 本阶段只落盘 Spec（不改业务代码）；
+6. 用户已说切 Spec/Plan → **直接写入** `docs/specs/<id>/`；
 7. 齐套后只出一张卡：能否批准进入 Build + Unverified 清单；
-8. **骨架以本节「核心工件」为准**：只落盘 `VERSION` / `contract` / `tests` / `plan` / `run`。
-   若宿主 `docs/specs/_template/` 仍是旧文件名（`context` / `requirements` / `tasks` /
-   `validation` / `scenario-spec` 等），**忽略模板文件名**，不得照抄旧骨架。
+8. **骨架**：落盘 `VERSION` / `contract` / `tests` / `plan` / `run`；
+9. **架构与设计边界轻门**：触及新入口 / 跨层 / 新存储 / 新权限模型 / 新部署单元时，
+   `plan.md` 按 `system-architecture.md` §7 写明沿用或新开边界、C4 层级、ADR、Unverified；
+   有 UI 时补 UX/视觉约束。齐套后再请求 Build。
+10. **机检**：宣称 Plan 可实施或派 Build 前，运行
+    `python3 <plugin>/skills/spec/scripts/check_spec.py <host> <spec-id>`
+   （见 [`scripts/check_spec.py`](./scripts/check_spec.py)）。通过后再进 Build / 派 Codex。
 
 ## 核心工件
 
@@ -44,11 +53,11 @@ docs/specs/<id>/
 `plan.md` 定义怎么做与隔离边界；`run.md` 是 Build/Verify/Repair 的唯一运行态。
 
 `run.md` 由 scaffold 随模板复制。Plan 只初始化其状态头（若需要）；批次结果、追踪矩阵、
-Fail/Repair、关版结论由 Build/Verify 填写，**Plan 不得填充结果**。
+Fail/Repair、关版结论由 Build/Verify 填写。
 
 ## 事实映射门（Plan 硬前置）
 
-在写 Requirement / plan 硬合同之前，必须在 `contract.md` 填完**入口事实映射**：
+在写 Requirement / plan 硬合同之前，在 `contract.md` 填完**入口事实映射**：
 
 | 入口 | actor | 业务实体 / 表关系（含 FK） | 可信路径如何派生 | 代码调用点 | 越权反例 | 证据级 |
 |---|---|---|---|---|---|---|
@@ -56,36 +65,36 @@ Fail/Repair、关版结论由 Build/Verify 填写，**Plan 不得填充结果**�
 
 规则：
 
-1. **表关系与调用点未填完 → 不开始**设计抽象（ManagedRoot、通用 registry、默认 DDL 等）。
-2. 仅 `Verified` 可进入 P0 Requirement、Requirements Lock、实施阻断、DDL 条件。
-3. `Unverified` 只能列在「待验证」；先调查升级为 Verified，或明确降级为非阻断假设。
-4. 「字段存了绝对路径」**不等于**「没有稳定真源」；必须先验证能否用业务 ID / owner 关系重解析。
-5. 宣称「可以实施」须对每个 In-scope 入口具备：输入 → 实体解析 → 授权 → canonical path → 操作 → 越权拒绝的证据链（或明确标 Unverified 且不进硬闸）。
+1. 表关系与调用点填完后再设计抽象；
+2. 仅 `Verified` 进入 P0 Requirement、Requirements Lock、实施阻断、DDL 条件；
+3. `Unverified` 列在「待验证」；调查升级为 Verified，或明确降级为非阻断假设；
+4. 「字段存了绝对路径」时，先验证能否用业务 ID / owner 关系重解析；
+5. 宣称「可以实施」时，每个 In-scope 入口具备：输入 → 实体解析 → 授权 → canonical path → 操作 → 越权拒绝的证据链（或明确标 Unverified 且不进硬闸）。
 
 ## 测试合同门（TDD · Plan 硬闸）
 
-在宣称 Plan 可实施 / 请求进入 Build 之前，`tests.md` 必须满足：
+在宣称 Plan 可实施 / 请求进入 Build 之前，`tests.md` 满足：
 
 1. 每个 P0 Requirement 至少映射 **1 条 success + 1 条 failure/permission**（`T-xxx`）；
-2. 每条用例含完整 **Given / When / Then（Oracle）**；Then 必须是可观察断言，禁止「功能正常」；
+2. 每条用例含完整 **Given / When / Then（Oracle）**；Then 为可观察断言；
 3. 层（V0–V3）与 Channel 已声明；自动化路径或 `manual-only` + 原因已写明；
-4. 未完成上述条款 → **不得**进入 Build。
+4. 上述齐套后再进入 Build。
 
-预期写在 `tests.md`；结果只写 `run.md`。禁止把 Oracle 改成实际观察。
+预期写在 `tests.md`；结果只写 `run.md`。Oracle 保持不变。
 
-## 纵向切片铁律
+## 纵向切片
 
-默认拆分单位是**纵向切片**，不是横向基础设施层：
+默认拆分单位是**纵向切片**：
 
 ```text
 真实入口 → 按关系解析实体与 owner → 可信路径 → 执行操作 → 验证成功与越权失败
 ```
 
-| ❌ 禁止作为独立任务轴 | ✅ 正确 |
+| 正确切片轴 | 例 |
 |---|---|
-| root / resolver / provisioning / ACL / package / readiness 横向模块 | 按入口：如 Web 文件、Detached Job、Feishu、worktree、扩展包 |
-| 先造平台概念再填入口 | 多切片重复同一逻辑后，再抽取共享 helper |
-| 用编号/矩阵制造虚假精确 | 每个切片链到可运行的 `T-xxx` Oracle |
+| 按真实用户入口 | Web 文件、Detached Job、Feishu、worktree、扩展包 |
+| 先落地入口，重复后再抽 helper | 多切片重复同一逻辑后，再抽取共享 helper |
+| 完成定义链到可运行 Oracle | 每个切片链到 `T-xxx` |
 
 数据库迁移仅在某个切片 **Verified** 证明现有关联无法唯一解析时才出现。
 
@@ -93,28 +102,39 @@ Codex 上每个纵向切片同时是普通回合的默认完成单元（见 work
 
 ## Plan 流程
 
-Plan 是一次连续动作：**在同一阶段内一口气产出整份 Spec 的全部设计工件，中途不向用户交还
-控制权**。按以下顺序连续完成，把结论直接写入对应文件：
+Plan 是一次连续动作：在同一阶段内一口气产出整份 Spec 的全部设计工件。按以下顺序连续完成，把结论直接写入对应文件：
 
-1. **入口事实映射**（写入 `contract.md`；未完成不得进入步骤 2 的硬合同）；
+1. **入口事实映射**（写入 `contract.md`；齐后再写硬合同）；
 2. 对照代码与宿主事实确认现状（补全 `contract.md`）；
 3. 建立 Requirement → Test 映射（`contract.md` Requirements + `tests.md` 完整用例）；每条 P0
    标注证据级，并满足测试合同门；
 4. 按纵向切片形成最小技术方案与执行顺序（`plan.md`；切片完成定义链 `T-xxx`）；
-5. 写清单向门、外部依赖、授权、回滚与**仅 Verified** 的真实 Blocker（`plan.md`）；
-6. 为整个 Spec 选择 Workspace、owner、外部 Claim 和集成重测（Workspace Strategy 槽位）；
-7. 初始化 `run.md` 状态头，并结构自检。
+5. 填写「架构与设计边界」（`plan.md`；对照 design-standards 与 AGENTS / `docs/architecture/`）；
+6. 写清单向门、外部依赖、授权、回滚与**仅 Verified** 的真实 Blocker（`plan.md`）；
+7. 为整个 Spec 选择 Workspace、owner、外部 Claim 和集成重测（Workspace Strategy 槽位）；
+8. 初始化 `run.md` 状态头，并结构自检。
 
-一次产出的设计工件是：`VERSION.md`、`contract.md`、`tests.md`、`plan.md`，以及 `run.md` 的静态头
-（按需 `optional/`）。调查结论边查边写进文件，**禁止**「先口头拟计划 → 请批准落盘 → 再写文件」。
+一次产出：`VERSION.md`、`contract.md`、`tests.md`、`plan.md`，以及 `run.md` 的静态头
+（按需 `optional/`）。调查结论边查边写进文件。
 
-**禁止“写一个文件就停下来问用户”**；只有遇到产品互斥选择、不可逆授权或真实外部阻塞时才在
-阶段内暂停。内部并行只隔离 owner 和 Workspace，不改变 Spec 是唯一交付单位的事实。
+阶段内暂停仅限：产品互斥选择、不可逆授权、真实外部阻塞。
 
-**禁止**：同一会话在无独立事实复核的情况下，仅凭文档自洽宣布「完整合理 / 可以实施」。
-**禁止**：`tests.md` 只有索引表、没有 Given/When/Then 正文时宣称可实施。
-**禁止**：因用户提示词未列质量条而跳过事实映射 / 纵向切片 / TDD 用例。
+可实施条件：有独立事实复核；`tests.md` 含 Given/When/Then 正文；质量条与 `check_spec` 已过。
+
+## 机检（check_spec）
+
+```bash
+python3 skills/spec/scripts/check_spec.py <host> <spec-id>
+# 或：bash skills/spec/scripts/check_spec.sh <host> <spec-id>
+# 全部非模板 Spec：… --all
+# 仅 AGENTS 就绪度警告：… --agents-only
+```
+
+校验：核心五件套、骨架文件名、事实映射列与填充、P0↔tests、Given/When/Then 正文、
+`plan.md` 架构与设计边界、`run.md` 诚实性（acceptance/可交付 vs Fail/Blocked）、
+可选 AGENTS 空槽 WARN。清单真源：
+[`design-standards/*.checklist.json`](../vibe-coding/references/design-standards/)。
 
 阶段边界语义以 [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md) 为唯一真源。
 Plan 阶段全部工件**已落盘**后，按该合同向用户用一张卡汇总技术方案、纵向切片、测试合同、执行边界、
-风险和未决项（区分 Verified / Unverified），取得明确批准后才进入 Build；不得要求用户重新发起任务。
+风险和未决项（区分 Verified / Unverified），取得明确批准后进入 Build。

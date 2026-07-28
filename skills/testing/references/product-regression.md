@@ -2,7 +2,7 @@
 
 > **可选能力：** 只有当宿主已具备稳定的浏览器回归入口（命令、账号、数据、环境）时再启用。  
 > **证明目标：** 用户关键旅程在迭代后没有回退。  
-> **底线：** 不得用单测 / mock / 空态浅 Pass 冒充产品回归通过。  
+> **底线：** 产品回归通过 = 真浏览器 + 真登录 + 主旅程证据（见下方 `product` 层）。  
 > 宿主模板不复制本文；活索引落在 `docs/product/regression-register.md`。
 
 ## 1) 何时启用
@@ -48,4 +48,4 @@
 | `docs/product/regression/surfaces.json` | 否 | 宿主机读编排（有自动化 runner 时再创建） |
 | `specs/<id>/optional/regression-map.md` | 否 | 某版晋升映射与范围说明 |
 
-默认 scaffold **不**创建 `surfaces.json`。没有自动化 runner 时不存在该文件，不视为违规。
+默认 scaffold **不**创建 `surfaces.json`。没有自动化 runner 时不存在该文件即可。

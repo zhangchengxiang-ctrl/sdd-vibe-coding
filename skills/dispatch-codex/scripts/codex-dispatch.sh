@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # CLI dispatcher for conductor→Codex construction units.
-# Forces approval_policy=never, wall-clock timeout, optional JSONL event log.
-# Prefer this over raw MCP when MCP has hung, or when you need a hard deadline.
+# Sets approval_policy=never, wall-clock timeout, optional JSONL event log.
 #
 # Usage:
 #   bash skills/dispatch-codex/scripts/codex-dispatch.sh \
@@ -29,6 +28,7 @@ Options:
   --model NAME           Model (default: gpt-5.6-sol; terra/luna rejected)
   --sandbox MODE         read-only|workspace-write|danger-full-access
   --timeout SEC          Wall clock limit (kills process on expiry)
+  --spec ID              Spec id under SDD docs/specs (required for build/goal unless SKIP)
   --json                 Stream JSONL events to stdout + log file
   --no-json              Final message only (default: --json on)
   --log-dir DIR          Event/log directory
@@ -36,6 +36,7 @@ Options:
 
 Prompt: remaining args after --, or stdin if no args.
 Always sets approval_policy=never (cannot be overridden).
+Build/Goal runs skills/spec/scripts/check_spec.py first (SKIP_SPEC_CHECK=1 to bypass).
 EOF
 }
 
@@ -47,6 +48,7 @@ EFFORT=""
 MODEL="${CODEX_DISPATCH_MODEL:-gpt-5.6-sol}"
 SANDBOX=""
 TIMEOUT_SEC=""
+SPEC_ID="${CODEX_DISPATCH_SPEC:-}"
 JSON=1
 LOG_DIR="${CODEX_DISPATCH_LOG_DIR:-}"
 PROMPT_ARGS=()
@@ -59,6 +61,7 @@ while [[ $# -gt 0 ]]; do
     --model) MODEL="${2:-}"; shift 2 ;;
     --sandbox) SANDBOX="${2:-}"; shift 2 ;;
     --timeout) TIMEOUT_SEC="${2:-}"; shift 2 ;;
+    --spec) SPEC_ID="${2:-}"; shift 2 ;;
     --json) JSON=1; shift ;;
     --no-json) JSON=0; shift ;;
     --log-dir) LOG_DIR="${2:-}"; shift 2 ;;
@@ -86,12 +89,11 @@ esac
 case "$MODEL" in
   gpt-5.6-sol) ;;
   gpt-5.6-terra|gpt-5.6-luna|*"terra"*|*"luna"*)
-    die "model '$MODEL' forbidden for Plan/Build/Goal; use gpt-5.6-sol"
+    die "model must be gpt-5.6-sol (got '$MODEL')"
     ;;
   *)
-    # Allow explicit sol aliases only if user really needs a pin; still ban terra/luna.
     if [[ "$MODEL" == *terra* || "$MODEL" == *luna* ]]; then
-      die "model '$MODEL' forbidden; use gpt-5.6-sol"
+      die "model must be gpt-5.6-sol (got '$MODEL')"
     fi
     echo "codex-dispatch: warning: non-default model '$MODEL' (expected gpt-5.6-sol)" >&2
     ;;
@@ -107,7 +109,7 @@ fi
 case "$EFFORT" in
   medium|high) ;;
   low)
-    die "effort=low forbidden for Plan/Build/Goal; use medium or high"
+    die "effort must be medium or high (got low)"
     ;;
   *)
     die "effort must be medium|high (got: $EFFORT)"
@@ -151,6 +153,24 @@ else
 fi
 [[ -n "${PROMPT//[[:space:]]/}" ]] || die "prompt is empty"
 
+# --- Spec static gate (Build/Goal) ---
+PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+CHECK_SPEC="$PLUGIN_ROOT/skills/spec/scripts/check_spec.py"
+if [[ "$UNIT" == "build" || "$UNIT" == "goal" ]]; then
+  if [[ "${SKIP_SPEC_CHECK:-0}" == "1" ]]; then
+    echo "codex-dispatch: SKIP_SPEC_CHECK=1 — bypassing check_spec" >&2
+  else
+    [[ -f "$CHECK_SPEC" ]] || die "check_spec.py not found at $CHECK_SPEC"
+    if [[ -z "$SPEC_ID" ]]; then
+      die "build/goal requires --spec <id> (or CODEX_DISPATCH_SPEC); refuse dispatch without Spec gate"
+    fi
+    echo "codex-dispatch: preflight check_spec ($SPEC_ID)" >&2
+    if ! python3 "$CHECK_SPEC" "$CWD" "$SPEC_ID" --skip-agents; then
+      die "check_spec failed for '$SPEC_ID' — refuse Codex $UNIT (fix Spec or SKIP_SPEC_CHECK=1)"
+    fi
+  fi
+fi
+
 command -v codex >/dev/null 2>&1 || die "codex CLI not found on PATH"
 command -v timeout >/dev/null 2>&1 || die "GNU timeout (coreutils) not found on PATH"
 
@@ -180,7 +200,7 @@ echo "codex-dispatch: unit=$UNIT model=$MODEL effort=$EFFORT sandbox=$SANDBOX ti
 echo "codex-dispatch: approval_policy=never (forced)" >&2
 echo "codex-dispatch: log=$LOG_FILE" >&2
 
-# Build argv. Never pass on-request / untrusted.
+# Build argv. approval_policy is always never.
 CMD=(
   timeout --signal=TERM --kill-after=30s "${TIMEOUT_SEC}s"
   codex exec
@@ -214,7 +234,7 @@ wait 2>/dev/null || true
 
 if [[ $STATUS -eq 124 || $STATUS -eq 137 ]]; then
   echo "codex-dispatch: TIMED OUT after ${TIMEOUT_SEC}s (exit $STATUS)" >&2
-  echo "codex-dispatch: inspect repo artifacts; do not wait for MCP." >&2
+  echo "codex-dispatch: inspect repo artifacts and accept against the repo." >&2
   echo "codex-dispatch: meta=$META_FILE" >&2
   exit 124
 fi

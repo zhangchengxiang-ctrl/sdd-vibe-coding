@@ -2,7 +2,7 @@
 # Run `make` or `make help` for the command list.
 
 .PHONY: help install install-dev install-cursor install-claude install-codex \
-	scaffold codex-dispatch verify check-docs eval-live
+	scaffold codex-dispatch verify check-docs check-spec eval-live
 
 HOST ?= .
 PROFILE ?= detect
@@ -10,6 +10,7 @@ DRY_RUN ?=
 ALLOW_PARTIAL ?=
 SDD_ROOT ?= docs
 DOC_ROOT ?= ./templates
+SPEC ?=
 UNIT ?= build
 PROMPT_FILE ?=
 EFFORT ?=
@@ -26,11 +27,12 @@ help:
 		'  make install-claude       只装 Claude Code' \
 		'  make install-codex        只装 Codex' \
 		'  make scaffold HOST=路径   AGENTS.md + SDD 文档树（PROFILE=；SDD_ROOT=docs|docs/sdd；DRY_RUN=1）' \
+		'  make check-spec HOST=路径 SPEC=id   Spec 静态门（事实映射/tests/架构节/run 诚实性）' \
 		'  make codex-dispatch HOST=路径 UNIT=plan|build|goal PROMPT_FILE=文件' \
-		'                            CLI 派 Codex（never + 墙钟超时；防 MCP 挂死）' \
+		'                            派 Codex（唯一通道；never + 墙钟；Build/Goal 需 SPEC=）' \
 		'' \
 		'Maintainer (本地私有 · 需本机有 evals/)' \
-		'  make verify               一键：布局 + templates docs + routing fixtures + scaffold' \
+		'  make verify               一键：布局 + templates docs + routing + check_spec fixtures + scaffold' \
 		'  make check-docs DOC_ROOT=路径  只校验文档（默认 DOC_ROOT=./templates）' \
 		'  make eval-live            Codex live 评测（需环境；--all）' \
 		'' \
@@ -61,8 +63,8 @@ scaffold:
 	if [ "$(ALLOW_PARTIAL)" = "1" ]; then extra="$$extra --allow-partial"; fi; \
 	bash scripts/scaffold.sh "$(HOST)" $$extra
 
-# Conductor escape hatch: wall-clock Codex dispatch (approval_policy=never).
-# Example: make codex-dispatch HOST=/path/to/repo UNIT=build PROMPT_FILE=prompt.txt
+# Conductor→Codex dispatch via codex-dispatch.sh.
+# Example: make codex-dispatch HOST=/path/to/repo UNIT=build PROMPT_FILE=prompt.txt SPEC=spec-id
 codex-dispatch:
 	@if [ -z "$(PROMPT_FILE)" ]; then \
 		echo 'Usage: make codex-dispatch HOST=<repo> UNIT=plan|build|goal PROMPT_FILE=<file>'; \
@@ -72,8 +74,17 @@ codex-dispatch:
 	@extra=""; \
 	if [ -n "$(EFFORT)" ]; then extra="$$extra --effort $(EFFORT)"; fi; \
 	if [ -n "$(TIMEOUT)" ]; then extra="$$extra --timeout $(TIMEOUT)"; fi; \
+	if [ -n "$(SPEC)" ]; then extra="$$extra --spec $(SPEC)"; fi; \
 	bash skills/dispatch-codex/scripts/codex-dispatch.sh \
 		--cwd "$(HOST)" --unit "$(UNIT)" $$extra -- "$$(cat "$(PROMPT_FILE)")"
+
+check-spec:
+	@extra=""; \
+	if [ -n "$(SPEC)" ]; then \
+		bash skills/spec/scripts/check_spec.sh "$(HOST)" "$(SPEC)"; \
+	else \
+		bash skills/spec/scripts/check_spec.sh "$(HOST)" --all; \
+	fi
 
 verify:
 	@if [ ! -f evals/verify.sh ]; then \

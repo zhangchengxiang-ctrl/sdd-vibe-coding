@@ -15,7 +15,21 @@ description: >-
 内部步骤只用于推进工作，不能成为最终回复、要求用户重新发起或中止当前交付的理由。
 薄提示词对照见 [`workflow-contract.md`](./references/workflow-contract.md)「薄提示词原则」。
 可选指挥施工见同文件「指挥施工 Harness」与 Skill [`dispatch-codex`](../dispatch-codex/SKILL.md)
-（仅 `gpt-5.6-sol` × medium/high；非 Terra/Luna 外包）。
+（`gpt-5.6-sol` × medium/high）。
+
+## 10 行操作卡（日常）
+
+1. 读宿主 `AGENTS.md`（含 SDD docs root）。
+2. 判轨：Shape / Plan / Build / Verify / Diagnose / Incident（或「派 Codex」）。
+3. Shape：只写 `product/`；有 UI 对照 design-standards ux/visual。
+4. Plan：落盘五件套；跑 `check_spec`；通过才请求 Build。
+5. Build：只做当前完成单元；测前冻结改码。
+6. Verify：收齐结果写 `run.md`；不改 Oracle；先交付卡。
+7. Fail → 统一 Repair，再回验整批。
+8. 派 Codex：先 `check_spec`；经 CLI `codex-dispatch.sh`；sol×medium|high + approval never。  
+   **硬门：** 不经 `user-codex` / `CallMcpTool`。
+9. 仅 Verified 进 P0/Lock；代码事实优先于文档自洽。
+10. 深合同按需再读下方「必读」链接。
 
 ## 必读
 
@@ -24,6 +38,7 @@ description: >-
 - [Workflow Contract](./references/workflow-contract.md)：目标、授权、**薄提示词**、**Harness 适配**（含可选指挥施工）、证据分级、推进和完成语义；
 - [Workspace Contract](./references/workspace-contract.md)：Local、Worktree、分支和 PR（含托管 / CLI Worktree）；
 - [Evidence Contract](./references/evidence-contract.md)：验证层次、行为优先、Deliver Gate 和完成声明；
+- [Design Standards](./references/design-standards/README.md)：系统架构 / UX / 视觉社区底线（按 Rail 默认加载；AGENTS 可覆盖）；
 - Diagnose / Incident → Skill `debug`。
 
 文中 `docs/product`、`docs/specs` 等路径均相对 `AGENTS.md` 的 SDD docs root（默认 `docs`）。
@@ -33,14 +48,14 @@ description: >-
 | 用户意图（自然语言即可） | 当前模式 |
 |---|---|
 | 澄清愿望、体验和产品方向（含聊聊/辩论、拆解 repo） | Shape → Skill `design` |
-| **派 Codex / 用 Codex 做 / 让 Codex 施工**（且当前在 Cursor/Claude） | **指挥施工** → Skill `dispatch-codex`（一次一单元；**仅 sol×medium/high**） |
-| 切 Spec / Plan / 按产品包拆到能编码 | Plan → Skill `spec`（**直接落盘**，勿再要落盘批准） |
+| **派 Codex / 用 Codex 做 / 让 Codex 施工**（且当前在 Cursor/Claude） | **指挥施工** → Skill `dispatch-codex`（一次一单元；sol×medium/high） |
+| 切 Spec / Plan / 按产品包拆到能编码 | Plan → Skill `spec`（**直接落盘**） |
 | Spec 批准了 / 开始做 / 实现 | Build（Codex 默认首个纵向切片；指挥模式下改派 Codex） |
 | 验收 / UX 走查 | Verify → Skill `testing`（指挥模式下建议指挥侧验收，maker ≠ grader） |
 | 只定位复杂或线上问题 | Diagnose |
 | 紧急恢复生产 | Incident |
 
-已在 **Codex** 会话中时：忽略「派 Codex」，按纯 Codex Harness 自行 Plan/Build，勿调用 `dispatch-codex`。
+已在 **Codex** 会话中时：忽略「派 Codex」，按纯 Codex Harness 自行 Plan/Build。
 
 ### trivial 豁免（可跳过完整 Shape→Plan）
 
@@ -63,7 +78,7 @@ description: >-
 1. 建立一个用户可判断的交付目标、范围和**当前完成单元**（整份 Spec 或一个纵向切片）；
 2. 读取当前事实并执行下一可执行步骤；Codex 上整份 Spec 长程交付须先 Goal（见合同 Harness 节）；
    指挥模式下由 `dispatch-codex` 派单，指挥侧验收后再向用户结案；
-3. Build 完成当前完成单元的实现后，只运行完整的单元测试批次；测试开始后禁止修改代码；
+3. Build 完成当前完成单元的实现后，只运行完整的单元测试批次；测试开始后冻结改码；
 4. Verify 统一运行集成、场景与真实通道测试，完整收集 Fail；**行为/权限 Oracle 优先于文档自洽**；
 5. 所有测试结束后先形成一份统一修复方案，再进入 Repair 集中修改并回验；
 6. 每个阶段完成后记录目标、完成内容、证据与限制，先向用户总结并取得明确批准，再进入下一
@@ -72,15 +87,14 @@ description: >-
 Spec 范围以 `VERSION.md`、`contract.md`（含事实映射）、`tests.md`（完整用例）、`plan.md`、
 `run.md` 与代码共同确定；先读这些文件，按需再读其他材料。
 
-不得把局部证据、未部署、普通 WIP、检查点、内部编号、盘点结论、缺少新对话/子代理或“需要汇报进度”
-作为暂停理由。生产授权只限制生产动作，不限制当前阶段内其余实现和测试。
+暂停理由仅限：完成单元达成、真实外部阻塞、不可逆授权。生产授权只限制生产动作。
 
-用户纠错或要求继续时：先改行为再解释；禁止用长篇根因/推责代替下一可执行步骤。
+用户纠错或要求继续时：先改行为，再给下一可执行步骤。
 
 ## 用户前台
 
 只用“我理解的目标”“当前进展”“交付结果”“需要你决定”说明事实。每次可有一句“下一步”，
 仅作进度说明。仅在确实需要用户做决定、授予授权或处理真实 Blocker 时向用户提问。
 
-禁止“测一个点、改一个点”。最终交付必须说明：用户目标是否完成、真实验证、未通过/受阻项、
-环境状态和后续授权（如有）。局部通过不能声明完成。
+最终交付说明：用户目标是否完成、真实验证、未通过/受阻项、环境状态和后续授权（如有）。
+完成声明须对应当前 Delivery Target 的全量证据。

@@ -45,11 +45,11 @@ Plan 为每个 Spec Build 选择 `local | managed-worktree | git-worktree`。选
 Claim 账本；由原生执行上下文、Workspace、依赖和 handoff 共同表达。
 
 有原生 Subagent 时，只有可独立实现、验证和交接的写入面才分派。没有这些能力时，在当前
-Build owner 串行执行；不得要求用户用新任务恢复正常推进。
+Build owner 串行执行，由当前对话推进到完成单元。
 
-### 禁止并行
+### 并行规则
 
-任一成立就串行：
+下列任一成立 → 串行：
 
 - 写入面有依赖；
 - 修改同一文件或代码区域；
@@ -91,8 +91,7 @@ delivery:
 ```
 
 宿主默认分支、初始化命令和分支保护只读 `AGENTS.md`。
-`claims` 只列数据库、端口、账号、浏览器、部署槽位等外部共享资源；不得为文件、目录或
-代码合同创建 Claim。
+`claims` 只列数据库、端口、账号、浏览器、部署槽位等外部共享资源；文件/目录/代码合同用 owner + Workspace 表达，不建 Claim。
 
 ## 6. 授权
 
@@ -107,7 +106,7 @@ delivery:
 - 一个完整 Spec 可以对应一个 PR；
 - 同一 Spec 内需要隔离的并行步骤可以使用独立 Worktree，但不改变一个 Spec 的交付边界；
 - 公共合同先合并，依赖分支 rebase 后重新验证；
-- 分别绿灯不等于集成验收通过。
+- 分别绿灯后仍须做声明的集成验收 / Version Acceptance。
 
 分支默认使用 `sdd/<spec>`，宿主另有规则时服从宿主。
 
@@ -161,12 +160,12 @@ PM 不需要输入恢复指针路径、线程 ID 或 Worktree 目录。
 9. Delivery 需要分支时，按当前 surface 或 Git 能力创建唯一分支；
 10. 同一用户任务需要在 Local 与其关联 Worktree 间移动且原生 Handoff 可用时使用 Handoff；
     跨任务或 Handoff 不可用时停止该 owner，由项目 handoff 索引和恢复指针在目标 Workspace
-    恢复，禁止两个 Worktree 同时 checkout 同一分支；
+    恢复；同一分支同一时刻只在一个 Worktree checkout。
 11. 回填 handoff、PR、证据并释放外部资源 Claim。
 
-托管 Worktree 初始通常是 detached HEAD。“已有 Worktree”不等于“已有分支”。被
+托管 Worktree 初始通常是 detached HEAD。需要分支时显式创建；「已有 Worktree」后再建分支。被
 `.gitignore` 忽略的本地文件不会自动随 Handoff 移动；宿主确有需要时才配置
-`.worktreeinclude`，不得借此传播密钥。
+`.worktreeinclude`（只放非密钥本地文件）。
 
 ### 9.3 CLI Git Worktree
 
@@ -179,7 +178,7 @@ PM 不需要输入恢复指针路径、线程 ID 或 Worktree 目录。
 4. Delivery 需要分支时，在该 Worktree 创建 `sdd/<spec>`（或宿主 `AGENTS.md` 规定的前缀）；
 5. 执行宿主 setup 与本 Spec 工作；
 6. push / PR 只按单独授权执行；
-7. 未合并改动、活跃 PR 或未保存证据存在时不得删除 Worktree。
+7. 工作区干净、无活跃 PR、证据已落盘后再删除 Worktree。
 
 命令中不使用宽泛路径、未验证变量或同一分支的重复 checkout。
 
@@ -189,7 +188,7 @@ PM 不需要输入恢复指针路径、线程 ID 或 Worktree 目录。
 - 文件互斥由单 owner 与 Worktree 承担，不创建 file Claim；
 - Worktree 不隔离数据库、端口、测试账号、浏览器或生产环境；
 - 公共合同先行时，依赖面在同步新 base 后重新执行直接验证；
-- 各 PR 分别绿灯不等于 Version Acceptance；
+- 各 PR 分别绿灯后仍做 Version Acceptance / `integration_retest`；
 - 合并顺序完成后执行 `integration_retest` 声明的 Scenario。
 
 ### 9.5 收尾

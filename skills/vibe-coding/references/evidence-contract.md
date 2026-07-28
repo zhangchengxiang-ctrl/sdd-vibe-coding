@@ -11,21 +11,19 @@
 | V2 | Test 在真实通道有效 | 浏览器、运行时 Job、目标环境、**跨用户越权拒绝** |
 | V3 | 全局消费者或发布稳定 | 全量回归、CI、生产检查 |
 
-按当前风险选择最小充分组合，不把 V0–V3 当固定工具清单。
+按当前风险选择最小充分组合。
 
 ### 行为优先于文档自洽
 
-1. Requirement 编号对齐、traceability、manifest 计数、checklist 勾选，只能证明**文档自洽**，
-   **不能单独**证明权限正确、用户 Job 成功或 `code-ready`。
-2. 权限 / 隔离类 Spec：每个 In-scope 入口至少要有一条可观察的成功路径与一条越权失败路径证据
-   （测试、探针或真实通道），否则不得宣称该入口完成。
-3. 代码或 Schema 事实与 Spec 冲突时，先修 Spec 或标缺陷；不得用「符合 Spec 文档」掩盖错误假设。
+1. 权限正确、用户 Job 成功、`code-ready` 须有行为/通道证据；编号对齐、manifest 计数、checklist 只证明文档自洽。
+2. 权限 / 隔离类 Spec：每个 In-scope 入口具备可观察的成功路径 + 越权失败路径证据（测试、探针或真实通道），再宣称该入口完成。
+3. 代码或 Schema 与 Spec 冲突时：先修 Spec 或标缺陷，再继续。
 
 ## 2. 三个验证层次
 
 ### Build Validation
 
-Build 先证明整个 Spec 的实现状态；完成实现后运行完整单元测试批次，测试期间不得改代码。
+Build 先证明整个 Spec 的实现状态；完成实现后运行完整单元测试批次，测试期间冻结改码。
 Repair 只在 Verify 汇总全部 Fail 并形成统一方案后开始：
 
 - 直接相关检查；
@@ -47,28 +45,27 @@ Verify 证明整份 Spec 集成后：
 
 ### Production Verification
 
-证明目标版本在**目标环境**真实生效：版本、deploy、health（仅过程信号）、**产品冒烟**、数据一致性、监控和回滚点。
+证明目标版本在**目标环境**真实生效：版本、deploy、health（过程信号）、**产品冒烟**、数据一致性、监控和回滚点。
 
 #### Delivery Target 闸门
 
 | Target | 含义 | 部署含义 |
 |---|---|---|
-| `code-ready` | 代码与合同就绪 | **不**自动部署 |
-| `dev-effective` | 在开发/预览环境生效 | 默认只交付该环境；若强行上生产须写清风险接受 + 加长版目标环境冒烟 |
-| `production-delivered` | 生产真实生效 | 才是正常生产发布入口 |
+| `code-ready` | 代码与合同就绪 | 不自动部署 |
+| `dev-effective` | 在开发/预览环境生效 | 默认只交付该环境；上生产须写清风险接受 + 加长版目标环境冒烟 |
+| `production-delivered` | 生产真实生效 | 正常生产发布入口 |
 
-未达声明 Target，不得把完成标签写成更高一层。
-`matrix-accounted` / `acceptance-passed` / `design-ready` / `production-restored`
+完成标签对齐已声明 Target。`matrix-accounted` / `acceptance-passed` / `design-ready` / `production-restored`
 不是 Delivery Target；分层见 [`workflow-contract.md`](./workflow-contract.md)「状态词汇」。
 
-#### 铁律（违反即不得报交付）
+#### 交付条件
 
-1. **`/health`、进程 active、首页 HTTP 200 ≠ 部署成功。** 有产品影响的发布必须在**目标环境**跑产品冒烟；未过或未跑 → 只能写冒烟未过 / Blocked，禁止单独写「部署成功」。
-2. **开发环境证据 ≠ 生产验收。** 禁止用开发/预览 E2E 或开发 URL 回归冒充生产交付；同 commit 也不行（数据、env、权限、预置通常不同）。
-3. **脚本证据 ≠ 判断。** 路径变更、reload 单元、环境检查清单只提供信号；发布风险定级与冒烟范围由 Agent/人声明理由，禁止把脚本输出当成已定级。
-4. **方案缺产品冒烟 → 禁止执行生产 deploy。** 仅有运维侧动作、没有目标环境用户路径核对 = 方案不合格。
-
-完成声明须带冒烟态（通过 / 未过 / Blocked+原因），不得用「已上线」单独收束。
+1. **产品冒烟**：有产品影响的发布在**目标环境**跑用户路径冒烟；完成声明带冒烟态（通过 / 未过 / Blocked+原因）。  
+   **硬门：** `/health`、进程 active、首页 HTTP 200 单独不构成「部署成功」或生产交付。
+2. **环境对齐**：生产 Target 的证据取自目标生产环境（数据、env、权限、预置）。  
+   **硬门：** 开发/预览 E2E 或开发 URL 回归单独不构成生产验收。
+3. **定级有理由**：发布风险定级与冒烟范围由 Agent/人写明理由；脚本（路径变更、reload、环境清单）只作信号。
+4. **deploy 方案**：生产 deploy 方案含目标环境用户路径核对后再执行。
 
 #### Deliver Gate 回写（`run.md`）
 
@@ -87,7 +84,7 @@ migration / health：
 Observe 结果：
 ```
 
-只有**目标环境**产品冒烟通过，才能把交付推进到生产 Observe；不得用「代码已合并 / health ok」冒充已交付。
+目标环境产品冒烟通过后，再推进生产 Observe。
 
 宿主具体命令、URL、检查清单以 `AGENTS.md`（及产品仓 deploy 适配器，若有）为准。
 
@@ -102,7 +99,7 @@ Requirement
 → Production Evidence
 ```
 
-任一适用节点断链时，不得提高对应 Delivery Target。
+适用节点齐备后再提高对应 Delivery Target。
 
 ## 4. Test 终态
 
@@ -110,8 +107,7 @@ Requirement
 - `Fail`：实际执行但未达到；
 - `Blocked`：无法执行，必须写原因。
 
-所有适用 Test 有终态时只能声明 `matrix-accounted`。只有关版条件满足时才能声明
-`acceptance-passed`。
+所有适用 Test 有终态 → 可声明 `matrix-accounted`。关版条件满足 → 可声明 `acceptance-passed`。
 
 ## 5. Fail 分类
 
@@ -125,24 +121,24 @@ Requirement
 | new-request | demand pool / Shape |
 | unknown-root-cause | Diagnose |
 
-单个 Fail 不得触发立即修复。所有适用测试结果齐备后才能创建 Repair 方案。
+全部适用测试结果齐备后，再创建统一 Repair 方案。
 
 ## 6. UI 与用户体验
 
-API 成功、控件存在、Toast 出现或脚本旁路均不能单独证明用户 Job 通过。UI/人工 Test
-至少需要一次 V2；截图应能让读者判断场景和结果。
+用户 Job 通过须有真实通道证据（至少一次 V2）。截图应能让读者判断场景和结果。  
+**硬门：** API 成功、控件存在、Toast、`/health` 或脚本旁路单独不构成 Job 通过。
 
 浏览器通道选型、证据落盘与身份切换细则见 testing Skill 的
 [`browser-verify.md`](../../testing/references/browser-verify.md)。
 UX 判定标准见 [`ux-standards.md`](../../testing/references/ux-standards.md)。
 
 生产/测试环境需要登录时：宿主 `AGENTS.md` 或项目约定中**已有可复用测试凭据**的，Agent
-应自行切换账号继续验收，不得默认停下来等人工登录。只有需要**用户个人账号**、OAuth 本人授权、
-或生产密钥时，才记为真实外部阻塞（`Blocked` / `needs-authorization`）。
+自行切换账号继续验收。仅当需要**用户个人账号**、OAuth 本人授权、或生产密钥时，记为
+`Blocked` / `needs-authorization`。
 
 ## 7. 完成声明
 
-完成报告必须写：
+完成报告须写：
 
 - Rail；
 - Spec / Test / 声明范围；
@@ -152,4 +148,4 @@ UX 判定标准见 [`ux-standards.md`](../../testing/references/ux-standards.md)
 - 未覆盖项、Blocked 和限制；
 - Workspace / Branch / PR / 环境状态。
 
-测试绿只证明对应 Correctness，不自动推出用户价值、目标环境或生产交付。
+测试绿证明对应 Correctness；用户价值、目标环境或生产交付另按本文件 Delivery Target 条件声明。

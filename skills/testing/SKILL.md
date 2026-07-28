@@ -12,41 +12,41 @@ description: >-
 本 Skill 只运行在已确认的 Verify Rail，不修改业务代码。先读宿主 `AGENTS.md`、当前声明范围、
 [`evidence-contract.md`](../vibe-coding/references/evidence-contract.md) 和适用
 `tests.md` 用例。
-用户体验场景再读 [UX Standards](./references/ux-standards.md)；UI / 浏览器真实通道再读
+用户体验场景再读 [UX Standards](./references/ux-standards.md)（真源
+[design-standards/ux.md](../vibe-coding/references/design-standards/ux.md)）；有界面时对照
+[visual.md](../vibe-coding/references/design-standards/visual.md)；UI / 浏览器真实通道再读
 [浏览器验证](./references/browser-verify.md)；用户要 **UX 走查 / 体验审计** 或需分级启发式
 发现时，加读 [UX 走查](./references/ux-walkthrough.md)。
 
 ## 先声明验收层次
 
-| 层次 | 要回答的问题 |
-|---|---|
-| Build Validation | 当前 Spec 的实现与集成是否按合同完成？ |
-| Version Acceptance | 当前版本是否满足产品结果？ |
-| Production Verification | 目标版本是否在**目标环境**真实生效（含产品冒烟，不只 health）？ |
+| 层次 | 要回答的问题 | 证据来源 |
+|---|---|---|
+| Build Validation | 当前 Spec 的实现与集成是否按合同完成？ | 本 Spec 实现与集成证据 |
+| Version Acceptance | 当前版本是否满足产品结果？ | 整版产品结果证据 |
+| Production Verification | 目标版本是否在**目标环境**真实生效（含产品冒烟）？ | 目标环境冒烟与观察 |
 
-不得用局部实现证据替代 Version Acceptance，也不得用本地/预览证据声明生产交付。
+层次与证据对齐后再提高声明；细则见 `evidence-contract.md` 交付条件。
 
 ## 执行
 
 1. 固定环境、版本、角色、数据和声明范围；
 2. 建立 Requirement → Test → Implementation → Evidence 追踪；
 3. 从宿主 `AGENTS.md` 取得真实命令、URL、账号和工具；有可复用测试凭据时自行切换角色/账号
-   继续跑矩阵，勿默认停等人工登录（个人账号 / OAuth / 生产密钥才算外部阻塞，见
-   `evidence-contract.md`）；
+   继续跑矩阵（个人账号 / OAuth / 生产密钥 → `Blocked` / `needs-authorization`）；
 4. 按风险选择 V0–V3 的最小充分组合；走查变体按 [ux-walkthrough](./references/ux-walkthrough.md)
    扩检查面，仍记录 `Pass | Fail | Blocked`；
 5. 按 `tests.md` 实际执行每个适用用例（Given/When/Then），记录结果；
 6. 记录命令、时间、环境、版本、观察值和证据路径；
-7. 对全部 Fail 统一归因、聚类并形成一份 Repair 方案；Verify 中禁止修改代码；
+7. 对全部 Fail 统一归因、聚类并形成一份 Repair 方案；Verify 只读实现；
 8. 给出实际 Delivery Target、下一 Rail 建议和阶段总结，并等待用户批准后才转换。
 
-UI/人工 Test 至少需要一次真实通道 V2（见 [browser-verify](./references/browser-verify.md)）。
-API 成功、DOM 存在、Toast 出现、`/health` 或脚本旁路都不能单独证明用户 Job 通过。
-**禁止**把 `tests.md` 的 Oracle 改成实际观察；结果只写 `run.md`。
+UI/人工 Test 至少需要一次真实通道 V2（见 [browser-verify](./references/browser-verify.md)）。  
+**硬门：** Oracle 保持在 `tests.md`；观察结果只写 `run.md`。API/DOM/Toast/`/health`/脚本旁路单独不构成 Job 通过。
 
 ## 用户前台输出
 
-验收结果必须先输出“交付结果”，不得先展示工程矩阵。交付卡包含：
+验收结果先输出“交付结果”，再按需展开工程矩阵。交付卡包含：
 
 - **结论**：可交付、不可交付或受阻，并用一句话说明原因；
 - **如何体验**：环境、入口、适用角色和代表性数据；
@@ -66,16 +66,15 @@ Matrix、commit、Workspace 等工程术语。正式报告仍保存完整工程�
 分类与下一 Rail 以 [`evidence-contract.md`](../vibe-coding/references/evidence-contract.md)
 §5 为唯一真源；本 Skill 不另维护表。
 
-不得在单个 Test 失败后立即修代码；所有适用 Test 都有结果后，才设计并执行统一 Repair。
+全部适用 Test 有结果后，再设计并执行统一 Repair。
 
 ## 声明
 
-所有适用 Test 有终态，只能说明 `matrix-accounted`；关版条件全部满足才是
-`acceptance-passed`（二者都不是 Delivery Target，见 workflow-contract「状态词汇」）。
+所有适用 Test 有终态 → `matrix-accounted`；关版条件全部满足 → `acceptance-passed`
+（二者都不是 Delivery Target，见 workflow-contract「状态词汇」）。
 正式结果写入当前 Spec 的 `run.md`（结构见 scaffold 模板；说明见
-[Validation Report](./references/validation-report.md)），必须同时写通过证据、失败、
-Blocked、未覆盖项和限制。报告必须先写 PM 验收摘要（关版结论），再写工程矩阵；内部状态不能替代
-“可交付 / 不可交付 / 受阻”的前台结论。
+[Validation Report](./references/validation-report.md)），同时写通过证据、失败、
+Blocked、未覆盖项和限制。报告先写 PM 验收摘要（关版结论），再写工程矩阵。
 
 长期产品回归（可选）合同见
 [product-regression](./references/product-regression.md)；启用后维护

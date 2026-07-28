@@ -3,7 +3,7 @@
 > **产品回归地图**（长期可跑子集）。合同：插件
 > `skills/testing/references/product-regression.md`  
 > 关版后登记 [`docs/product/regression-register.md`](../../../product/regression-register.md)；
-> 正文留 Spec（勿拷 modules）。
+> 正文留 Spec（Test/Oracle 正文在 Spec，modules 只索引）。
 
 **范围：** （从 `tests.md` 晋升的关键旅程）  
 **Out：** （不挡绿；可链 GAP）  
@@ -26,5 +26,5 @@
 ## 维护
 
 - 先改本表，再改测试标题（须含 `T-N`）  
-- Out 禁止假 Pass  
+- Out：浅 Pass / mock 单独不晋升为产品回归通过  
 - 晋升后更新 `regression-register`；宿主有机读 runner 时再创建/更新 `regression/surfaces.json`

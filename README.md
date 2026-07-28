@@ -55,7 +55,8 @@ make install         # 推荐：有 CLI 的端都装；缺则 SKIP
 | `make install-claude` | 只装 Claude Code | 只动一端 |
 | `make install-codex` | 只装 Codex | 只动一端 |
 | `make scaffold HOST=/path/to/repo` | 宿主生成 `AGENTS.md` + `docs/`（默认 `HOST=.`，`PROFILE=detect`） | 空仓 / **存量**宿主初始化 |
-| `make codex-dispatch HOST=… UNIT=plan\|build\|goal PROMPT_FILE=…` | CLI 派 Codex（强制 never + 墙钟超时） | MCP 挂死 / 要硬截止 |
+| `make check-spec HOST=/path/to/repo SPEC=id` | Spec 静态门（事实映射 / tests / 架构节 / run 诚实性） | Plan 齐套后、派 Build 前 |
+| `make codex-dispatch HOST=/path UNIT=plan\|build\|goal PROMPT_FILE=…` | 派 Codex（never + 墙钟超时；Build/Goal 需 `SPEC=`） | 指挥侧外包有界单元 |
 
 安装在 cache stage **生成**各端清单（**不写入本仓库**），再注册。改仓库后 **不会自动热载**：再跑 `make install`（或开发期 `make install-dev`），然后：
 
@@ -107,9 +108,9 @@ make scaffold HOST=/path DRY_RUN=1                    # 只探测，不写盘
 | Skill | 职责 |
 |-------|------|
 | `vibe-coding` | 宽入口；路由 Shape/Plan/Build/Verify/Diagnose/Incident |
-| `design` | Shape（含探索对话、代码库 grounding、产品包） |
-| `spec` | Plan |
-| `testing` | Verify / 证据（含浏览器真实通道、UX 走查变体） |
+| `design` | Shape（含探索对话、代码库 grounding、产品包；对照 design-standards ux/visual） |
+| `spec` | Plan（含架构与设计边界轻门） |
+| `testing` | Verify / 证据（含浏览器真实通道、UX 走查变体；ux 真源在 design-standards） |
 | `debug` | Diagnose / Incident |
 | `dispatch-codex` | 可选：Cursor/Claude 指挥 → Codex 施工（需用户明示） |
 
@@ -119,11 +120,11 @@ make scaffold HOST=/path DRY_RUN=1                    # 只探测，不写盘
 
 **公开交付：** `skills/` · `templates/` · `scripts/` · `ARCHITECTURE.md`
 
-**本机私有（已 `.gitignore`，勿推 GitHub）：** `evals/` · `plans/` · `minutes/` · `.env*` · 评测产物
+**本机私有（已 `.gitignore`，仅本机）：** `evals/` · `plans/` · `minutes/` · `.env*` · 评测产物
 
 ## 安全
 
-- 不要提交 API Key、`.env`、会议纪要、宿主业务仓 secrets
+- API Key、`.env`、会议纪要、宿主业务仓 secrets 只留本机
 - 公开仓不含评测夹具与内部计划；克隆后若本地没有 `evals/`，`make verify` 会提示跳过
 
 ## 架构
