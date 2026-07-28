@@ -2,10 +2,18 @@
 # Run `make` or `make help` for the command list.
 
 .PHONY: help install install-dev install-cursor install-claude install-codex \
-	scaffold verify check-docs eval-live
+	scaffold codex-dispatch verify check-docs eval-live
 
 HOST ?= .
+PROFILE ?= detect
+DRY_RUN ?=
+ALLOW_PARTIAL ?=
+SDD_ROOT ?= docs
 DOC_ROOT ?= ./templates
+UNIT ?= build
+PROMPT_FILE ?=
+EFFORT ?=
+TIMEOUT ?=
 
 help:
 	@printf '%s\n' \
@@ -17,7 +25,9 @@ help:
 		'  make install-cursor       只装 Cursor' \
 		'  make install-claude       只装 Claude Code' \
 		'  make install-codex        只装 Codex' \
-		'  make scaffold HOST=路径   给宿主仓生成 AGENTS.md + docs/（默认 HOST=.）' \
+		'  make scaffold HOST=路径   AGENTS.md + SDD 文档树（PROFILE=；SDD_ROOT=docs|docs/sdd；DRY_RUN=1）' \
+		'  make codex-dispatch HOST=路径 UNIT=plan|build|goal PROMPT_FILE=文件' \
+		'                            CLI 派 Codex（never + 墙钟超时；防 MCP 挂死）' \
 		'' \
 		'Maintainer (本地私有 · 需本机有 evals/)' \
 		'  make verify               一键：布局 + templates docs + routing fixtures + scaffold' \
@@ -44,7 +54,26 @@ install-codex:
 	bash scripts/install.sh codex
 
 scaffold:
-	bash scripts/scaffold.sh "$(HOST)"
+	@extra=""; \
+	if [ -n "$(PROFILE)" ]; then extra="$$extra --profile $(PROFILE)"; fi; \
+	if [ -n "$(SDD_ROOT)" ]; then extra="$$extra --root $(SDD_ROOT)"; fi; \
+	if [ "$(DRY_RUN)" = "1" ]; then extra="$$extra --dry-run"; fi; \
+	if [ "$(ALLOW_PARTIAL)" = "1" ]; then extra="$$extra --allow-partial"; fi; \
+	bash scripts/scaffold.sh "$(HOST)" $$extra
+
+# Conductor escape hatch: wall-clock Codex dispatch (approval_policy=never).
+# Example: make codex-dispatch HOST=/path/to/repo UNIT=build PROMPT_FILE=prompt.txt
+codex-dispatch:
+	@if [ -z "$(PROMPT_FILE)" ]; then \
+		echo 'Usage: make codex-dispatch HOST=<repo> UNIT=plan|build|goal PROMPT_FILE=<file>'; \
+		echo 'Optional: EFFORT=medium|high TIMEOUT=<sec>'; \
+		exit 2; \
+	fi
+	@extra=""; \
+	if [ -n "$(EFFORT)" ]; then extra="$$extra --effort $(EFFORT)"; fi; \
+	if [ -n "$(TIMEOUT)" ]; then extra="$$extra --timeout $(TIMEOUT)"; fi; \
+	bash skills/dispatch-codex/scripts/codex-dispatch.sh \
+		--cwd "$(HOST)" --unit "$(UNIT)" $$extra -- "$$(cat "$(PROMPT_FILE)")"
 
 verify:
 	@if [ ! -f evals/verify.sh ]; then \

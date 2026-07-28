@@ -55,7 +55,7 @@
 8. **挂死上限**：Plan ~15min / Build 单片 ~20min 仍 pending → 中断工具，验收仓库；可改 CLI 重派。禁止干等。
 9. **失败打回同一 thread**（`codex-reply`，可升 high）或新开派单修正；不得用催促词掩盖坏 Spec。
 10. **多片长程**：可派「对该 Spec 开 Goal，完成条件=剩余切片+验证命令」；effort=**high**；指挥只盯里程碑与证据，不逐工具盯梢。
-11. **工具降级**：优先 Codex MCP（`codex` / `codex-reply`，须带 never）；不可用或曾挂死则 `codex exec`（`-m gpt-5.6-sol`、effort、`approval_policy=never`）；两者皆失败 → 对人说明 Blocked，禁止谎报已派单成功。
+11. **工具降级**：优先 Codex MCP（`codex` / `codex-reply`，须带 never）；不可用或曾挂死则走 `skills/dispatch-codex/scripts/codex-dispatch.sh`（强制 never + 墙钟 timeout + JSONL）；再不行才裸 `codex exec`；皆失败 → 对人说明 Blocked，禁止谎报已派单成功。
 
 **对人前台：** 只说目标、进展、证据、要你决定；可简说「复杂活用 Codex Sol」。不暴露 threadId、MCP、Goal 内部词，除非用户追问。
 
@@ -88,7 +88,7 @@ demand pool 条目、`modules/` 设计稿、聊天清单或截图 **都不算** 
 3. **禁止**改业务代码；
 4. **禁止**新建 `docs/specs/`（Spec 只在用户批准进入 Plan 后由 Plan 创建）。
 
-空仓无 `AGENTS.md` / `docs/` → 先跑 `scripts/scaffold.sh`（或等价）生成骨架；scaffold **不算** (a)/(b)。
+空仓或未 scaffold 的宿主：先跑 `scripts/scaffold.sh`（默认 `detect`：空 SDD root → full，已有文件 → minimal；保留路径语义冲突 → 拒绝）。存量推荐 `PROFILE=minimal`；宿主已占用默认 `docs/product` 时用 `--root=docs/sdd`（见 [docs-root.md](./docs-root.md)）。scaffold **不算** (a)/(b)。
 
 trivial 豁免（跳过完整 Shape→Plan）见 [`vibe-coding/SKILL.md`](../SKILL.md)。
 

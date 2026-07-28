@@ -61,9 +61,10 @@ description: >-
 
 优先顺序：
 
-1. **MCP** `user-codex`：`codex`（新开）/ `codex-reply`（续聊，需 `threadId`）
-2. **CLI**：`codex exec`（见下方参数；适合要墙钟超时或 MCP 曾挂死时）
-3. 皆失败 → 状态 `blocked`，说明缺 MCP/CLI，**禁止**声称已派给 Codex
+1. **MCP** `user-codex`：`codex`（新开）/ `codex-reply`（续聊，需 `threadId`）——须带下方必传参数
+2. **CLI 包装** `skills/dispatch-codex/scripts/codex-dispatch.sh`（**强制** `approval_policy=never` + 墙钟 `timeout` + 默认 JSONL 日志）——MCP 不可用、曾挂死、或要硬截止时**优先于**裸 `codex exec`
+3. **裸 CLI**：`codex exec`（仅包装不可用时；参数须与下方质量门一致）
+4. 皆失败 → 状态 `blocked`，说明缺 MCP/CLI，**禁止**声称已派给 Codex
 
 ### 必传参数（质量门 · 缺一禁止调用）
 
@@ -98,16 +99,51 @@ MCP `codex` 是同步 RPC：整轮不结束就不返回。指挥侧必须：
 3. 若产物已达完成定义 → 对人结案，注明「MCP 未正常收口，已按仓库验收」。
 4. 若 escalation / sandbox 仍卡住 → 改用 **CLI**（带 `approval_policy=never`）重派，或指挥侧补跑该条验证。
 5. **禁止**把「tool 还在 running」当成进度；无仓库变化即无进展。
+6. 超时/中断后默认改走 **`codex-dispatch.sh`**，不要对同一挂死 MCP 调用死磕。
 
-CLI 示例：
+### CLI 包装（推荐）
+
+仓库内路径（安装后随 skill 一并存在）：
+
+`skills/dispatch-codex/scripts/codex-dispatch.sh`
 
 ```bash
-codex exec -C <HOST_ROOT> -s danger-full-access -m gpt-5.6-sol \
-  -c model_reasoning_effort=\"medium\" -c approval_policy=\"never\" \
-  --skip-git-repo-check "<薄派单正文>"
+# Plan（默认 15min / workspace-write / medium）
+bash skills/dispatch-codex/scripts/codex-dispatch.sh \
+  --cwd <HOST_ROOT> --unit plan -- <<'EOF'
+<薄派单正文>
+EOF
+
+# Build 单片（默认 20min / danger-full-access / medium）
+bash skills/dispatch-codex/scripts/codex-dispatch.sh \
+  --cwd <HOST_ROOT> --unit build --effort medium -- <<'EOF'
+<薄派单正文>
+EOF
+
+# Goal（默认 60min / danger-full-access / high）
+bash skills/dispatch-codex/scripts/codex-dispatch.sh \
+  --cwd <HOST_ROOT> --unit goal -- <<'EOF'
+<薄派单正文>
+EOF
 ```
 
-记录：`threadId`（若有）、model、effort、approval-policy、sandbox、派单时间、单元 ID → 可选「技术详情」。
+要点：
+
+- **不能**关掉 `never`；脚本写死 `approval_policy=never`
+- 墙钟到点会 `SIGTERM`/`SIGKILL` 并 exit `124`——之后**对照仓库**验收
+- 默认 `--json`：事件写入 `<cwd>/.codex-dispatch-logs/<unit>_<ts>_<pid>.jsonl`（可 `--log-dir` / `--no-json`）
+- 禁 terra/luna、禁 effort=`low`（与质量门一致）
+- Make：`make codex-dispatch HOST=… UNIT=plan|build|goal PROMPT_FILE=…`
+
+裸 `codex exec` 兜底（仅包装缺失时）：
+
+```bash
+timeout 20m codex exec -C <HOST_ROOT> -s danger-full-access -m gpt-5.6-sol \
+  -c model_reasoning_effort=\"medium\" -c approval_policy=\"never\" \
+  --skip-git-repo-check --json "<薄派单正文>"
+```
+
+记录：`threadId`（若有）、model、effort、approval-policy、sandbox、派单时间、单元 ID、dispatch log 路径 → 可选「技术详情」。
 
 ## 薄派单模板
 

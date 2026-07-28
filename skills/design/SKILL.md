@@ -37,7 +37,7 @@ Shape 禁止创建实施 Spec、修改业务代码、部署或把技术偏好冒
 | 意图 | 做法 |
 |------|------|
 | 聊方向 / 辩论 / 帮我想想（未要求锁切片） | 先走 [探索对话](./references/debate-style.md)，收敛后再出理解卡 |
-| 拆解 / 学习 repo / 产品文档落后于代码 | 先走 [代码库 grounding](./references/codebase-grounding.md)，再 Shape |
+| 拆解 / 学习 repo / 产品文档落后于代码 / 存量首次接入 | 先走 [代码库 grounding](./references/codebase-grounding.md)（含 Brownfield bootstrap），再 Shape |
 | 成块能力蓝图 | 下方「产品包」；简单诉求可只写 demand pool / 单页 |
 
 默认结构化路径：

@@ -37,6 +37,9 @@ plans/
 docs/.sdd-scaffold
 **/.sdd-scaffold
 
+# Codex CLI dispatch logs (host cwd)
+.codex-dispatch-logs/
+
 # Protocol dirs are install-stage only — never commit
 .cursor-plugin/
 .claude-plugin/

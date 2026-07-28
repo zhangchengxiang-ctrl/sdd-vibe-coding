@@ -26,6 +26,8 @@
 宿主脚手架层（可被 scaffold 复制）
   templates/AGENTS.md          # 唯一宿主项目事实面
   templates/docs/**            # 槽位与空表，不复制合同正文
+  scripts/scaffold.sh          # detect|minimal|full；--root / SDD_ROOT；探测 OK/SKIP/BLOCK；永不覆盖
+  skills/.../docs-root.md      # 宿主 AGENTS「SDD docs root」解析约定
 
 校验层（维护者 · 本机私有，不进公开 GitHub）
   evals/                       # verify / fixtures / live 评测；见 .gitignore

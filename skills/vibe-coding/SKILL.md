@@ -19,12 +19,14 @@ description: >-
 
 ## 必读
 
-先读宿主 `AGENTS.md`，再按当前问题读取：
+先读宿主 `AGENTS.md`（含 **SDD docs root**，见 [docs-root.md](./references/docs-root.md)），再按当前问题读取：
 
 - [Workflow Contract](./references/workflow-contract.md)：目标、授权、**薄提示词**、**Harness 适配**（含可选指挥施工）、证据分级、推进和完成语义；
 - [Workspace Contract](./references/workspace-contract.md)：Local、Worktree、分支和 PR（含托管 / CLI Worktree）；
 - [Evidence Contract](./references/evidence-contract.md)：验证层次、行为优先、Deliver Gate 和完成声明；
 - Diagnose / Incident → Skill `debug`。
+
+文中 `docs/product`、`docs/specs` 等路径均相对 `AGENTS.md` 的 SDD docs root（默认 `docs`）。
 
 ## 路由
 

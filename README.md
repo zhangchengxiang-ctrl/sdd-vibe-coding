@@ -54,7 +54,8 @@ make install         # 推荐：有 CLI 的端都装；缺则 SKIP
 | `make install-cursor` | 只装 Cursor | 只动一端 |
 | `make install-claude` | 只装 Claude Code | 只动一端 |
 | `make install-codex` | 只装 Codex | 只动一端 |
-| `make scaffold HOST=/path/to/repo` | 宿主生成 `AGENTS.md` + `docs/`（默认 `HOST=.`） | 空仓 / 新宿主初始化 |
+| `make scaffold HOST=/path/to/repo` | 宿主生成 `AGENTS.md` + `docs/`（默认 `HOST=.`，`PROFILE=detect`） | 空仓 / **存量**宿主初始化 |
+| `make codex-dispatch HOST=… UNIT=plan\|build\|goal PROMPT_FILE=…` | CLI 派 Codex（强制 never + 墙钟超时） | MCP 挂死 / 要硬截止 |
 
 安装在 cache stage **生成**各端清单（**不写入本仓库**），再注册。改仓库后 **不会自动热载**：再跑 `make install`（或开发期 `make install-dev`），然后：
 
@@ -68,13 +69,30 @@ make install         # 推荐：有 CLI 的端都装；缺则 SKIP
 
 等价裸脚本：`bash scripts/install.sh […]`、`bash scripts/scaffold.sh <host>`。
 
-## 空仓骨架
+## 宿主骨架（空仓 / 存量）
 
 ```bash
-make scaffold HOST=/path/to/host-repo
+make scaffold HOST=/path/to/host-repo                 # PROFILE=detect（默认），SDD_ROOT=docs
+make scaffold HOST=/path PROFILE=minimal              # 存量推荐：少铺空模板
+make scaffold HOST=/path PROFILE=full                 # 全量 templates/docs
+make scaffold HOST=/path SDD_ROOT=docs/sdd            # 宿主已占用 docs/product 时隔离
+make scaffold HOST=/path DRY_RUN=1                    # 只探测，不写盘
 ```
 
-只生成 `AGENTS.md`、可选 `CLAUDE.md`（`@AGENTS.md`）、`docs/`。不写 `.cursor/` / `.claude/`，不拷 check-docs。scaffold **不算**编码许可。
+| `PROFILE` | 行为 |
+|-----------|------|
+| `detect`（默认） | 空 SDD root → `full`；已有文件 → `minimal`；保留路径语义冲突 → **拒绝**（exit 2） |
+| `minimal` | `AGENTS.md` + product 槽位 + `specs/_template` + `reference/`（不含空 foundation 等） |
+| `full` | 整棵 `templates/docs` 写入 `SDD_ROOT` |
+
+| `SDD_ROOT` | 行为 |
+|------------|------|
+| `docs`（默认） | 与技能文档中的 `docs/product` 等路径一致 |
+| `docs/sdd` 等 | 写入子树，并在 `AGENTS.md` 盖章 `SDD docs root`；Agent 须按该根解析路径 |
+
+探测会打印 `OK` / `SKIP` / `BLOCK`；**永不覆盖**已有文件。硬冲突：挪到 `docs/_host/`、改用 `SDD_ROOT=docs/sdd`，或 `ALLOW_PARTIAL=1`。
+
+不写 `.cursor/` / `.claude/`，不拷 check-docs。scaffold **不算**编码许可。
 
 ## 权威分层
 

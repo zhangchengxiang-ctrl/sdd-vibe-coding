@@ -17,6 +17,22 @@
 
 同一规则不要复制到多个层次；其他文档只链接权威来源。
 
+### SDD 保留路径（独占语义）
+
+下列路径由 SDD 占用；宿主原有技术文档请放在其他子树（例如 `docs/architecture/`、`docs/api/`），或迁到 `docs/_host/`：
+
+| 路径 | 语义 |
+|---|---|
+| `product/` | 愿望、蓝图、gap（含 `modules/`、`foundation/`） |
+| `specs/` | 实施合同与 `_template/` |
+| `reference/handoff.md` · `reference/claims.md` | 交付索引与 Claim |
+| `planning/roadmap.md` | 排期（full scaffold；minimal 可后补） |
+| `operations/incidents/` | 事故记录 |
+
+存量初始化：优先 `make scaffold PROFILE=minimal`（或默认 `detect`）。硬冲突时 scaffold 会 `BLOCK`；也可 `SDD_ROOT=docs/sdd`（或 `--root=docs/sdd`）把 SDD 挂到子树，并在 `AGENTS.md` 盖章 `SDD docs root`（见插件 `skills/vibe-coding/references/docs-root.md`）。
+
+旧 wiki / README **只链接、不整页搬进** `product/`，避免双真源。
+
 ### 真源优先级（冲突时）
 
 ```text

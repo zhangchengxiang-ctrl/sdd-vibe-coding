@@ -6,8 +6,10 @@
 
 ## SDD
 
-- 未明示「开始做 / 实现 / 按这个来 / 构建」、且无已确认 `docs/specs/<id>/` → 只写 `docs/product/`，**不改业务代码**。
-- 空仓先跑插件 `scripts/scaffold.sh`；scaffold **不算**编码许可。
+- SDD docs root: docs
+- 未明示「开始做 / 实现 / 按这个来 / 构建」、且无已确认 `<SDD docs root>/specs/<id>/` → 只写 `<SDD docs root>/product/`，**不改业务代码**。
+- 无 `AGENTS.md` / SDD 文档树时先跑插件 `scripts/scaffold.sh`（存量推荐 `PROFILE=minimal` 或默认 `detect`；宿主已占用 `docs/product` 时用 `--root=docs/sdd`）；scaffold **不算**编码许可。硬冲突见探测输出的 `BLOCK`。
+- 技能里写的 `docs/product`、`docs/specs` 均相对本文件的 **SDD docs root**（默认 `docs`）。
 - 未经当前代码、Schema/约束、配置或运行证据验证的关键技术判断，必须标为 `Unverified`；**不得**写成事实、P0 Requirement、Lock、Blocker、DDL 条件，也不得据此宣称可实施。
 - Codex：整份 Spec 长程「不要中途停止」→ 使用持久 Goal；普通回合只承诺一个纵向切片。
 - 用户自然语言意图即可触发 Plan/Build；质量条（事实映射、纵向切片、TDD 用例）由插件默认执行，不要求用户复述。
