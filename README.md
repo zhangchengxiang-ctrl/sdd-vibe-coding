@@ -6,6 +6,12 @@
 
 > 用户前台保持简单；`docs/`、Spec、handoff 是 Agent 的内部交付记忆。
 
+## 你需要什么
+
+- 本机已安装至少一端：Cursor、Claude Code 或 Codex CLI
+- Git + Make + bash
+- 在**宿主业务仓库**里使用（本插件仓本身不是业务应用）
+
 ## 用户会看到什么
 
 | 你这样说 | 体系做什么 | 不会做什么 |
@@ -34,7 +40,7 @@ Production issue → Diagnose → Incident / Repair / Plan / Blocked
 ## 安装与常用命令（Make）
 
 ```bash
-git clone <repo-url> sdd-vibe-coding
+git clone https://github.com/<org>/sdd-vibe-coding.git
 cd sdd-vibe-coding
 make                 # 打印全部目标说明
 make install         # 推荐：有 CLI 的端都装；缺则 SKIP
@@ -49,9 +55,6 @@ make install         # 推荐：有 CLI 的端都装；缺则 SKIP
 | `make install-claude` | 只装 Claude Code | 只动一端 |
 | `make install-codex` | 只装 Codex | 只动一端 |
 | `make scaffold HOST=/path/to/repo` | 宿主生成 `AGENTS.md` + `docs/`（默认 `HOST=.`） | 空仓 / 新宿主初始化 |
-| `make verify` | 一键：布局 + templates docs + routing fixtures + scaffold | 改完脚本/布局/夹具自检 |
-| `make check-docs DOC_ROOT=路径` | 只校验文档（默认 `./templates`） | 改文档模板或宿主 docs |
-| `make eval-live` | Codex live 评测 | 有 Codex 环境时 |
 
 安装在 cache stage **生成**各端清单（**不写入本仓库**），再注册。改仓库后 **不会自动热载**：再跑 `make install`（或开发期 `make install-dev`），然后：
 
@@ -90,13 +93,24 @@ make scaffold HOST=/path/to/host-repo
 | `spec` | Plan |
 | `testing` | Verify / 证据（含浏览器真实通道、UX 走查变体） |
 | `debug` | Diagnose / Incident |
+| `dispatch-codex` | 可选：Cursor/Claude 指挥 → Codex 施工（需用户明示） |
 
 只有 `vibe-coding` 默认可隐式触发；其余由主入口路由或显式调用。能力进 references，不另开平行 Skill。
 
-## 维护者
+## 仓库里有什么 / 没有什么
 
-见 [`evals/README.md`](./evals/README.md)。日常优先 `make verify`。
-架构与真源分层见 [`ARCHITECTURE.md`](./ARCHITECTURE.md)。
+**公开交付：** `skills/` · `templates/` · `scripts/` · `ARCHITECTURE.md`
+
+**本机私有（已 `.gitignore`，勿推 GitHub）：** `evals/` · `plans/` · `minutes/` · `.env*` · 评测产物
+
+## 安全
+
+- 不要提交 API Key、`.env`、会议纪要、宿主业务仓 secrets
+- 公开仓不含评测夹具与内部计划；克隆后若本地没有 `evals/`，`make verify` 会提示跳过
+
+## 架构
+
+见 [`ARCHITECTURE.md`](./ARCHITECTURE.md)。
 
 ## License
 

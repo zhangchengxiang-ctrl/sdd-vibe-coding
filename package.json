@@ -11,8 +11,8 @@
     "install": "bash ./scripts/install.sh",
     "install-local": "bash ./scripts/install.sh",
     "scaffold": "bash ./scripts/scaffold.sh",
-    "verify": "bash ./evals/verify.sh",
-    "check-docs": "bash ./evals/tools/check_docs.sh ./templates",
-    "eval-live": "python3 ./evals/tools/live_eval.py"
+    "verify": "make verify",
+    "check-docs": "make check-docs",
+    "eval-live": "make eval-live"
   }
 }

@@ -27,10 +27,9 @@
   templates/AGENTS.md          # 唯一宿主项目事实面
   templates/docs/**            # 槽位与空表，不复制合同正文
 
-校验层（维护者工具）
-  evals/tools/check_docs.py
-  evals/verify.sh
-  evals/fixtures/**
+校验层（维护者 · 本机私有，不进公开 GitHub）
+  evals/                       # verify / fixtures / live 评测；见 .gitignore
+  plans/                       # 内部设计笔记
 ```
 
 ## 真源边界
@@ -44,7 +43,7 @@
 - Cursor/Claude → Codex 派单与指挥侧验收：只改 `skills/dispatch-codex/SKILL.md`
 - 单个 Rail 的前台话术与执行约束：改对应 `skills/<rail>/SKILL.md`
 - 宿主填写槽位与文档模板：改 `templates/docs/**` 与 `templates/AGENTS.md`
-- 结构校验规则：改 `evals/tools/check_docs.py`
+- 结构校验规则：改本机 `evals/tools/check_docs.py`（公开仓无此目录）
 
 禁止在 `templates/docs` 复制合同正文；模板只保留最小落盘结构并链接合同真源。
 
@@ -77,7 +76,7 @@
 1. 一个概念只在一个合同文件定义；
 2. 模板没有复制同一合同大段正文；
 3. `AGENTS.md` 是宿主唯一项目事实面（无 `docs/guides/` 第二份）；
-4. `make verify` 通过；
+4. 本机有 `evals/` 时跑 `make verify`；公开克隆可跳过；
 5. 文档中的状态词与 `workflow-contract.md` 一致。
 
 ## 维护者附录：外借实践（BORROW）
