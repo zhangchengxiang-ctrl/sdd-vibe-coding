@@ -21,6 +21,7 @@
   skills/design
   skills/spec
   skills/testing
+  skills/deploy          # 发布 P0–P6（证据→方案→批准→执行→冒烟关版）
   skills/debug
   skills/dispatch-codex   # 可选：Cursor/Claude 指挥 → Codex 施工
 
@@ -40,6 +41,7 @@
 
 - 流程、状态词、完成声明、Harness 适配（含可选指挥施工）、证据分级：只改 `workflow-contract.md`
 - 验证层次、行为优先、Deliver Gate、Fail 分类：只改 `evidence-contract.md`
+- 发布阶段 P0–P6、定级裁剪、方案模板：只改 `skills/deploy/`（关版硬门仍在 evidence-contract）
 - Workspace / Worktree / Claim：只改 `workspace-contract.md`
 - 产品包章节与剪枝：只改 `skills/design/references/product-package.md`
 - 系统架构 / UX / 视觉社区底线：只改 `skills/vibe-coding/references/design-standards/`
@@ -67,6 +69,7 @@
 | 调整 Spec 机检 | `skills/spec/scripts/check_spec.py` | `verify.sh` fixtures、`dispatch-codex` 预检、Makefile |
 | 调整测试合同结构 | `tests.md` 模板 + `spec/SKILL.md` | `check_docs.py`, `testing/SKILL.md` |
 | 调整指挥施工派单/验收 | `dispatch-codex/SKILL.md` + workflow「指挥施工」 | `vibe-coding/SKILL.md`, `verify.sh` |
+| 调整发布生命周期 | `skills/deploy/` | `evidence-contract` Deliver Gate、`run.md` 模板、`vibe-coding` 路由 |
 
 ## Spec 文件名迁移（历史对照）
 

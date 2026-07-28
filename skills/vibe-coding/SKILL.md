@@ -3,10 +3,10 @@ name: vibe-coding
 description: >-
   Spec-Driven Delivery 跨端主入口（Cursor / Claude / Codex）。触发：我希望 / 优化体验 /
   讨论产品 / 聊聊方向 / 拆解 / 学习这个 repo / 排期 / 准备实施 / 切 Spec / 开始做 /
-  实现 / 构建 / 验收 / UX走查 / 修复 / 排障 / vibe / 派 Codex / 用 Codex 做。先读宿主
-  AGENTS.md；未明示开始做且无已确认 Spec → 只写 docs/product/，不改业务代码。质量条在
-  插件默认执行。Codex：整份 Spec 须 Goal；普通回合只承诺一个纵向切片。Cursor/Claude 上
-  用户明示派 Codex 时走指挥施工（Skill dispatch-codex）。
+  实现 / 构建 / 验收 / UX走查 / 发布 / 上线 / 部署 / 修复 / 排障 / vibe / 派 Codex /
+  用 Codex 做。先读宿主 AGENTS.md；未明示开始做且无已确认 Spec → 只写 docs/product/，
+  不改业务代码。质量条在插件默认执行。Codex：整份 Spec 须 Goal；普通回合只承诺一个纵向
+  切片。Cursor/Claude 上用户明示派 Codex 时走指挥施工（Skill dispatch-codex）。
 ---
 
 # Vibe Coding
@@ -20,16 +20,16 @@ description: >-
 ## 10 行操作卡（日常）
 
 1. 读宿主 `AGENTS.md`（含 SDD docs root）。
-2. 判轨：Shape / Plan / Build / Verify / Diagnose / Incident（或「派 Codex」）。
+2. 判轨：Shape / Plan / Build / Verify / Deploy / Diagnose / Incident（或「派 Codex」）。
 3. Shape：只写 `product/`；有 UI 对照 design-standards ux/visual。
 4. Plan：落盘五件套；跑 `check_spec`；通过才请求 Build。
 5. Build：只做当前完成单元；测前冻结改码。
 6. Verify：收齐结果写 `run.md`；不改 Oracle；先交付卡。
-7. Fail → 统一 Repair，再回验整批。
-8. 派 Codex：先 `check_spec`；经 CLI `codex-dispatch.sh`；sol×medium|high + approval never。  
+7. Deploy：P1 证据 → P2+P3 方案 → 批准 → 执行 → P6 目标环境冒烟关版（禁仅 health）。
+8. Fail → 统一 Repair，再回验整批。
+9. 派 Codex：先 `check_spec`；经 CLI `codex-dispatch.sh`；sol×medium|high + approval never。  
    **硬门：** 不经 `user-codex` / `CallMcpTool`。
-9. 仅 Verified 进 P0/Lock；代码事实优先于文档自洽。
-10. 深合同按需再读下方「必读」链接。
+10. 仅 Verified 进 P0/Lock；代码事实优先于文档自洽。深合同按需再读下方「必读」。
 
 ## 必读
 
@@ -39,6 +39,7 @@ description: >-
 - [Workspace Contract](./references/workspace-contract.md)：Local、Worktree、分支和 PR（含托管 / CLI Worktree）；
 - [Evidence Contract](./references/evidence-contract.md)：验证层次、行为优先、Deliver Gate 和完成声明；
 - [Design Standards](./references/design-standards/README.md)：系统架构 / UX / 视觉社区底线（按 Rail 默认加载；AGENTS 可覆盖）；
+- 发布 / 上线 → Skill [`deploy`](../deploy/SKILL.md)（P0–P6）；
 - Diagnose / Incident → Skill `debug`。
 
 文中 `docs/product`、`docs/specs` 等路径均相对 `AGENTS.md` 的 SDD docs root（默认 `docs`）。
@@ -52,6 +53,7 @@ description: >-
 | 切 Spec / Plan / 按产品包拆到能编码 | Plan → Skill `spec`（**直接落盘**） |
 | Spec 批准了 / 开始做 / 实现 | Build（Codex 默认首个纵向切片；指挥模式下改派 Codex） |
 | 验收 / UX 走查 | Verify → Skill `testing`（指挥模式下建议指挥侧验收，maker ≠ grader） |
+| 发布 / 上线 / 部署 / 发版 / 生产部署 | Deploy → Skill `deploy`（P0–P6；先方案后执行） |
 | 只定位复杂或线上问题 | Diagnose |
 | 紧急恢复生产 | Incident |
 
@@ -70,8 +72,9 @@ description: >-
 `workspace-contract.md` 的「trivial / small fix」只决定选 Local，不跳过 Shape。写代码前硬闸见
 [`workflow-contract.md`](./references/workflow-contract.md)。
 
-每个阶段在自身范围内连续完成；`Shape → Plan → Build → Verify → Repair` 的跨阶段切换须先总结并
+每个阶段在自身范围内连续完成；`Shape → Plan → Build → Verify → Deploy → Repair` 的跨阶段切换须先总结并
 取得用户明确批准。闸门与宿主完成单元见 [`workflow-contract.md`](./references/workflow-contract.md)。
+（Deploy 可紧接 Verify 后生产交付，或用户单独要求「上线」时进入；P4 批准不可跳过。）
 
 ## 持续交付规则
 

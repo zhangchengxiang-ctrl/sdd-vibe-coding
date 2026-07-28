@@ -98,6 +98,7 @@ trivial 豁免见 [`vibe-coding/SKILL.md`](../SKILL.md)。常见 Shape 话术（
 | Build | 实现确认 Spec 的全部内容 | 是 |
 | Verify | 只运行批量验收、记录结果并归类失败 | 否 |
 | Repair | 按统一方案集中修复已收齐的失败 | 是 |
+| Deploy | 目标环境发布：P0–P6（证据 → 发布+验证方案 → 批准 → 执行 → 冒烟关版） | 仅经批准的发布动作；不写新功能 |
 | Diagnose | 定位原因和证据 | 否，除非用户明确要求修复 |
 | Incident | 经授权恢复生产 | 仅最小止血 |
 
@@ -112,8 +113,10 @@ trivial 豁免见 [`vibe-coding/SKILL.md`](../SKILL.md)。常见 Shape 话术（
 | 「派 Codex / 用 Codex 做」 | Cursor/Claude：指挥施工（Skill `dispatch-codex`）；一次一单元；sol×medium/high |
 | 「完整实施 / 不要中途停 / 把整份 Spec 做完」 | Codex：立即创建持久 Goal |
 | 「验收一下」 | Verify：行为/权限 Oracle 优先于文档自洽 |
+| 「发布 / 上线 / 部署」 | Deploy：P2+P3 先于执行；P6 目标环境冒烟关版；health ≠ 交付 |
 
-插件已默认覆盖：事实映射、纵向切片、Verified 才进 Lock、Given/When/Then、真实阻塞判定、短交付卡。
+插件已默认覆盖：事实映射、纵向切片、Verified 才进 Lock、Given/When/Then、真实阻塞判定、短交付卡、
+发布 P0–P6 门禁（见 Skill `deploy`）。
 
 ### Plan 落盘授权
 
@@ -124,15 +127,17 @@ trivial 豁免见 [`vibe-coding/SKILL.md`](../SKILL.md)。常见 Shape 话术（
 Plan 阶段内：调查 → **直接落盘** `VERSION`/`contract`/`tests`/`plan`/`run` → 结束时只出
 **进入 Build** 的批准卡。
 
-仍须跨阶段批准的只有：`Shape → Plan`、`Plan → Build`、`Build/Verify →` 下一阶段或生产动作。
+仍须跨阶段批准的只有：`Shape → Plan`、`Plan → Build`、`Build/Verify →` 下一阶段，以及
+**Deploy P4**（L1/L2 发布方案+验证方案批准）与其他生产动作。
 
 ## 阶段闸门
 
 > 本节是"何时连续、何时暂停、跨阶段如何总结与批准"的唯一真源。其他 Skill 只引用本节。
 
 1. **阶段内连续**：每个阶段由当前 agent 一次性连续完成自身职责。
-2. **跨阶段闸门**：`Shape → Plan → Build → Verify → Repair` 每一次阶段切换前，先向用户总结本阶段
+2. **跨阶段闸门**：`Shape → Plan → Build → Verify → Deploy → Repair` 每一次阶段切换前，先向用户总结本阶段
    的目标、完成内容、证据、限制与建议的下一阶段，取得**明确批准**后才进入下一阶段。
+   Deploy 另遵 P0–P6：L1/L2 须先批准 P2+P3 再执行。
 3. **阶段内暂停**：仅在产品选择互斥、破坏性/不可逆动作、用户本人才能完成的外部操作、或**已 Verified**
    的事实与已确认需求冲突且将改变交付结果时询问用户。
 4. **纠错后续**：用户指出错误或要求继续时，先纠正并继续执行下一可执行步骤。需要暂停开发时，用户须明确说停。
@@ -201,7 +206,7 @@ Plan 阶段内：调查 → **直接落盘** `VERSION`/`contract`/`tests`/`plan`
 |---|---|
 | `code-ready` | 代码与合同就绪；**不**自动部署 |
 | `dev-effective` | 在开发/预览环境真实生效 |
-| `production-delivered` | 生产真实生效 |
+| `production-delivered` | 生产真实生效（须目标环境 P6 冒烟通过；见 Deliver Gate） |
 
 细则见 [`evidence-contract.md`](./evidence-contract.md) Deliver Gate。
 

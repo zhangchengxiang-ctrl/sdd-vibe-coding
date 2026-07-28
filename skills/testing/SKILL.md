@@ -24,9 +24,10 @@ description: >-
 |---|---|---|
 | Build Validation | 当前 Spec 的实现与集成是否按合同完成？ | 本 Spec 实现与集成证据 |
 | Version Acceptance | 当前版本是否满足产品结果？ | 整版产品结果证据 |
-| Production Verification | 目标版本是否在**目标环境**真实生效（含产品冒烟）？ | 目标环境冒烟与观察 |
+| Production Verification | 目标版本是否在**目标环境**真实生效（含产品冒烟）？ | 目标环境冒烟与观察（= 发布生命周期 P6） |
 
-层次与证据对齐后再提高声明；细则见 `evidence-contract.md` 交付条件。
+层次与证据对齐后再提高声明；细则见 `evidence-contract.md` 交付条件。  
+用户要**整次上线**（方案+执行+关版）→ Skill [`deploy`](../deploy/SKILL.md)；本 Skill 可只跑 P6 核对。
 
 ## 执行
 

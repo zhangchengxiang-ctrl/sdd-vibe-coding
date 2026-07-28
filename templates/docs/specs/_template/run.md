@@ -102,15 +102,19 @@
 
 ## Production Verification（适用时）
 
-> 产品冒烟（目标环境）态写入上方字段后再报生产交付。`/health` 与进程 active 是过程信号。
-> 通则见 `evidence-contract.md` Deliver Gate。
+> 产品冒烟（目标环境 · P6）态写入后再报生产交付。`/health` 与进程 active 是 P5 过程信号。
+> 通则见 `evidence-contract.md` Deliver Gate；阶段见 Skill `deploy` / `release-lifecycle.md`。
 
 - 声明目标 / 实际达到：
 - 定级 + 理由（若适用）：
-- Deploy / rollback：
-- Health：
+- P2 发布方案（执行序 / sidecar 采纳或延期）：
+- P3 验证方案（冒烟层勾选）：
+- Deploy / rollback（P5）：
+- Health（过程）：
 - 环境门禁：
-- 产品冒烟（目标环境）：通过 | 未过 | Blocked+原因
+- 产品冒烟（目标环境 · P6）：通过 | 未过 | Blocked+原因
+- 完成标签：`[部署·L#·prod-smoke …]`
+- Open MUST（延期项 → 下次 P1）：
 - 原始故障信号：
 - 核心用户路径：
 - 数据一致性：

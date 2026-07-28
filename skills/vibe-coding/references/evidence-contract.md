@@ -47,25 +47,32 @@ Verify 证明整份 Spec 集成后：
 
 证明目标版本在**目标环境**真实生效：版本、deploy、health（过程信号）、**产品冒烟**、数据一致性、监控和回滚点。
 
+发布全过程（证据 → 并列设计「怎么发 / 怎么证伪」→ 批准 → 执行 → 关版）见 Skill
+[`deploy`](../../deploy/SKILL.md) 与 [`release-lifecycle.md`](../../deploy/references/release-lifecycle.md)
+（P0–P6）。本节只钉 **关版硬门**；执行步骤以 deploy Skill 为准。
+
 #### Delivery Target 闸门
 
 | Target | 含义 | 部署含义 |
 |---|---|---|
 | `code-ready` | 代码与合同就绪 | 不自动部署 |
 | `dev-effective` | 在开发/预览环境生效 | 默认只交付该环境；上生产须写清风险接受 + 加长版目标环境冒烟 |
-| `production-delivered` | 生产真实生效 | 正常生产发布入口 |
+| `production-delivered` | 生产真实生效 | 正常生产发布入口；须 P6 目标环境冒烟通过 |
 
 完成标签对齐已声明 Target。`matrix-accounted` / `acceptance-passed` / `design-ready` / `production-restored`
 不是 Delivery Target；分层见 [`workflow-contract.md`](./workflow-contract.md)「状态词汇」。
 
 #### 交付条件
 
-1. **产品冒烟**：有产品影响的发布在**目标环境**跑用户路径冒烟；完成声明带冒烟态（通过 / 未过 / Blocked+原因）。  
-   **硬门：** `/health`、进程 active、首页 HTTP 200 单独不构成「部署成功」或生产交付。
+1. **产品冒烟（P6）**：有产品影响的发布在**目标环境**按事先写好的验证方案跑用户路径冒烟；完成声明带冒烟态（通过 / 未过 / Blocked+原因）。  
+   **硬门：** `/health`、进程 active、首页 HTTP 200 单独不构成「部署成功」或生产交付（仅 P5 过程检查）。
 2. **环境对齐**：生产 Target 的证据取自目标生产环境（数据、env、权限、预置）。  
-   **硬门：** 开发/预览 E2E 或开发 URL 回归单独不构成生产验收。
-3. **定级有理由**：发布风险定级与冒烟范围由 Agent/人写明理由；脚本（路径变更、reload、环境清单）只作信号。
-4. **deploy 方案**：生产 deploy 方案含目标环境用户路径核对后再执行。
+   **硬门：** 开发/预览 E2E 或开发 URL 回归单独不构成生产验收（最多作 P1 旁证）。
+3. **定级有理由**：发布风险定级（L0/L1/L2）与冒烟范围由 Agent/人写明理由；脚本（路径变更、reload、环境清单）只作信号，不定级。
+4. **P2 + P3 先于执行**：生产发布须先贴 **发布方案（怎么发）** 与 **验证方案（怎么证伪）**，再经批准（P4）后才执行（P5）。  
+   **硬门：** L1/L2 缺任一则禁止 deploy；L0 可极简但仍须触及面最小冒烟。  
+   **硬门：** P6 未过禁止宣称 `production-delivered`；标签只能是 `prod-smoke 未过/Blocked`。
+5. **非代码面**：触及 migrate / 主机依赖 / 反向代理·进程模板 / 新 env 合同等时，方案须含采纳或明确延期（理由+跟踪）；配置类 MUST 含「模板↔live 同步」再 reload，禁止只写 reload。
 
 #### Deliver Gate 回写（`run.md`）
 
@@ -76,10 +83,14 @@ Verify 证明整份 Spec 集成后：
 实际达到：
 环境 / 版本：
 定级 + 理由（若适用）：
-reload / deploy：
-migration / health：
+P2 发布方案（执行序 / sidecar 采纳或延期）：
+P3 验证方案（冒烟层勾选）：
+reload / deploy（P5）：
+migration / health（过程）：
 环境门禁 / 侧车检查：
-产品冒烟（目标环境）：通过 | 未过 | Blocked+原因
+产品冒烟（目标环境 · P6）：通过 | 未过 | Blocked+原因
+完成标签：[部署·L#·prod-smoke …]
+Open MUST（延期 sidecar，挂下次 P1）：
 回滚点：
 Observe 结果：
 ```

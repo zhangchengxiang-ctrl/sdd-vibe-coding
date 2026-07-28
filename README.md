@@ -107,10 +107,11 @@ make scaffold HOST=/path DRY_RUN=1                    # 只探测，不写盘
 
 | Skill | 职责 |
 |-------|------|
-| `vibe-coding` | 宽入口；路由 Shape/Plan/Build/Verify/Diagnose/Incident |
+| `vibe-coding` | 宽入口；路由 Shape/Plan/Build/Verify/Deploy/Diagnose/Incident |
 | `design` | Shape（含探索对话、代码库 grounding、产品包；对照 design-standards ux/visual） |
 | `spec` | Plan（含架构与设计边界轻门） |
 | `testing` | Verify / 证据（含浏览器真实通道、UX 走查变体；ux 真源在 design-standards） |
+| `deploy` | 发布 P0–P6（证据 → 发布+验证方案 → 批准 → 执行 → 目标环境冒烟关版） |
 | `debug` | Diagnose / Incident |
 | `dispatch-codex` | 可选：Cursor/Claude 指挥 → Codex 施工（需用户明示） |
 

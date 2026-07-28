@@ -1,0 +1,6 @@
+interface:
+  display_name: "Deploy / Release"
+  short_description: "按 P0–P6 做有边界的生产发布：先设计怎么发与怎么证伪，批准后再执行并用目标环境冒烟关版"
+  default_prompt: "Use $deploy to run a release through evidence, release+verification design, approval, execute, and prod-smoke closeout."
+policy:
+  allow_implicit_invocation: false
