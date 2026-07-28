@@ -4,8 +4,8 @@ description: >-
   可选指挥施工：在 Cursor / Claude Code 上将一个完成单元派给 Codex（仅 gpt-5.6-sol
   × medium/high）执行并验收。触发：派 Codex / 用 Codex 做 / 让 Codex 施工 /
   省成本用 Codex。一次只派 Plan 整份 Spec 或 Build 一个纵向切片；指挥侧必须对照
-  仓库产物验收。仅在 vibe-coding 已路由到本模式，或用户显式调用时使用。不在纯
-  Codex 会话中调用本 Skill。
+  仓库产物验收。MCP 派单必须 approval-policy=never（禁 on-request，防挂死）。
+  仅在 vibe-coding 已路由到本模式，或用户显式调用时使用。不在纯 Codex 会话中调用。
 ---
 
 # Dispatch Codex：指挥施工
@@ -53,8 +53,8 @@ description: >-
 2. **预检**
    - Build：打开 `tests.md`，确认该片 T-xxx 含 success + failure/permission 的 Given/When/Then；
    - 缺 Oracle → **不派单**，先走 Plan 或请用户补产品判定。
-3. **选定 sol × medium|high** → **薄派单**（见下方模板）→ 调用工具（必须带 model/effort）。
-4. **验收**（maker ≠ grader）→ 对照仓库 + 下方探针；失败则 `codex-reply` 打回（可升 high）或指挥侧自做。
+3. **选定 sol × medium|high** → **薄派单** → **按下方质量门调用工具**（缺参则禁止调用）。
+4. **验收**（maker ≠ grader）→ 对照仓库 + 下方勾选；失败则 `codex-reply` 打回（可升 high）或指挥侧自做。
 5. **对人交付卡**：目标、结果、证据路径、要你决定（下一切片 / 进 Verify / 授权）。
 
 ## 工具
@@ -62,28 +62,52 @@ description: >-
 优先顺序：
 
 1. **MCP** `user-codex`：`codex`（新开）/ `codex-reply`（续聊，需 `threadId`）
-2. **CLI**：`codex exec`（见下方参数）
+2. **CLI**：`codex exec`（见下方参数；适合要墙钟超时或 MCP 曾挂死时）
 3. 皆失败 → 状态 `blocked`，说明缺 MCP/CLI，**禁止**声称已派给 Codex
 
-**必传参数（质量门）：**
+### 必传参数（质量门 · 缺一禁止调用）
 
-| 参数 | 值 |
-|---|---|
-| `cwd` / `-C` | 宿主仓根（或约定 worktree）；**禁止**误指其它仓 |
-| `model` / `-m` | `gpt-5.6-sol` |
-| `model_reasoning_effort` | `medium` 或 `high`（见上表） |
-| `approval-policy` | `never`（派单已含范围） |
-| sandbox | 以能读库/写 Spec 与代码为准（常 `workspace-write` 或 `danger-full-access`） |
+| 参数 | 值 | 硬约束 |
+|---|---|---|
+| `cwd` / `-C` | 宿主仓根（或约定 worktree） | **禁止**误指其它仓 |
+| `model` / `-m` | `gpt-5.6-sol` | 禁止 terra/luna |
+| `model_reasoning_effort` / config | `medium` 或 `high` | 禁止 `low` |
+| `approval-policy` | **`never`** | **禁止** `on-request` / `untrusted`；漏传视为非法调用 |
+| `sandbox` | Plan：`workspace-write`；Build/Goal：**`danger-full-access`**（默认） | Build 禁止只开 `workspace-write` 却指望沙箱内 listen/port 测试 |
+
+> **为何 `never`：** 派单已是离场施工。`on-request` + MCP 同步 RPC 在 escalation
+> （如 listen 本地端口）时经常**弹不出批准 UI**，Cursor 侧 `CallMcpTool` 会无限 pending。
+> 实测：Codex 约 7 分钟写完，编排干等 40+ 分钟。
+
+### MCP 调用前自检（必须全部为真再 CallMcpTool）
+
+- [ ] arguments 含 `approval-policy: "never"`（字面量，不可省略）
+- [ ] `model` = `gpt-5.6-sol`；effort = medium|high
+- [ ] Build/Goal 的 `sandbox` = `danger-full-access`
+- [ ] 一次只一个完成单元（非 S1–S9 打包）
+- [ ] prompt 为薄模板，无合同大段
+
+任一项为假 → **不得发起调用**；先改参数。
+
+### 挂死与超时（编排侧义务）
+
+MCP `codex` 是同步 RPC：整轮不结束就不返回。指挥侧必须：
+
+1. **墙钟上限约 15 分钟**（Plan）/ **20 分钟**（Build 单片）。超时仍 pending → **中断工具调用**，不得干等。
+2. 中断后立刻 **对照仓库产物验收**（diff / Spec / `run.md`），不以 MCP 是否 return 为准。
+3. 若产物已达完成定义 → 对人结案，注明「MCP 未正常收口，已按仓库验收」。
+4. 若 escalation / sandbox 仍卡住 → 改用 **CLI**（带 `approval_policy=never`）重派，或指挥侧补跑该条验证。
+5. **禁止**把「tool 还在 running」当成进度；无仓库变化即无进展。
 
 CLI 示例：
 
 ```bash
-codex exec -C <HOST_ROOT> -s workspace-write -m gpt-5.6-sol \
+codex exec -C <HOST_ROOT> -s danger-full-access -m gpt-5.6-sol \
   -c model_reasoning_effort=\"medium\" -c approval_policy=\"never\" \
   --skip-git-repo-check "<薄派单正文>"
 ```
 
-记录：`threadId`（若有）、model、effort、派单时间、单元 ID → 可选「技术详情」或 `handoff` 一句。
+记录：`threadId`（若有）、model、effort、approval-policy、sandbox、派单时间、单元 ID → 可选「技术详情」。
 
 ## 薄派单模板
 
@@ -93,9 +117,11 @@ codex exec -C <HOST_ROOT> -s workspace-write -m gpt-5.6-sol \
 cwd: <HOST_ROOT>
 model: gpt-5.6-sol
 effort: medium
+approval-policy: never
+sandbox: workspace-write
 按 vibe-coding 走 Plan。产品真源：<PRODUCT_PATH>。
 切一份新 Spec，直接落盘 VERSION/contract/tests/plan/run，不要改业务代码。
-只写上述新骨架；禁止 context/requirements/tasks/validation/scenario-spec 旧文件名。
+只写上述新骨架；禁止旧文件名（context、requirements、tasks、validation、scenario-spec）。
 以插件质量条为准，不要照抄 docs/specs/_template 的旧文件名。
 不要再问「批准落盘 Spec」；结束后只给能否进入 Build 的批准卡，并列出 Unverified。
 ```
@@ -106,6 +132,8 @@ effort: medium
 cwd: <HOST_ROOT>
 model: gpt-5.6-sol
 effort: medium
+approval-policy: never
+sandbox: danger-full-access
 docs/specs/<SPEC_ID>/ 已批准。按 vibe-coding 只做 plan.md 中的切片 <SLICE_ID>（完成定义：<T-ids>）。
 对照 contract 事实映射再改；做完跑该片验证，结果写入 run.md。
 不要整包硬扛，不要用绝对路径/typecheck 旧债假阻塞。
@@ -118,6 +146,8 @@ docs/specs/<SPEC_ID>/ 已批准。按 vibe-coding 只做 plan.md 中的切片 <S
 cwd: <HOST_ROOT>
 model: gpt-5.6-sol
 effort: high
+approval-policy: never
+sandbox: danger-full-access
 对 docs/specs/<SPEC_ID>/ 创建持久 Goal：按 plan.md 顺序做完剩余切片 <S_a…S_z>。
 每片完成条件=对应 T-xxx 行为证据写入 run.md；禁改 Out of Scope；真阻塞或生产授权则 pause。
 不要普通单轮假装一口气做完。
@@ -149,3 +179,4 @@ effort: high
 只用「我理解的目标 / 当前进展 / 交付结果 / 需要你决定」。  
 默认可说：「复杂 Spec/切片用 Codex Sol；小改我这边做。」  
 默认不展示 MCP、threadId、sandbox、model id；用户追问再放「技术详情（可选）」。
+若因挂死中断且仓库已达标，对人只说结果与证据，不展开 MCP 术语。

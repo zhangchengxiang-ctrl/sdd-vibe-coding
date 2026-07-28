@@ -46,13 +46,16 @@
 **规则：**
 
 1. **一次只派一个完成单元**：Plan（整份 Spec 落盘）或 Build **一个**纵向切片；禁止把整包多片塞进一次普通 Codex 派单。
-2. **派单必须薄**：只含 cwd、单元类型、输入路径、完成定义指针（如 `S1 → T-001/T-002`）、**model/effort**；**禁止**把本合同大段粘进派单。质量条由施工侧已装插件默认执行。
+2. **派单必须薄**：只含 cwd、单元类型、输入路径、完成定义指针（如 `S1 → T-001/T-002`）、**model/effort**、**approval-policy**、**sandbox**；**禁止**把本合同大段粘进派单。质量条由施工侧已装插件默认执行。
 3. **模型硬约束**：Plan / Build / Goal 仅允许 `gpt-5.6-sol`，effort 仅 `medium`（默认）或 `high`（加码）。**禁止** `gpt-5.6-terra` / `gpt-5.6-luna` / sol×`low`（评测：旧骨架或无产物）。
-4. **无 Oracle 不准派 Build**：该片缺少可观察的 success + failure/permission（`tests.md`）→ 指挥侧先补 Plan 或打回，不得派编码。
-5. **maker ≠ grader**：Codex 施工自评不算通过；指挥侧必须对照仓库产物（Spec 文件 / `run.md` / diff / 测试）验收后再向用户交付。Plan 若落成旧骨架（`context`/`requirements`/`tasks`/`validation` 等而无 `contract.md`）→ **否决打回**，不得改派 Terra/Luna。
-6. **失败打回同一 thread**（`codex-reply`，可升 high）或新开派单修正；不得用催促词掩盖坏 Spec。
-7. **多片长程**：可派「对该 Spec 开 Goal，完成条件=剩余切片+验证命令」；effort=**high**；指挥只盯里程碑与证据，不逐工具盯梢。
-8. **工具降级**：优先 Codex MCP（`codex` / `codex-reply`）；不可用则 `codex exec`（须带 `-m gpt-5.6-sol` 与 effort）；两者皆失败 → 对人说明 Blocked，禁止谎报已派单成功。
+4. **审批硬约束**：MCP/CLI 派单必须 `approval-policy=never`。**禁止** `on-request` / `untrusted`（MCP 同步通道弹不出批准 UI → 工具无限挂死）。漏传等同非法派单。
+5. **沙箱**：Plan 可用 `workspace-write`；Build/Goal 默认 `danger-full-access`（避免 listen/port 集成测卡 escalation）。
+6. **无 Oracle 不准派 Build**：该片缺少可观察的 success + failure/permission（`tests.md`）→ 指挥侧先补 Plan 或打回，不得派编码。
+7. **maker ≠ grader**：Codex 施工自评不算通过；指挥侧必须对照仓库产物（Spec 文件 / `run.md` / diff / 测试）验收后再向用户交付。Plan 若落成旧骨架（`context`/`requirements`/`tasks`/`validation` 等而无 `contract.md`）→ **否决打回**，不得改派 Terra/Luna。**MCP 是否 return 不是验收条件**；挂死后仍按仓库结案。
+8. **挂死上限**：Plan ~15min / Build 单片 ~20min 仍 pending → 中断工具，验收仓库；可改 CLI 重派。禁止干等。
+9. **失败打回同一 thread**（`codex-reply`，可升 high）或新开派单修正；不得用催促词掩盖坏 Spec。
+10. **多片长程**：可派「对该 Spec 开 Goal，完成条件=剩余切片+验证命令」；effort=**high**；指挥只盯里程碑与证据，不逐工具盯梢。
+11. **工具降级**：优先 Codex MCP（`codex` / `codex-reply`，须带 never）；不可用或曾挂死则 `codex exec`（`-m gpt-5.6-sol`、effort、`approval_policy=never`）；两者皆失败 → 对人说明 Blocked，禁止谎报已派单成功。
 
 **对人前台：** 只说目标、进展、证据、要你决定；可简说「复杂活用 Codex Sol」。不暴露 threadId、MCP、Goal 内部词，除非用户追问。
 
