@@ -13,7 +13,9 @@ description: >-
 [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)。
 有体验或 UI 诉求时再读
 [`design-standards/ux.md`](../vibe-coding/references/design-standards/ux.md)，有界面时加读
-[`visual.md`](../vibe-coding/references/design-standards/visual.md)（加载合同见
+[`visual.md`](../vibe-coding/references/design-standards/visual.md)；讨论或确认**具体页面**时加读
+[`ui-page-gate.md`](../vibe-coding/references/design-standards/ui-page-gate.md)
+（加载合同见
 [design-standards/README.md](../vibe-coding/references/design-standards/README.md)）。
 用户描述产品问题、判断取舍和确认结果即可；实现结构与内部交付术语由插件消化。
 

@@ -169,8 +169,9 @@ Plan 阶段内：调查 → **直接落盘** `VERSION`/`contract`/`tests`/`plan`
 
 - 覆盖当前完成单元（整份 Spec 或一个纵向切片）的入口、数据流、错误语义；先按事实映射核对再修改。
 - 用户只说「开始做」且未点名切片时：Codex = `plan.md` **第一个**纵向切片；Cursor/Claude = 默认可连续整份 Spec（仍可按切片推进）。
+- **新建 / 大改用户可见页面**：先执行 [ui-page-gate.md](./design-standards/ui-page-gate.md)（评审确认前不写页面业务码）；视觉服从 [visual.md](./design-standards/visual.md)。
 - 实现期间可做编译、格式化、静态分析等非验收性检查；完成以行为验收为准。
-- 完成实现后冻结代码，列出并运行完整单元测试命令；记录全部失败后统一 Repair。
+- 按需编写/更新自动化测试（分层与用语见 [automated-tests.md](./automated-tests.md)）；完成实现后冻结代码，列出并运行完整单元测试命令；记录全部失败后统一 Repair。
 - 行为验收优先：越权拒绝、成功路径等可观察断言。
 - 切片/完成单元收口：短报告「做成了什么 / 证据在哪 / 下一个切片」。
 

@@ -1,15 +1,18 @@
 {
   "id": "ui-surface",
-  "title": "有 UI 时的体验/视觉自检",
-  "source": "design-standards/ux.md + visual.md",
+  "title": "有 UI 时的体验/视觉/门控自检",
+  "source": "design-standards/ux.md + visual.md + ui-page-gate.md",
   "required_when": "has_ui",
   "items": [
+    {"id": "page_positioning", "prompt": "页面定位（谁/核心任务/频率）已写清或可从 Spec 推出"},
+    {"id": "ia_not_field_dump", "prompt": "非后端字段平铺；骨架/主次/披露有意图"},
     {"id": "job_paths", "prompt": "主 Job 成功/失败/权限路径可感"},
     {"id": "feedback", "prompt": "反馈与完成感可观察（非仅 Toast）"},
-    {"id": "no_uuid_memory", "prompt": "不逼用户记忆内部 ID（除非角色需要）"},
+    {"id": "no_uuid_memory", "prompt": "不逼用户记忆内部 ID（除非角色需要）；ID 优先选择器"},
     {"id": "nav_consistency", "prompt": "与现有导航/用词一致或显式 Breaking"},
     {"id": "primary_task", "prompt": "一屏一主任务 / 主 CTA 层级清晰"},
     {"id": "states", "prompt": "空/加载/错/成功/无权限有意图"},
+    {"id": "grayscale_hierarchy", "prompt": "层级不依赖装饰色；颜色主要用于状态/CTA/品牌"},
     {"id": "a11y", "prompt": "WCAG 底线无故意违反或已写豁免"},
     {"id": "no_second_ds", "prompt": "未平行发明第二套视觉语言"}
   ]

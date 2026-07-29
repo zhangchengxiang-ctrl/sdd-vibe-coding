@@ -22,13 +22,21 @@ Job、Test（`tests.md`）、Effective Channel 和 Oracle。
 | **无 Browser MCP**（远程 worker、无头 CI、网页 Agent） | Playwright / 宿主 `AGENTS.md` 约定的等价命令 |
 | CI | 仓内 E2E / smoke 目标 |
 
+### 验证层次（UI / 全栈交付）
+
+| 层 | 验什么 | 单独算交付？ |
+|----|--------|--------------|
+| L1 接口 | HTTP 状态、JSON 结构、错误边界 | 否 |
+| L2 UI 交互 | 页面渲染、控件实际触发、数据联动、无 Console 致命错 | 否（须配合 Job） |
+| L3 用户旅程 | 目标角色走完 Job，Oracle 可观察 | **是（V2）** |
+
 ### V2 通过条件
 
 - 打开宿主声明的产品 Dev / 目标 URL（正确主机）；
-- 经浏览器通道走完 Job 步骤；
+- 经浏览器通道走完 Job 步骤（L3；关键控件须真实点击，不能只截静态首屏）；
 - Oracle 可观察结果 + 截图/日志落盘路径写入 `run.md`。
 
-**硬门：** 仅 API 冒烟、`curl /health`、首页 200、仅单测绿、或错误主机 loopback，不构成 V2 通过。
+**硬门：** 仅 API 冒烟、`curl /health`、首页 200、nginx 200 + SPA Not Found、仅单测绿、或错误主机 loopback，不构成 V2 通过。
 
 ## 回写（Demo / V2 Gate）
 

@@ -44,9 +44,10 @@
 - 发布阶段 P0–P6、定级裁剪、方案模板：只改 `skills/deploy/`（关版硬门仍在 evidence-contract）
 - Workspace / Worktree / Claim：只改 `workspace-contract.md`
 - 产品包章节与剪枝：只改 `skills/design/references/product-package.md`
-- 系统架构 / UX / 视觉社区底线：只改 `skills/vibe-coding/references/design-standards/`
+- 系统架构 / UX / 视觉 / 页面门控社区底线：只改 `skills/vibe-coding/references/design-standards/`
   （Verify 接线薄页 `skills/testing/references/ux-standards.md`；启发式正文在 design-standards）
 - 产品回归启用条件与分层：只改 `skills/testing/references/product-regression.md`
+- Build 期自动化测试通则：只改 `skills/vibe-coding/references/automated-tests.md`
 - 事实映射门、纵向切片、测试合同门、Plan 流程、**check_spec 机检**：只改 `skills/spec/`（含 `scripts/check_spec.py`）
 - Cursor/Claude → Codex 派单与指挥侧验收：只改 `skills/dispatch-codex/SKILL.md`（CLI 预检同目录 `scripts/`）
 - 单个 Rail 的前台话术与执行约束：改对应 `skills/<rail>/SKILL.md`

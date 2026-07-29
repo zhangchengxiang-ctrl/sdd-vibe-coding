@@ -21,7 +21,7 @@ description: >-
 
 1. 读宿主 `AGENTS.md`（含 SDD docs root）。
 2. 判轨：Shape / Plan / Build / Verify / Deploy / Diagnose / Incident（或「派 Codex」）。
-3. Shape：只写 `product/`；有 UI 对照 design-standards ux/visual。
+3. Shape：只写 `product/`；有 UI 对照 design-standards ux/visual（具体页面加 ui-page-gate）。
 4. Plan：落盘五件套；跑 `check_spec`；通过才请求 Build。
 5. Build：只做当前完成单元；测前冻结改码。
 6. Verify：收齐结果写 `run.md`；不改 Oracle；先交付卡。
