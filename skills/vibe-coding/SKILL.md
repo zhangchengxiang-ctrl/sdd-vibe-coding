@@ -21,10 +21,10 @@ description: >-
 
 1. 读宿主 `AGENTS.md`（含 SDD docs root）。
 2. 判轨：Shape / Plan / Build / Verify / Deploy / Diagnose / Incident（或「派 Codex」）。
-3. Shape：只写 `product/`；有 UI 对照 design-standards ux/visual（具体页面加 ui-page-gate）。
+3. Shape：只写 `product/`；有 UI 先读 design-standards **LOAD-MAP**（字段门控唯一真源）。
 4. Plan：落盘五件套；跑 `check_spec`；通过才请求 Build。
-5. Build：只做当前完成单元；测前冻结改码。
-6. Verify：收齐结果写 `run.md`；不改 Oracle；先交付卡。
+5. Build：只做当前完成单元；测前冻结改码；改存量 UI 先 change-control（见 LOAD-MAP）。
+6. Verify：收齐结果写 `run.md`；不改 Oracle；先交付卡；有界轮次 + Visual QA。
 7. Deploy：P1 证据 → P2+P3 方案 → 批准 → 执行 → P6 目标环境冒烟关版（禁仅 health）。
 8. Fail → 统一 Repair，再回验整批。
 9. 派 Codex：先 `check_spec`；经 CLI `codex-dispatch.sh`；sol×medium|high + approval never。  
@@ -38,7 +38,7 @@ description: >-
 - [Workflow Contract](./references/workflow-contract.md)：目标、授权、**薄提示词**、**Harness 适配**（含可选指挥施工）、证据分级、推进和完成语义；
 - [Workspace Contract](./references/workspace-contract.md)：Local、Worktree、分支和 PR（含托管 / CLI Worktree）；
 - [Evidence Contract](./references/evidence-contract.md)：验证层次、行为优先、Deliver Gate 和完成声明；
-- [Design Standards](./references/design-standards/README.md)：系统架构 / UX / 视觉社区底线（按 Rail 默认加载；AGENTS 可覆盖）；
+- [Design Standards](./references/design-standards/README.md)：入口 **[LOAD-MAP](./references/design-standards/LOAD-MAP.md)**（字段门控 / 豁免 / 场景必读）；AGENTS/PRODUCT+DESIGN.md 可覆盖；
 - 发布 / 上线 → Skill [`deploy`](../deploy/SKILL.md)（P0–P6）；
 - Diagnose / Incident → Skill `debug`。
 

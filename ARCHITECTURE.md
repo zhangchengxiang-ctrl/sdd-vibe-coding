@@ -13,7 +13,7 @@
   skills/vibe-coding/references/workflow-contract.md
   skills/vibe-coding/references/evidence-contract.md
   skills/vibe-coding/references/workspace-contract.md
-  skills/vibe-coding/references/design-standards/   # 系统架构 / UX / 视觉社区底线
+  skills/vibe-coding/references/design-standards/   # LOAD-MAP·tokens·pages·overlays·copy·anchor…
   skills/design/references/product-package.md
   skills/testing/references/product-regression.md
 
