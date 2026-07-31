@@ -12,11 +12,15 @@ description: >-
 本 Skill 只运行在已确认的 Verify Rail，不修改业务代码。先读宿主 `AGENTS.md`、当前声明范围、
 [`evidence-contract.md`](../vibe-coding/references/evidence-contract.md) 和适用
 `tests.md` 用例。
-用户体验场景再读 [UX Standards](./references/ux-standards.md)（真源
-[design-standards/ux.md](../vibe-coding/references/design-standards/ux.md)）；有界面时对照
-[visual.md](../vibe-coding/references/design-standards/visual.md)；UI / 浏览器真实通道再读
-[浏览器验证](./references/browser-verify.md)；用户要 **UX 走查 / 体验审计** 或需分级启发式
-发现时，加读 [UX 走查](./references/ux-walkthrough.md)。
+用户体验场景再读 [UX Standards](./references/ux-standards.md)；有界面时按 Spec 的
+`UI surface`/`page_kind` 走
+[LOAD-MAP](../vibe-coding/references/design-standards/LOAD-MAP.md)（抽检项见该表 Verify 行）；
+遵守 [有界验收](./references/bounded-verify.md)；
+UI / 浏览器真实通道再读
+[浏览器验证](./references/browser-verify.md)；用户要 **UX 走查 / 体验审计** 时加读
+[UX 走查](./references/ux-walkthrough.md)，意见格式可参考
+[critique-format](../design/references/critique-format.md)。
+UI 回归定位可指向 [debug-playbook](../vibe-coding/references/design-standards/debug-playbook.md)（仍不改码）。
 
 ## 先声明验收层次
 

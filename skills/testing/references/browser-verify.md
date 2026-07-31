@@ -34,7 +34,8 @@ Job、Test（`tests.md`）、Effective Channel 和 Oracle。
 
 - 打开宿主声明的产品 Dev / 目标 URL（正确主机）；
 - 经浏览器通道走完 Job 步骤（L3；关键控件须真实点击，不能只截静态首屏）；
-- Oracle 可观察结果 + 截图/日志落盘路径写入 `run.md`。
+- Oracle 可观察结果 + 截图/日志落盘路径写入 `run.md`；
+- UI 切片另记 **Visual QA 三态**（视觉 / 控制台 / 网络）→ [bounded-verify.md](./bounded-verify.md)。
 
 **硬门：** 仅 API 冒烟、`curl /health`、首页 200、nginx 200 + SPA Not Found、仅单测绿、或错误主机 loopback，不构成 V2 通过。
 
