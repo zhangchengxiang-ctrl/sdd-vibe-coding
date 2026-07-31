@@ -8,6 +8,7 @@
 | 路径 | 回答什么 |
 |---|---|
 | `foundation/` | 使命、原则、角色旅程、系统边界 |
+| `DESIGN.md` | 可选：默认 surface、锚点、品牌色/字体、反参考（插件 design-standards 底线之上） |
 | `modules/<slug>/` | 成块能力的产品蓝图（章节合同见插件 skill `design` → `product-package`） |
 | `demand-pool.md` | 尚未进入 Plan 的愿望和反馈 |
 | `gap-register.md` | 蓝图与现状之间的差距 |

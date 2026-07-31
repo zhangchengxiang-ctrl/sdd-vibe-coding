@@ -69,8 +69,12 @@
 - 生成物及生成命令：
 - 模块 README 约定路径：
 - 写入边界 / 只读区域：
-- 体验 / 视觉 / 无障碍例外（相对插件 ux·visual）：
+- 体验 / 视觉 / 无障碍例外（相对插件 design-standards）：
 - 设计系统 / 品牌真源（若有）：
+- Default UI surface（product|consumer|n/a）：
+- 可选产品寄存器：`docs/product/PRODUCT.md`（用户/Job/反参考；模板见插件 scaffold）
+- 可选设计上下文：`docs/product/DESIGN.md`（锚点、品牌色、字体、反参考；模板见插件 scaffold）
+- **DS 绑定（可选）：** 若 `组件库=antd`，施工前读 Ant Design「for agents」文档与项目 token；用官方组件 API，禁止手搓第二套近似皮肤。其他 DS（shadcn 等）同理：一项目一系统。
 
 ## 验证
 
