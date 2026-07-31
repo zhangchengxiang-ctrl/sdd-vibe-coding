@@ -11,13 +11,13 @@ description: >-
 
 本 Skill 只负责已确认的 Shape Rail。先读宿主 `AGENTS.md`、产品真源和
 [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)。
-有体验或 UI 诉求时再读
-[`design-standards/ux.md`](../vibe-coding/references/design-standards/ux.md)，有界面时加读
-[`visual.md`](../vibe-coding/references/design-standards/visual.md)；讨论或确认**具体页面**时加读
-[`ui-page-gate.md`](../vibe-coding/references/design-standards/ui-page-gate.md)
-（加载合同见
-[design-standards/README.md](../vibe-coding/references/design-standards/README.md)）。
-用户描述产品问题、判断取舍和确认结果即可；实现结构与内部交付术语由插件消化。
+有体验或 UI 诉求时：**先打开**
+[`design-standards/LOAD-MAP.md`](../vibe-coding/references/design-standards/LOAD-MAP.md)
+（字段门控、Design Read、surface、page_kind/motif、anchor 时机只认该表）。
+改存量 UI 先读 [change-control.md](../vibe-coding/references/design-standards/change-control.md)。
+具体页面评审输出用 [`ui-page-gate.md`](../vibe-coding/references/design-standards/ui-page-gate.md)。
+评审意见用 [critique-format.md](./references/critique-format.md)。
+用户描述产品问题、判断取舍和确认结果即可。
 
 ## 目标
 
@@ -110,8 +110,9 @@ docs/product/modules/<slug>/
 
 简单诉求可以只写 demand pool 或单页设计，不强制五层产品包。
 
-有 UI 时，落盘或确认产品包前按 `ux.md` / `visual.md` 自检（失败与权限路径、状态可见、可访问性底线）；
-违反项写入切片非目标或待决。系统架构分层归 Plan。
+有 UI 时，落盘或确认产品包前按 [LOAD-MAP](../vibe-coding/references/design-standards/LOAD-MAP.md)
+对应场景自检（失败与权限路径、状态可见、可访问性底线）；违反项写入切片非目标或待决。
+系统架构分层归 Plan。`ux.md` / `visual.md` 仅为原则索引，不作施工入口。
 
 ## 交付给 Plan
 

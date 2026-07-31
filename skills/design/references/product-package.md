@@ -36,14 +36,14 @@ docs/product/modules/<slug>/
 
 ### 01 体验
 设计立场 · 角色/画像 · 操控面 · 用户旅程 · 可感配置/屏幕 · 体验非目标  
-（有 UI 时对照插件 [`design-standards/ux.md`](../../vibe-coding/references/design-standards/ux.md) 自检）
+（有 UI 时按 [`LOAD-MAP`](../../vibe-coding/references/design-standards/LOAD-MAP.md) 场景自检；启发式见 [`ux.md`](../../vibe-coding/references/design-standards/ux.md)）
 
 ### 02 产品模型
 能力表 · 概念术语 · 核心对象与状态 · 权限/触发 · 冻结项 · 非目标
 
 ### 03 呈现
 IA · 文案/视觉语义 · 组件/表面规格（无 UI → 整篇省略）  
-（对照 [`design-standards/visual.md`](../../vibe-coding/references/design-standards/visual.md)；品牌/DS 例外在 AGENTS）
+（有 UI → [`LOAD-MAP`](../../vibe-coding/references/design-standards/LOAD-MAP.md)；原则索引 [`visual.md`](../../vibe-coding/references/design-standards/visual.md)；品牌/DS 例外在 AGENTS）
 
 ### 04 运行时意图（薄）
 进程/边界意图 · 关键路径语义 · 安全/观测约束  
@@ -70,4 +70,4 @@ IA · 文案/视觉语义 · 组件/表面规格（无 UI → 整篇省略）
 - [ ] 适用层含合同章节或 N/A+理由；空层已省略  
 - [ ] 04 只有产品级约束  
 - [ ] 关版 Test 以 Spec `tests.md` 为阅卷真源；05 只索引  
-- [ ] 有 UI 时 01/03 已对照 design-standards ux/visual（或 N/A+理由）  
+- [ ] 有 UI 时 01/03 已按 LOAD-MAP 场景自检（或 N/A+理由）  
