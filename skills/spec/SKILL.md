@@ -13,9 +13,8 @@ description: >-
 **薄提示词原则**、**证据分级**、**Harness 适配**、**Plan 落盘授权**）、`workspace-contract.md`
 与 `evidence-contract.md`，以及
 [`design-standards/system-architecture.md`](../vibe-coding/references/design-standards/system-architecture.md)
-（有 UI 时加 [`ux.md`](../vibe-coding/references/design-standards/ux.md) /
-[`visual.md`](../vibe-coding/references/design-standards/visual.md)；加载合同见
-[README](../vibe-coding/references/design-standards/README.md)）。
+（有 UI 时先读 [`LOAD-MAP.md`](../vibe-coding/references/design-standards/LOAD-MAP.md)；
+合同字段强度只认该表；改存量注明 `change: refinement|redesign`）。
 新建 Spec 与跨阶段批准以
 [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md) 硬闸与阶段闸门为准。
 
@@ -33,7 +32,7 @@ description: >-
 8. **骨架**：落盘 `VERSION` / `contract` / `tests` / `plan` / `run`；
 9. **架构与设计边界轻门**：触及新入口 / 跨层 / 新存储 / 新权限模型 / 新部署单元时，
    `plan.md` 按 `system-architecture.md` §7 写明沿用或新开边界、C4 层级、ADR、Unverified；
-   有 UI 时补 UX/视觉约束。齐套后再请求 Build。
+   有 UI 时按 LOAD-MAP 字段门控补 `UI surface` / Design Read / `page_kind|motif` / `anchor` 等。齐套后再请求 Build。
 10. **机检**：宣称 Plan 可实施或派 Build 前，运行
     `python3 <plugin>/skills/spec/scripts/check_spec.py <host> <spec-id>`
    （见 [`scripts/check_spec.py`](./scripts/check_spec.py)）。通过后再进 Build / 派 Codex。

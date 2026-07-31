@@ -150,6 +150,68 @@ def detect_has_ui(contract: str, plan: str, tests: str) -> bool:
     return any(h in blob for h in ui_hits)
 
 
+def detect_ui_surface(contract: str, plan: str, tests: str) -> str | None:
+    """Return product|consumer|n/a if declared; else None."""
+    blob = f"{contract}\n{plan}\n{tests}"
+    m = re.search(
+        r"UI\s*surface\s*[:：]\s*`?(product|consumer|n/a)`?",
+        blob,
+        flags=re.IGNORECASE,
+    )
+    if m:
+        return m.group(1).lower()
+    m = re.search(
+        r"(?m)^\s*[-*]?\s*`?surface`?\s*[:：]\s*`?(product|consumer|n/a)`?",
+        blob,
+        flags=re.IGNORECASE,
+    )
+    if m:
+        return m.group(1).lower()
+    return None
+
+
+def detect_page_kind(contract: str, plan: str, tests: str) -> str | None:
+    """Return page_kind or motif (equivalent for consumer)."""
+    blob = f"{contract}\n{plan}\n{tests}"
+    m = re.search(
+        r"page_kind\s*[:：]\s*`?([a-z][a-z0-9_-]*)`?",
+        blob,
+        flags=re.IGNORECASE,
+    )
+    if m:
+        return m.group(1).lower()
+    m = re.search(
+        r"\bmotif\s*[:：]\s*`?([a-z][a-z0-9_-]*)`?",
+        blob,
+        flags=re.IGNORECASE,
+    )
+    return m.group(1).lower() if m else None
+
+
+def detect_design_read(contract: str, plan: str, tests: str) -> bool:
+    """True if Design Read line or equivalent is present."""
+    blob = f"{contract}\n{plan}\n{tests}"
+    if re.search(r"Reading\s+this\s+as\s*:", blob, flags=re.IGNORECASE):
+        return True
+    if re.search(r"Design\s*Read\s*[:：]\s*\S+", blob, flags=re.IGNORECASE):
+        return True
+    return False
+
+
+def detect_anchor(contract: str, plan: str, tests: str) -> bool:
+    blob = f"{contract}\n{plan}\n{tests}"
+    if re.search(r"\banchor\s*[:：]\s*\S+", blob, flags=re.IGNORECASE):
+        # reject hollow anchors
+        if re.search(
+            r"anchor\s*[:：]\s*.*(现代|干净|简洁|高级|sleek|clean|modern)\s*$",
+            blob,
+            flags=re.IGNORECASE | re.MULTILINE,
+        ):
+            return False
+        return True
+    return False
+
+
 def check_legacy_skeleton(spec_dir: Path, report: Report) -> None:
     legacy = [n for n in LEGACY_NAMES if (spec_dir / n).is_file()]
     has_contract = (spec_dir / "contract.md").is_file()
@@ -388,11 +450,69 @@ def check_plan_architecture(
 
     if has_ui:
         ui_path = checklist_dir / "ui-surface.checklist.json"
-        # Soft: plan should mention UX/视觉 or N/A
-        if not re.search(r"UX|视觉|N/A|无 UI", body, re.I):
+        if not re.search(r"UX|视觉|N/A|无 UI|surface", body, re.I):
             report.warn(
-                f"{spec_dir.name}/plan.md: has_ui suspected but UX/视觉/N/A not mentioned "
+                f"{spec_dir.name}/plan.md: has_ui suspected but UX/视觉/surface/N/A not mentioned "
                 f"(see {ui_path.name if ui_path.is_file() else 'ui-surface checklist'})"
+            )
+
+
+def check_ui_surface(
+    spec_dir: Path,
+    contract: str,
+    plan: str,
+    tests: str,
+    *,
+    has_ui: bool,
+    report: Report,
+    structure_only: bool,
+) -> None:
+    if structure_only or not has_ui:
+        return
+    surface = detect_ui_surface(contract, plan, tests)
+    if not surface:
+        report.fail(
+            f"{spec_dir.name}: has_ui but missing `UI surface: product|consumer|n/a` "
+            "(declare in contract.md or plan.md — see design-standards/surfaces/)"
+        )
+        return
+    report.ok(f"{spec_dir.name}: UI surface={surface}")
+    if surface == "n/a":
+        return
+    if not detect_design_read(contract, plan, tests):
+        report.warn(
+            f"{spec_dir.name}: has_ui but missing Design Read "
+            "(`Reading this as: …` or `Design Read:` — see design-standards/craft-knobs.md)"
+        )
+    else:
+        report.ok(f"{spec_dir.name}: Design Read declared")
+    pk = detect_page_kind(contract, plan, tests)
+    if not pk:
+        report.warn(
+            f"{spec_dir.name}: has_ui but no `page_kind:` or `motif:` "
+            "(list|detail|settings|dashboard|form|growth|… — see design-standards/LOAD-MAP.md)"
+        )
+    else:
+        report.ok(f"{spec_dir.name}: page_kind/motif={pk}")
+    if not detect_anchor(contract, plan, tests):
+        report.warn(
+            f"{spec_dir.name}: missing usable `anchor:` / `diverge:` "
+            "(Build 前须补 — see design-standards/LOAD-MAP.md；not 现代/简洁)"
+        )
+    else:
+        report.ok(f"{spec_dir.name}: anchor declared")
+    blob = f"{contract}\n{plan}\n{tests}"
+    if surface == "product" and re.search(
+        r"新建.*壳|应用壳|sidebar|侧栏布局|AppShell", blob, re.I
+    ):
+        if not re.search(
+            r"shell\s*[:：]\s*`?(floating-card|flush-pane|doc-workspace|data-table|unset)`?",
+            blob,
+            re.I,
+        ):
+            report.warn(
+                f"{spec_dir.name}: product chrome work suspected but shell not declared "
+                "(floating-card|flush-pane|doc-workspace|data-table|unset)"
             )
 
 
@@ -537,6 +657,15 @@ def check_spec_dir(
     )
     check_tests(spec_dir, tests, req_rows, report, structure_only=structure_only)
     has_ui = detect_has_ui(contract, plan, tests)
+    check_ui_surface(
+        spec_dir,
+        contract,
+        plan,
+        tests,
+        has_ui=has_ui,
+        report=report,
+        structure_only=structure_only,
+    )
     check_plan_architecture(
         spec_dir,
         plan,
