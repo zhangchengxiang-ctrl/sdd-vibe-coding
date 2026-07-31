@@ -1,7 +1,7 @@
 # UX（用户体验默认）
 
 > 社区锚点：ISO 9241-11、[Nielsen 10 Usability Heuristics](https://www.nngroup.com/articles/ten-usability-heuristics/)。  
-> 设计时（Shape/Plan）与验收时（Verify）**同一真源**。加载合同 → [README.md](./README.md)。  
+> **原则/启发式真源**（非 UI 施工入口）。有界面施工 → [LOAD-MAP.md](./LOAD-MAP.md)。  
 > Verify 接线 → [`skills/testing/references/ux-standards.md`](../../../testing/references/ux-standards.md)。
 
 ## 核心原则
@@ -32,7 +32,7 @@
 | 反馈 | 操作后是否及时显示真实状态？ |
 | 错误恢复 | 失败是否说明原因和可行下一步？ |
 | 一致性 | 相同概念、动作和权限是否一致？ |
-| 可访问 | 见 [visual.md](./visual.md)；键盘、焦点、对比度、语义 |
+| 可访问 | 见 [audit/web-interface.md](./audit/web-interface.md)；键盘、焦点、对比度、语义 |
 | 完成感 | 用户能确认 Job 已完成且知道影响范围吗？ |
 
 ## Nielsen 十条启发式（严重度 0–4）
