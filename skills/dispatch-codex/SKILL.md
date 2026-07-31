@@ -16,6 +16,9 @@ description: >-
 施工侧 Codex 须已安装同版本 `sdd-vibe-coding`（建议 `make install-dev` 软链），质量条由其
 默认执行。派单只含薄模板，合同正文由施工侧插件执行。
 
+**有 UI 的 Plan/Build：** 薄派单须点名服从宿主已声明的 `UI surface` / `page_kind|motif`，并要求施工侧
+先读插件 `design-standards/LOAD-MAP.md`；勿在派单里粘贴长合同。
+
 > **档位真源：** Plan → AD-P（2026-07-27）；Build → AD-B（2026-07-28）。  
 > 选用 `gpt-5.6-sol` × medium/high。详见
 > `evals/fixtures/codex-live/RUN-capability-agentdeck-2026-07-27.md`、
@@ -150,6 +153,7 @@ approval-policy: never
 sandbox: workspace-write
 按 vibe-coding 走 Plan。产品真源：<PRODUCT_PATH>。
 切一份新 Spec，直接落盘 VERSION/contract/tests/plan/run；本轮只改 docs。
+有 UI：合同写 UI surface（及 page_kind|motif / Design Read / Build 前 anchor）；施工服从 LOAD-MAP（勿贴长文）。
 骨架文件名用上述五件套；以插件质量条为准。
 结束后只给能否进入 Build 的批准卡，并列出 Unverified。
 ```
@@ -163,7 +167,8 @@ effort: medium
 approval-policy: never
 sandbox: danger-full-access
 docs/specs/<SPEC_ID>/ 已批准。按 vibe-coding 只做 plan.md 中的切片 <SLICE_ID>（完成定义：<T-ids>）。
-对照 contract 事实映射再改；做完跑该片验证，结果写入 run.md。
+对照 contract 事实映射再改；有 UI 先按 LOAD-MAP 读必读册；改存量注明 refinement|redesign。
+做完跑该片验证，结果写入 run.md。
 切片完成后短报告：做成了什么、证据在哪、下一个切片是什么。
 ```
 
