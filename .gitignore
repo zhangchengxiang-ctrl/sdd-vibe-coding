@@ -45,3 +45,6 @@ docs/.sdd-scaffold
 .claude-plugin/
 .codex-plugin/
 .agents/
+
+# Local research downloads (do not commit)
+tmp/
