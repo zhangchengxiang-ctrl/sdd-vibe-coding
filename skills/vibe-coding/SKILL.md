@@ -49,14 +49,18 @@ Cursor 会话硬闸另见 install 投影的 `~/.cursor/rules/sdd-*.mdc`。
 3. Shape：只写 `product/`；有 UI 先读 design-standards **LOAD-MAP**（字段门控唯一真源）→ **product-judgment**（Job Brief 先于视觉）。
 4. Plan：落盘五件套；跑 `check_spec`；通过后出批准卡并**必给新对话 Build 提示词**（默认另开短聊）。
 5. Build：只做当前完成单元；测前冻结改码；改存量 UI 先 change-control（见 LOAD-MAP）。  
-   **硬门：** 只可报「实现完成」；禁「可交付」；**禁 P5/P6 生产动作**（须 Deploy 轨 + P4）。
-6. **Polish**：用户明示 polish/抛光/按 refinement 修/修走查 P0–P1 → 非 material 直接改，不新开 Spec；material → Shape。缩读见 LOAD-MAP 豁免。
+   **硬门：** 只可报「实现完成」；禁「可交付」；**禁 P5/P6 生产动作**（须 Deploy 轨 + P4）。  
+   **硬门（钉 2）：** 禁改 `tests.md` / 验收矩阵；`run.md` 写 `oracle-freeze: intact` + 红绿证据（Polish/无自动化可 `N/A · …`）。
+6. **Polish**：用户明示 polish/抛光/按 refinement 修/修走查 P0–P1 → 非 material 直接改，不新开 Spec；material → Shape。缩读见 LOAD-MAP 豁免。豁免红绿对，仍禁甩用户发现。
 7. Verify：有 UI/走查先 Read **product-judgment + LOAD-MAP**（testing FIRST ACTION）；再证伪写 Pass；`kind=` Evidence；不改 Oracle；先交付卡；有界轮次 + Visual QA。  
-   **硬门：** 未跑证伪 → 禁止对用户说可交付。
-8. Deploy：P1 证据 → P2+P3 方案 → 批准 → 执行 → P6 目标环境冒烟关版（禁仅 health）。
+   **硬门：** 未跑证伪 → 禁止对用户说可交付。系列/整体验收 → [version-acceptance-matrix](../testing/references/version-acceptance-matrix.md)。  
+   **硬门（钉 1）：** 可交付前 `make verify-deliver HOST=<repo> SPEC=<id>` exit 0（`verify-deliver: ok · <时间>`）。  
+   **硬门（钉 3）：** 验收不派 Codex；指挥侧亲自 ≥1 条证伪。  
+8. Deploy：P1 证据 → P2+P3 方案 → 批准 → 执行 → P6 **Agent** 目标环境冒烟关版（禁仅 health；禁甩用户硬刷发现）。通则 [verification-loop](./references/verification-loop.md)。`prod-smoke 通过` 同钉 1。
 9. Fail → 统一 Repair，再回验整批。
 10. 派 Codex：先 `check_spec`；经 CLI `codex-dispatch.sh`；sol×medium|high + approval never。  
-   **硬门：** 不经 `user-codex` / `CallMcpTool`；指挥侧重跑 ≥1 条证伪。仅 Verified 进 P0/Lock。
+   **硬门：** 不经 `user-codex` / `CallMcpTool`；指挥侧重跑 ≥1 条证伪。仅 Verified 进 P0/Lock。  
+   **硬门：** 禁止派 Codex 做主验收 / 「验到可交付」（钉 3）。
 
 ## 必读
 
@@ -67,6 +71,7 @@ Cursor 会话硬闸另见 install 投影的 `~/.cursor/rules/sdd-*.mdc`。
 - [Workflow Contract](./references/workflow-contract.md)：目标、授权、**薄提示词**、**Harness 适配**（含可选指挥施工）、证据分级、推进和完成语义；
 - [Workspace Contract](./references/workspace-contract.md)：Local、Worktree、分支和 PR（含托管 / CLI Worktree）；
 - [Evidence Contract](./references/evidence-contract.md)：验证层次、**Evidence Kind**、行为优先、Deliver Gate 和完成声明；
+- [Verification Loop](./references/verification-loop.md)：三钉（关版戳 / Oracle 冻结 / maker≠grader）、结束信号、反放水；
 - [Design Standards](./references/design-standards/README.md)：入口 **[LOAD-MAP](./references/design-standards/LOAD-MAP.md)**（字段门控 / 豁免 / 场景必读）；AGENTS/PRODUCT+DESIGN.md 可覆盖；
 - 发布 / 上线 → Skill [`deploy`](../deploy/SKILL.md)（P0–P6）；
 - Diagnose / Incident → Skill `debug`。
@@ -83,7 +88,7 @@ Cursor 会话硬闸另见 install 投影的 `~/.cursor/rules/sdd-*.mdc`。
 | 切 Spec / Plan / 按产品包拆到能编码 | Plan → Skill `spec`（**直接落盘**） |
 | Spec 批准了 / 开始做 / 实现 | Build（Codex 默认首个纵向切片；指挥模式下改派 Codex） |
 | polish / 抛光 / 前端小改 / 交互微调 / 按 refinement 修 / 修本批走查 | **Polish**（写码硬闸 (c)；非 material；见下） |
-| 验收 / UX 走查 | Verify → Skill `testing`（指挥模式下建议指挥侧验收，maker ≠ grader） |
+| 验收 / UX 走查 | Verify → Skill `testing`（**指挥侧执行**；maker ≠ grader；禁派 Codex 主验收） |
 | 发布 / 上线 / 部署 / 发版 / 生产部署 | Deploy → Skill `deploy`（P0–P6；先方案后执行） |
 | 只定位复杂或线上问题 | Diagnose |
 | 紧急恢复生产 | Incident |
@@ -132,7 +137,8 @@ Spec 范围以 `VERSION.md`、`contract.md`（含事实映射）、`tests.md`（
 ## 用户前台
 
 只用“我理解的目标”“当前进展”“交付结果”“需要你决定”说明事实。每次可有一句“下一步”，
-仅作进度说明。仅在确实需要用户做决定、授予授权或处理真实 Blocker 时向用户提问。
+仅作进度说明。仅在确实需要用户做决定、授予授权或处理真实 Blocker 时向用户提问。  
+**硬门：** 不得把 Agent 可自跑的打开/硬刷/确认是否正常写成「下一步」；默认无需用户动作。
 
 最终交付说明：用户目标是否完成、真实验证、未通过/受阻项、环境状态和后续授权（如有）。
-完成声明须对应当前 Delivery Target 的全量证据。
+完成声明须对应当前 Delivery Target 的全量证据；结束信号见 [verification-loop](./references/verification-loop.md)。

@@ -1,7 +1,8 @@
 # Build：自动化测试编写（跨仓通则）
 
 > 与 Verify Skill `testing` 分工不同：本文管 **Build 期间写/跑自动化测试**；  
-> 产品旅程验收、交付卡、UX 走查仍走 Skill `testing` + [browser-verify](../../testing/references/browser-verify.md)。
+> 产品旅程验收、交付卡、UX 走查仍走 Skill `testing` + [browser-verify](../../testing/references/browser-verify.md)。  
+> 关版三钉见 [verification-loop](./verification-loop.md)。
 
 命令、夹具、目录只读宿主 `AGENTS.md`；不写死单仓路径。
 
@@ -12,6 +13,12 @@
 3. **先失败场景**：权限拒绝、空态、非法输入与成功路径同等重要。
 4. **回归挂在根因上**：Bug 修复后补覆盖该边界的用例，再重跑相关套件。
 5. **数据面最低条**：触及分页/排序/筛选时，至少 1 个 API/契约测断言「不同 offset/参数 → 不同 rows」；纯前端 mock 列表测不能单独关闭该条。证伪通则见 testing [`falsify-checklist`](../../testing/references/falsify-checklist.md)。
+6. **先红后绿（钉 2）**：有自动化时，先见证失败（red，exit≠0 或断言挂），再改实现至绿（green，exit=0）。两态命令+退出码写入 Spec `run.md`：
+   ```text
+   红绿证据: red `<cmd>` exit=<n> · green `<cmd>` exit=0
+   ```
+   Polish / trivial / 无自动化 → `红绿证据: N/A · polish|trivial|无自动化`。  
+   **禁止**改 Spec `tests.md` 或产品包验收矩阵来刷绿；改 Oracle 回 Plan。
 
 ## 默认分层（宿主可改名）
 
@@ -32,3 +39,4 @@
 | 全栈入口 | 后端相关测 + 契约生成（若宿主要求） | V2 + 路由/入口按 `AGENTS.md` 核对 |
 
 报告用语写清实际跑过的命令与覆盖面；禁止在只跑过后端套件时宣称「全量回归 / 可以发版」。
+宣称「实现完成」时另填 `oracle-freeze: intact`（见 verification-loop 钉 2）。

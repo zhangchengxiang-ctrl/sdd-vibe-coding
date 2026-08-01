@@ -49,7 +49,8 @@
 4. **审批**：CLI 派单用 `approval_policy=never`（`codex-dispatch.sh` 写死）。
 5. **沙箱**：Plan 用 `workspace-write`；Build/Goal 默认 `danger-full-access`。
 6. **Oracle 齐才派 Build**：该片须有可观察的 success + failure/permission（`tests.md`）；否则先补 Plan。
-7. **maker ≠ grader**：指挥侧对照仓库产物验收，并**亲自跑 ≥1 条证伪命令**（或复核其输出），不只读施工侧 `run.md`。Plan 通过条件见 `dispatch-codex` 验收清单（须有 `contract.md` 五件套）。超时后按仓库结案。
+7. **maker ≠ grader**：指挥侧对照仓库产物验收，并**亲自跑 ≥1 条证伪命令**（或复核其输出），不只读施工侧 `run.md`。Plan 通过条件见 `dispatch-codex` 验收清单（须有 `contract.md` 五件套）。超时后按仓库结案。  
+   **禁止**派 Codex 做 Verify 主验收 / 「验到可交付」（见 [verification-loop](./verification-loop.md) 钉 3）。
 8. **墙钟上限**：Plan ~15min / Build 单片 ~20min（脚本默认）；超时 exit 124 → 验收仓库。
 9. **失败打回**：经 CLI 再派（可升 high）或指挥侧自做。
 10. **多片长程**：可派「对该 Spec 开 Goal，完成条件=剩余切片+验证命令」；effort=**high**；指挥盯里程碑与证据。
@@ -216,16 +217,22 @@ Plan 阶段内：调查 → **直接落盘** `VERSION`/`contract`/`tests`/`plan`
 - **新建 / 大改用户可见页面**：先读 [LOAD-MAP.md](./design-standards/LOAD-MAP.md)（字段门控 + 场景必读）与 [product-judgment.md](./design-standards/product-judgment.md)（Job Brief 先于视觉）；需要时用 [ui-page-gate.md](./design-standards/ui-page-gate.md) 评审模板；输出前扫 ai-tells。
 - 实现期间可做编译、格式化、静态分析等非验收性检查；完成以行为验收为准。
 - 按需编写/更新自动化测试（分层与用语见 [automated-tests.md](./automated-tests.md)）；完成实现后冻结代码，列出并运行完整单元测试命令；记录全部失败后统一 Repair。
+- **有自动化 → 先红后绿**：红/绿命令与退出码写入 `run.md`「红绿证据」；Polish/trivial/无自动化写 `N/A · …`。
 - 行为验收优先：越权拒绝、成功路径等可观察断言。
 - 切片/完成单元收口：短报告「做成了什么 / 证据在哪 / 下一个切片」。
 - **硬门：** Build 轨只可报「实现完成」；禁止宣称「可交付」/ `acceptance-passed`（属 Verify）。
 - **硬门：** Build 轨禁止执行 Deploy P5/P6 或读写生产 deploy/reload；须路由 Skill `deploy` 并完成本轮 P4。
+- **硬门（钉 2 · Oracle 冻结）：** Build/Repair **禁止**修改 Spec `tests.md` 与产品包验收矩阵（`06-acceptance-matrix` 等）。改 Oracle 只能回 Plan + 用户批准。宣称实现完成时 `run.md` 须有 `oracle-freeze: intact`（`check_spec` 机检）；指挥侧 diff 不得含上述 Oracle 文件。
 
 ### Verify
 
 - 在不修改实现的前提下，**先按** testing [`falsify-checklist`](../../testing/references/falsify-checklist.md) **证伪**，再跑完整集成/场景/端到端/真实环境探针。
 - Evidence 写 `kind=`（见 evidence-contract §1.1）；Pass 禁止仅 window-smoke / health。
 - 同会话不得把 Build 冒烟原样誊为 Verify Pass。
+- 结束信号与三钉：[`verification-loop.md`](./verification-loop.md)。
+- **硬门（钉 1）：** 宣称可交付 / acceptance-passed 前须 `make verify-deliver` exit 0，`run.md` 有 `verify-deliver: ok · <时间>`。
+- **硬门（钉 3）：** Verify 默认指挥侧执行；禁止派 Codex 做主验收。
+- 整体/系列/多角色 material 验收：[`version-acceptance-matrix.md`](../../testing/references/version-acceptance-matrix.md)；禁 Build Pass 冒充系列 Pass。
 - 报告每个失败的命令、结果、影响范围和初步根因；环境、账号、主机或外部依赖失败须有原始证据。
 - 若存在可修实现问题，输出一份 Repair 方案：根因分组、修改面、风险、回归矩阵，然后进入 Repair。
 
@@ -233,6 +240,7 @@ Plan 阶段内：调查 → **直接落盘** `VERSION`/`contract`/`tests`/`plan`
 
 - 只按已记录的统一 Repair 方案修改；若发现新根因，补入同一方案。
 - 修复完成后重跑完整的单元与 Verify 批次。
+- **同钉 2：** Repair 禁改 `tests.md` / 验收矩阵 Oracle。
 
 ## 完成声明
 

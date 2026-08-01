@@ -11,7 +11,9 @@
 | V2 | Test 在真实通道有效 | 浏览器、运行时 Job、目标环境、**跨用户越权拒绝** |
 | V3 | 全局消费者或发布稳定 | 全量回归、CI、生产检查 |
 
-按当前风险选择最小充分组合。
+按当前风险选择验证层组合。**Floor ≠ 关版**——最低条只是入场；关版条件见
+[`verification-loop.md`](./verification-loop.md)。系列 / 全角色验收见 testing
+[`version-acceptance-matrix.md`](../../testing/references/version-acceptance-matrix.md)。
 
 ### 1.1 Evidence Kind（`run.md` Evidence 列）
 
@@ -86,12 +88,13 @@ Verify 证明整份 Spec 集成后（**先证伪，再写 Pass**；见 falsify-c
 #### 交付条件
 
 1. **产品冒烟（P6）**：有产品影响的发布在**目标环境**按事先写好的验证方案跑用户路径冒烟；完成声明带冒烟态（通过 / 未过 / Blocked+原因）。  
-   **硬门：** `/health`、进程 active、首页 HTTP 200 单独不构成「部署成功」或生产交付（仅 P5 过程检查）。
+   **硬门：** `/health`、进程 active、首页 HTTP 200 单独不构成「部署成功」或生产交付（仅 P5 过程检查）。  
+   **硬门：** P6 须 `探活执行者: agent`（或 `blocked-needs-auth`）；禁止在宣称通过后再派用户「打开/硬刷」当第一发现手段（见 [`verification-loop.md`](./verification-loop.md)）。
 2. **环境对齐**：生产 Target 的证据取自目标生产环境（数据、env、权限、预置）。  
    **硬门：** 开发/预览 E2E 或开发 URL 回归单独不构成生产验收（最多作 P1 旁证）。
 3. **定级有理由**：发布风险定级（L0/L1/L2）与冒烟范围由 Agent/人写明理由；脚本（路径变更、reload、环境清单）只作信号，不定级。
 4. **P2 + P3 先于执行**：生产发布须先贴 **发布方案（怎么发）** 与 **验证方案（怎么证伪）**，再经批准（P4）后才执行（P5）。  
-   **硬门：** L1/L2 缺任一则禁止 deploy；L0 可极简但仍须触及面最小冒烟。  
+   **硬门：** L1/L2 缺任一则禁止 deploy；L0 可极简但仍须触及面最小冒烟（Agent 跑关键路径，非仅 health）。  
    **硬门：** P6 未过禁止宣称 `production-delivered`；标签只能是 `prod-smoke 未过/Blocked`。
 5. **非代码面**：触及 migrate / 主机依赖 / 反向代理·进程模板 / 新 env 合同等时，方案须含采纳或明确延期（理由+跟踪）；配置类 MUST 含「模板↔live 同步」再 reload，禁止只写 reload。
 
@@ -110,6 +113,9 @@ reload / deploy（P5）：
 migration / health（过程）：
 环境门禁 / 侧车检查：
 产品冒烟（目标环境 · P6）：通过 | 未过 | Blocked+原因
+探活执行者：agent | blocked-needs-auth
+产品冒烟证据：kind=… · <路径或命令>
+需要用户做什么：无需动作 | 批准… | 真人SSO/密钥…
 完成标签：[部署·L#·prod-smoke …]
 Open MUST（延期 sidecar，挂下次 P1）：
 回滚点：
@@ -168,6 +174,12 @@ UX 判定标准见 [`ux-standards.md`](../../testing/references/ux-standards.md)
 生产/测试环境需要登录时：宿主 `AGENTS.md` 或项目约定中**已有可复用测试凭据**的，Agent
 自行切换账号继续验收。仅当需要**用户个人账号**、OAuth 本人授权、或生产密钥时，记为
 `Blocked` / `needs-authorization`。
+
+**硬门：** 结论为通过 / `prod-smoke 通过` 时，`需要用户做什么` 默认 `无需动作`；禁止把
+「请打开页面 / 硬刷新确认是否正常」当作验收步骤（那是 Agent 探活义务）。  
+**硬门（钉 1）：** 宣称 `可交付` / `acceptance-passed` / `prod-smoke 通过` 前须
+`make verify-deliver HOST=<repo> SPEC=<id>` exit 0，且 `run.md` 含
+`verify-deliver: ok · <时间>`（见 [`verification-loop.md`](./verification-loop.md)）。
 
 ## 7. 完成声明
 
