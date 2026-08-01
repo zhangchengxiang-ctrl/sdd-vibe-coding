@@ -155,7 +155,7 @@ sandbox: workspace-write
 切一份新 Spec，直接落盘 VERSION/contract/tests/plan/run；本轮只改 docs。
 有 UI：合同写 UI surface（及 page_kind|motif / Design Read / Build 前 anchor）；施工服从 LOAD-MAP（勿贴长文）。
 骨架文件名用上述五件套；以插件质量条为准。
-结束后只给能否进入 Build 的批准卡，并列出 Unverified。
+结束后只给能否进入 Build 的批准卡（含可复制的新对话 Build 提示词），并列出 Unverified。
 ```
 
 ### Build（单切片）
@@ -194,7 +194,7 @@ sandbox: danger-full-access
 - [ ] `plan.md` 纵向切片，完成定义链 T-xxx
 - [ ] `tests.md` 每 P0 有完整 Given/When/Then（含 permission）
 - [ ] 本轮仅 docs/handoff 改动
-- [ ] 落盘后给出能否进入 Build 的批准卡
+- [ ] 落盘后给出能否进入 Build 的批准卡（含新对话 Build 提示词）
 
 **硬门（打回）：** 无 `contract.md`，或仅有 context/requirements/tasks/validation/scenario-spec 旧骨架 → 经 CLI 升 `effort=high` 重派或指挥侧自做。
 

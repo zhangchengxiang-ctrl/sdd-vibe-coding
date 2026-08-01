@@ -49,7 +49,7 @@ Diagnose 默认只读。写代码、改配置、改数据或部署须另有明�
 | 证伪 | 临时日志或调试只为验证假设；确认根因后再最小修复 |
 
 修复获授权后：最小改动；检查同模式是否在别处复现；边界条件补自动化测试（命令读 `AGENTS.md`）。  
-非 trivial 行为变更走 Plan / Repair 合同，不靠口头「修一下」。
+非 trivial / 非 Polish 行为变更走 Plan / Repair 合同，不靠口头「修一下」。UI 抛光明示话术见 workflow-contract (c)。
 
 只读证据源彼此独立且当前 surface 提供 Subagent 时，可以并行委派有边界的证据调查；
 每个证据源仍只有一个 owner，父对话负责合并结论。没有 Subagent 时在当前对话串行调查。
