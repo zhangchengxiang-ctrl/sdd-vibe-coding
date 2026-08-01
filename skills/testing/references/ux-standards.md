@@ -12,8 +12,9 @@
 **Pass = 指定用户在真实情境下能有效、高效、满意地完成目标**（ux.md）。  
 有控件 / Toast / API 200 / 空态文案 **单独均不算 Pass。**
 
-走查时按 Spec 的 `page_kind`/`motif` 打开对应 `pages/*.md` 自检，并抽：
+走查时先对照 Spec / 切片的 **Job Brief 与人话验收**（[product-judgment.md](../../vibe-coding/references/design-standards/product-judgment.md)），再按 `page_kind`/`motif` 打开对应 `pages/*.md` 自检，并抽：
 
+- [product-judgment.md](../../vibe-coding/references/design-standards/product-judgment.md)（`rule/*`：交互单位、禁黑话、权限 vs 分发）  
 - [audit/ai-tells.md](../../vibe-coding/references/design-standards/audit/ai-tells.md)  
 - [audit/web-interface.md](../../vibe-coding/references/design-standards/audit/web-interface.md)  
 - [copy.md](../../vibe-coding/references/design-standards/copy.md)  

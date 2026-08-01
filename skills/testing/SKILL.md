@@ -9,17 +9,29 @@ description: >-
 
 # Testing：Verify 与证据
 
-本 Skill 只运行在已确认的 Verify Rail，不修改业务代码。先读宿主 `AGENTS.md`、当前声明范围、
+本 Skill 只运行在已确认的 Verify Rail，不修改业务代码。
+
+## FIRST ACTION（有 UI / UX 走查 · 硬门）
+
+命中 **验收 / UX 走查 / 体验审计 / 走查页面** 且涉及用户可见界面时，在开浏览器或写交付卡之前，
+**工具调用顺序必须满足**：
+
+1. Read 本文件（若尚未 Read）；  
+2. Read [`ux-standards.md`](./references/ux-standards.md)；  
+3. Read [`design-standards/product-judgment.md`](../vibe-coding/references/design-standards/product-judgment.md)；  
+4. Read [`design-standards/LOAD-MAP.md`](../vibe-coding/references/design-standards/LOAD-MAP.md)（至少扫 Verify 行 + 本任务场景行）。  
+
+未完成 2–4 → **禁止**宣称已按 design-standards 走查；发现项应尽量引用 `rule/*`（见 product-judgment）。  
+UX 走查变体再读 [`ux-walkthrough.md`](./references/ux-walkthrough.md)（**不能**用它替代 2–4）。
+
+然后：宿主 `AGENTS.md`、当前声明范围、
 [`evidence-contract.md`](../vibe-coding/references/evidence-contract.md) 和适用
 `tests.md` 用例。
-用户体验场景再读 [UX Standards](./references/ux-standards.md)；有界面时按 Spec 的
-`UI surface`/`page_kind` 走
-[LOAD-MAP](../vibe-coding/references/design-standards/LOAD-MAP.md)（抽检项见该表 Verify 行）；
+有界面时按 Spec 的 `UI surface`/`page_kind` 继续 LOAD-MAP 场景册；
 遵守 [有界验收](./references/bounded-verify.md) 与
 [证伪清单](./references/falsify-checklist.md)（**先证伪再 Pass**）；
 UI / 浏览器真实通道再读
-[浏览器验证](./references/browser-verify.md)；用户要 **UX 走查 / 体验审计** 时加读
-[UX 走查](./references/ux-walkthrough.md)，意见格式可参考
+[浏览器验证](./references/browser-verify.md)；意见格式可参考
 [critique-format](../design/references/critique-format.md)。
 UI 回归定位可指向 [debug-playbook](../vibe-coding/references/design-standards/debug-playbook.md)（仍不改码）。
 
