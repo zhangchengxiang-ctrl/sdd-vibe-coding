@@ -70,7 +70,7 @@ Build 前未写可用 anchor → **不得定视觉实现方向**（可先写 IA/
 | Shape | 写 Design Read；必须 surface；有具体页则 page_kind/motif；knobs 建议；anchor 可后置；读对应 surfaces |
 | Plan | 合同写 surface；page_kind/motif + anchor 建议（机检 warn）；架构边界点名服从本包 |
 | Build | **本表场景行全文** + 需要时 ui-page-gate 评审模板；改存量先 change-control；确认前不写页 |
-| Verify | 同 surface/page_kind；ai-tells + web-interface + copy 抽检；有界轮次见 testing/bounded-verify |
+| Verify | 同 surface/page_kind；**先证伪**（testing/falsify-checklist）；ai-tells + web-interface + copy 抽检；有界轮次见 testing/bounded-verify；list/dashboard 须 api-diff/network-har |
 
 ## 禁止
 

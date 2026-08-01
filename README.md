@@ -2,7 +2,8 @@
 
 面向略懂技术产品经理的 **Spec-Driven Delivery** 插件（Cursor · Claude Code · Codex）。
 
-用户表达诉求、判断关键取舍、授权实施并验收真实成果。跨仓工作流在 **skills**；本仓命令与红线在宿主 **AGENTS.md** / `docs/`。不依赖 rules / hooks。
+用户表达诉求、判断关键取舍、授权实施并验收真实成果。跨仓工作流在 **skills**；本仓命令与红线在宿主 **AGENTS.md** / `docs/`。  
+Cursor 另经 `make install-cursor` 投影 **`~/.cursor/rules/sdd-*.mdc`**（入口 / 写码闸 / Deploy P4 / Codex CLI）作会话硬闸；不依赖宿主仓自建 hooks。
 
 > 用户前台保持简单；`docs/`、Spec、handoff 是 Agent 的内部交付记忆。
 
@@ -56,13 +57,17 @@ make install         # 推荐：有 CLI 的端都装；缺则 SKIP
 | `make install-codex` | 只装 Codex | 只动一端 |
 | `make scaffold HOST=/path/to/repo` | 宿主生成 `AGENTS.md` + `docs/`（默认 `HOST=.`，`PROFILE=detect`） | 空仓 / **存量**宿主初始化 |
 | `make check-spec HOST=/path/to/repo SPEC=id` | Spec 静态门（事实映射 / tests / 架构节 / run 诚实性） | Plan 齐套后、派 Build 前 |
-| `make codex-dispatch HOST=/path UNIT=plan\|build\|goal PROMPT_FILE=…` | 派 Codex（never + 墙钟超时；Build/Goal 需 `SPEC=`） | 指挥侧外包有界单元 |
+| `make verify-deliver HOST=/path SPEC=id` | Verify 关版门（可交付 / 证伪 / Deploy P2·P3） | 宣称可交付前 |
+| `make preflight-rail HOST=/path` | Shape 写码闸（业务 dirty 无授权则失败） | 讨论/设计会话自检 |
+| `make codex-dispatch HOST=/path UNIT=plan\|build\|goal PROMPT_FILE=…` | 派 Codex（never + 墙钟；Build 需 `SPEC=`+`SLICE=`；Goal 需 `GOAL_APPROVED=1`） | 指挥侧外包有界单元 |
+| `make require-falsify LOG_DIR=… RUN_ID=…` | 指挥侧证伪落盘门 | Codex Build 返回后、对人结案前 |
+| `make phase3-negative` | Phase0–2 负向验收（规则投影 / 写码闸 / dispatch / 宿主入口） | 修完纪律后自检 |
 
 安装在 cache stage **生成**各端清单（**不写入本仓库**），再注册。改仓库后 **不会自动热载**：再跑 `make install`（或开发期 `make install-dev`），然后：
 
 | 端 | 装完后 |
 |----|--------|
-| Cursor | **Reload Window** → Plugins 见 **sdd-vibe-coding**；`~/.cursor/skills/` 已链 skill（可用 `/vibe-coding`） |
+| Cursor | **Reload Window** → Plugins 见 **sdd-vibe-coding**；`~/.cursor/skills/` 已链 skill（可用 `/vibe-coding`）；`~/.cursor/rules/sdd-*.mdc` 已链会话硬闸 |
 | Claude Code | `/reload-plugins` |
 | Codex | 重启或**新开任务** → Plugins |
 

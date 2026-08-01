@@ -7,7 +7,9 @@
 ## SDD
 
 - SDD docs root: docs
+- **入口：** 产品 / 编码 / 验收 / 发布意图 → 先加载插件 skill **`vibe-coding`**，再读本文件。
 - 未明示「开始做 / 实现 / 按这个来 / 构建」、且无已确认 `<SDD docs root>/specs/<id>/` → 只写 `<SDD docs root>/product/`，**不改业务代码**。
+- **Build ≠ Deploy：** 生产发布须 Deploy 轨（P2+P3 → 本轮 P4 → P5 → P6）；仅「批准 Build」不得上生产。
 - 无 `AGENTS.md` / SDD 文档树时先跑插件 `scripts/scaffold.sh`（存量推荐 `PROFILE=minimal` 或默认 `detect`；宿主已占用 `docs/product` 时用 `--root=docs/sdd`）；scaffold **不算**编码许可。硬冲突见探测输出的 `BLOCK`。
 - 技能里写的 `docs/product`、`docs/specs` 均相对本文件的 **SDD docs root**（默认 `docs`）。
 - 未经当前代码、Schema/约束、配置或运行证据验证的关键技术判断，标为 `Unverified`；仅 `Verified` 可进 P0 Requirement、Lock、Blocker、DDL 条件与可实施宣称。

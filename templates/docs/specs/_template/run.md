@@ -23,15 +23,17 @@
 
 ### 批次结果
 
-| 层或命令 | 覆盖 Tests | 结果 | 证据 |
+| 层或命令 | 覆盖 Tests | 结果 | 证据（`kind=` · 路径） |
 |---|---|---|---|
-| | T-001 | Pass / Fail / Blocked | |
+| | T-001 | Pass / Fail / Blocked | kind=… · |
 
 ### 追踪矩阵
 
-| Requirement | Test | Implementation | Evidence | Result |
+| Requirement | Test | Implementation | Evidence（`kind=` · 路径） | Result |
 |---|---|---|---|---|
-| R-001 | T-001 | | | Pass / Fail / Blocked |
+| R-001 | T-001 | | kind=… · | Pass / Fail / Blocked |
+
+> Pass 禁止仅 `kind=window-smoke` / `health` / 裸 `*smoke*.json`。数据面 success 须 `api-diff` 或 `network-har`。
 
 ### Fail / Blocked 分类
 
@@ -65,9 +67,11 @@
 
 ### 已验证的用户结果
 
-| 用户要完成的事 | 实际观察 | 证据 | 结论 |
+| 用户要完成的事 | 操作 → 两态观察差 | 证据（`kind=`） | 结论 |
 |---|---|---|---|
-| | | | 已通过 / 未通过 / 无法验证 |
+| | | kind=… · | 已通过 / 未通过 / 无法验证 |
+
+> 无两态观察差不得写「已通过」。Build 轨不得填「是否可以交付：可交付」。
 
 ### 未通过或无法验证
 

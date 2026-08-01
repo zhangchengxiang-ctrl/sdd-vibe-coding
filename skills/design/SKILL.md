@@ -33,6 +33,7 @@ description: >-
 
 Shape 产出：`docs/product/` 切片与理解卡。  
 **硬门：** 本轨不创建实施 Spec、不改业务代码、不部署；技术偏好不替代产品决定。  
+**交叉硬门：** 「设计方案 / 构建产品文档 / 走查 / 应该支持…」**不是** Build 授权；用户未明示「开始做 / 批准 Build」前禁止 Write/StrReplace 业务源码。  
 写代码前硬闸 → [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)。  
 权限 / 数据边界类诉求：进入 Plan 前先有可读的代码与 Schema 事实（见 Plan「事实映射门」）。
 

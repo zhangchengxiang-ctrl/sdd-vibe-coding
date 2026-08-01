@@ -29,6 +29,7 @@ Options:
   --sandbox MODE         read-only|workspace-write|danger-full-access
   --timeout SEC          Wall clock limit (kills process on expiry)
   --spec ID              Spec id under SDD docs/specs (required for build/goal unless SKIP)
+  --slice ID             Build: required slice id (also accept SLICE_ID= in prompt)
   --json                 Stream JSONL events to stdout + log file
   --no-json              Final message only (default: --json on)
   --log-dir DIR          Event/log directory
@@ -37,6 +38,9 @@ Options:
 Prompt: remaining args after --, or stdin if no args.
 Always sets approval_policy=never (cannot be overridden).
 Build/Goal runs skills/spec/scripts/check_spec.py first (SKIP_SPEC_CHECK=1 to bypass).
+Build: one longitudinal slice only (multi-slice → --unit goal + GOAL_APPROVED=1).
+Goal: requires env GOAL_APPROVED=1.
+After Build ok: conductor must write <log-dir>/<run-id>_falsify.log (see require-conductor-falsify.sh).
 EOF
 }
 
@@ -49,6 +53,7 @@ MODEL="${CODEX_DISPATCH_MODEL:-gpt-5.6-sol}"
 SANDBOX=""
 TIMEOUT_SEC=""
 SPEC_ID="${CODEX_DISPATCH_SPEC:-}"
+SLICE_ID="${CODEX_DISPATCH_SLICE:-}"
 JSON=1
 LOG_DIR="${CODEX_DISPATCH_LOG_DIR:-}"
 PROMPT_ARGS=()
@@ -62,6 +67,7 @@ while [[ $# -gt 0 ]]; do
     --sandbox) SANDBOX="${2:-}"; shift 2 ;;
     --timeout) TIMEOUT_SEC="${2:-}"; shift 2 ;;
     --spec) SPEC_ID="${2:-}"; shift 2 ;;
+    --slice) SLICE_ID="${2:-}"; shift 2 ;;
     --json) JSON=1; shift ;;
     --no-json) JSON=0; shift ;;
     --log-dir) LOG_DIR="${2:-}"; shift 2 ;;
@@ -153,12 +159,37 @@ else
 fi
 [[ -n "${PROMPT//[[:space:]]/}" ]] || die "prompt is empty"
 
+# --- Unit / slice gates ---
+if [[ "$UNIT" == "goal" && "${GOAL_APPROVED:-0}" != "1" ]]; then
+  die "goal requires GOAL_APPROVED=1 (user asked for continuous multi-slice / full Spec Goal)"
+fi
+
+if [[ "$UNIT" == "build" ]]; then
+  if echo "$PROMPT" | grep -Eiq \
+    '剩余切片|all[[:space:]]+slices|全部切片|整份[[:space:]]*Spec[[:space:]]*(做完|完成)|multiple[[:space:]]+slices|多片连做|S1[[:space:]]*[|｜,/][[:space:]]*S2|S2[[:space:]]*[~～-][[:space:]]*S[0-9]'; then
+    die "build unit = one slice only; for multi-slice use --unit goal + GOAL_APPROVED=1"
+  fi
+  if [[ -z "$SLICE_ID" ]]; then
+    if echo "$PROMPT" | grep -Eqi 'SLICE_ID[[:space:]]*=[[:space:]]*[[:alnum:]_.-]+'; then
+      SLICE_ID="$(echo "$PROMPT" | grep -Eio 'SLICE_ID[[:space:]]*=[[:space:]]*[[:alnum:]_.-]+' | head -1 | sed -E 's/.*=[[:space:]]*//')"
+    elif echo "$PROMPT" | grep -Eqi '(^|[[:space:]])S[0-9]+([[:space:]]|$|[：:])'; then
+      SLICE_ID="$(echo "$PROMPT" | grep -Eio '(^|[[:space:]])S[0-9]+' | head -1 | tr -d '[:space:]')"
+    fi
+  fi
+  [[ -n "$SLICE_ID" ]] || die "build requires --slice <id> or SLICE_ID=/S# in prompt (one longitudinal slice)"
+  if ! echo "$PROMPT" | grep -Eqi "SLICE_ID[[:space:]]*=[[:space:]]*${SLICE_ID}|切片[^[:alnum:]]*${SLICE_ID}|${SLICE_ID}"; then
+    PROMPT="SLICE_ID=${SLICE_ID}
+${PROMPT}"
+  fi
+  echo "codex-dispatch: build slice=$SLICE_ID" >&2
+fi
+
 # --- Spec static gate (Build/Goal) ---
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 CHECK_SPEC="$PLUGIN_ROOT/skills/spec/scripts/check_spec.py"
 if [[ "$UNIT" == "build" || "$UNIT" == "goal" ]]; then
   if [[ "${SKIP_SPEC_CHECK:-0}" == "1" ]]; then
-    echo "codex-dispatch: SKIP_SPEC_CHECK=1 — bypassing check_spec" >&2
+    echo "codex-dispatch: WARN SKIP_SPEC_CHECK=1 — maintainer-only bypass; never in user sessions" >&2
   else
     [[ -f "$CHECK_SPEC" ]] || die "check_spec.py not found at $CHECK_SPEC"
     if [[ -z "$SPEC_ID" ]]; then
@@ -194,6 +225,10 @@ META_FILE="$LOG_DIR/${RUN_ID}.meta.txt"
   echo "json=$JSON"
   echo "started_at=$STAMP"
   echo "log_file=$LOG_FILE"
+  echo "run_id=$RUN_ID"
+  [[ -n "$SPEC_ID" ]] && echo "spec=$SPEC_ID"
+  [[ -n "$SLICE_ID" ]] && echo "slice=$SLICE_ID"
+  echo "falsify_log=$LOG_DIR/${RUN_ID}_falsify.log"
 } >"$META_FILE"
 
 echo "codex-dispatch: unit=$UNIT model=$MODEL effort=$EFFORT sandbox=$SANDBOX timeout=${TIMEOUT_SEC}s" >&2
@@ -245,4 +280,8 @@ if [[ $STATUS -ne 0 ]]; then
 fi
 
 echo "codex-dispatch: ok; meta=$META_FILE" >&2
+if [[ "$UNIT" == "build" || "$UNIT" == "goal" ]]; then
+  echo "codex-dispatch: NEXT — conductor falsify → tee to $LOG_DIR/${RUN_ID}_falsify.log" >&2
+  echo "codex-dispatch: then: bash skills/dispatch-codex/scripts/require-conductor-falsify.sh --log-dir $LOG_DIR --run-id $RUN_ID" >&2
+fi
 exit 0

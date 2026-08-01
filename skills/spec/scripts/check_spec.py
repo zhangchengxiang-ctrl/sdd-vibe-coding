@@ -212,6 +212,114 @@ def detect_anchor(contract: str, plan: str, tests: str) -> bool:
     return False
 
 
+WEAK_ORACLE_PHRASES = (
+    "能打开",
+    "页面打开",
+    "页面正常",
+    "有数据",
+    "列表有数据",
+    "表格出现",
+    "能看到列表",
+    "正常显示",
+    "渲染成功",
+    "加载成功",
+    "可以滚动",
+    "冒烟通过",
+    "smoke pass",
+    "smoke passed",
+    "page loads",
+    "page load",
+    "works",
+)
+
+DATA_SURFACE_RE = re.compile(
+    r"page_kind\s*[:：]\s*`?(list|dashboard)`?"
+    r"|\bmotif\s*[:：]\s*`?(list|dashboard)`?"
+    r"|分页|无限滚动|infinite[\s_-]?scroll|load[\s_-]?more"
+    r"|排序|筛选|offset|cursor[\s_-]?pag",
+    re.IGNORECASE,
+)
+
+FALSIFY_HINT_RE = re.compile(
+    r"offset|cursor|has_more|order_by|sort_by|排序参数|主键"
+    r"|响应不同|可区分|api-diff|network-har|二次请求|下一页"
+    r"|page\s*[#:]?\s*2|不同.{0,8}(rows?|批|页|键)|两态|证伪",
+    re.IGNORECASE,
+)
+
+SMOKE_ONLY_RE = re.compile(
+    r"(?:window[\s_-]?smoke|dev-ui-window-smoke|smoke[\s_-]?latest"
+    r"|/health\b|health[\s_-]?check"
+    r"|kind\s*=\s*(?:window-smoke|health)\b)",
+    re.IGNORECASE,
+)
+
+STRONG_KIND_RE = re.compile(
+    r"kind\s*=\s*(?:api-diff|network-har|browser-job|unit|integration)\b",
+    re.IGNORECASE,
+)
+
+
+def extract_then_body(test_body: str) -> str:
+    m = re.search(
+        r"### Then(?:（Oracle）)?\n(.*?)(?:\n### |\n## |\Z)",
+        test_body,
+        re.S,
+    )
+    return m.group(1) if m else ""
+
+
+def then_is_weak(then_text: str) -> bool:
+    """True when Then has no distinguishing assertion beyond weak phrases."""
+    if FALSIFY_HINT_RE.search(then_text):
+        return False
+    substantive = 0
+    for raw in then_text.splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        line = re.sub(
+            r"^[-*]\s*(用户可见|副作用[^：:\n]*)[：:]\s*",
+            "",
+            line,
+        ).strip()
+        if not line:
+            continue
+        tmp = line
+        for phrase in WEAK_ORACLE_PHRASES:
+            tmp = re.sub(re.escape(phrase), "", tmp, flags=re.IGNORECASE)
+        for filler in ("列表", "页面", "表格", "用户", "可见", "应当", "应该", "显示"):
+            tmp = tmp.replace(filler, "")
+        tmp = re.sub(r"[\s，。、；;:：\-_/|（）()【】\[\]`<>「」]+", "", tmp)
+        if len(tmp) >= 2:
+            substantive += 1
+    return substantive == 0
+
+
+def detect_data_surface(contract: str, plan: str, tests: str) -> bool:
+    blob = f"{contract}\n{plan}\n{tests}"
+    pk = detect_page_kind(contract, plan, tests)
+    if pk in {"list", "dashboard"}:
+        return True
+    return bool(DATA_SURFACE_RE.search(blob))
+
+
+def evidence_is_smoke_only(evidence: str) -> bool:
+    """Pass-quality evidence that is only smoke/health (no strong kind)."""
+    e = clean(evidence)
+    if e in EMPTYISH:
+        return False
+    if STRONG_KIND_RE.search(e):
+        return False
+    if SMOKE_ONLY_RE.search(e):
+        return True
+    # bare smoke json / smoke path without kind=
+    if re.search(r"(?i)smoke", e) and not STRONG_KIND_RE.search(e):
+        if re.search(r"(?i)\.json\b|window|dev-ui|/health\b", e):
+            return True
+    return False
+
+
 def check_legacy_skeleton(spec_dir: Path, report: Report) -> None:
     legacy = [n for n in LEGACY_NAMES if (spec_dir / n).is_file()]
     has_contract = (spec_dir / "contract.md").is_file()
@@ -318,6 +426,8 @@ def check_tests(
     report: Report,
     *,
     structure_only: bool,
+    contract: str = "",
+    plan: str = "",
 ) -> None:
     if "### Given" not in tests or "### When" not in tests:
         report.fail(f"{spec_dir.name}/tests.md: missing Given/When headings")
@@ -353,6 +463,24 @@ def check_tests(
         given = re.search(r"### Given\n(.*?)(?:\n### |\n## |\Z)", body, re.S)
         if given and not re.search(r"[^\s\-：:].{3,}", given.group(1)):
             report.warn(f"{spec_dir.name}/tests.md: {tid} Given looks empty")
+        then = extract_then_body(body)
+        if then and then_is_weak(then):
+            report.fail(
+                f"{spec_dir.name}/tests.md: {tid} Then is weak Oracle "
+                "(only '能打开/有数据/冒烟通过' class — see oracle-strength.md)"
+            )
+
+    # Data-surface: at least one Then must carry falsify hints
+    if detect_data_surface(contract, plan, tests):
+        all_thens = "\n".join(extract_then_body(b) for b in bodies.values())
+        if not FALSIFY_HINT_RE.search(all_thens):
+            report.fail(
+                f"{spec_dir.name}/tests.md: data-surface Spec needs ≥1 Then with "
+                "falsify assertion (two offsets / order_by / distinguishable rows — "
+                "see oracle-strength.md)"
+            )
+        else:
+            report.ok(f"{spec_dir.name}: data-surface falsify hint present")
 
     # P0 success + failure/permission
     p0_ids = [
@@ -565,6 +693,96 @@ def check_run_honesty(spec_dir: Path, run: str, report: Report, *, structure_onl
                 f"{spec_dir.name}/run.md: acceptance claimed but Evidence column empty"
             )
 
+    # Pass rows must not be smoke-only evidence
+    smoke_pass = 0
+    for row in matrix:
+        if clean(row.get("Test", "")) in EMPTYISH:
+            continue
+        result = clean(row.get("Result", "")).lower()
+        if result != "pass":
+            continue
+        # Evidence column may be named with parenthetical hint
+        evidence = ""
+        for key, val in row.items():
+            if key.lower().startswith("evidence"):
+                evidence = val
+                break
+        if evidence_is_smoke_only(evidence):
+            smoke_pass += 1
+            report.fail(
+                f"{spec_dir.name}/run.md: {clean(row.get('Test', ''))} Pass uses "
+                f"smoke/health-only Evidence ({evidence!r}) — need kind=api-diff|"
+                "network-har|browser-job (see evidence-contract §1.1)"
+            )
+    if claimed_pass and smoke_pass:
+        report.fail(
+            f"{spec_dir.name}/run.md: acceptance/可交付 claimed while {smoke_pass} "
+            "Pass row(s) are smoke-only"
+        )
+
+    # Deliver claims require Verify rail + falsify trail (not Build-mode chat)
+    mode = ""
+    m_mode = re.search(r"当前模式：\s*`?([^`|\n]+)`?", run)
+    if m_mode:
+        mode = clean(m_mode.group(1)).lower()
+    if deliver == "可交付":
+        if mode and "verify" not in mode and mode not in {"verifying"}:
+            report.fail(
+                f"{spec_dir.name}/run.md: 是否可以交付=可交付 but 当前模式={mode!r} "
+                "(must be verify; Build 轨禁止可交付)"
+            )
+        if not re.search(r"证伪|falsify", run, re.I):
+            report.fail(
+                f"{spec_dir.name}/run.md: 可交付 requires 证伪/falsify record "
+                "(see testing/falsify-checklist)"
+            )
+        if "已验证的用户结果" not in run:
+            report.fail(
+                f"{spec_dir.name}/run.md: 可交付 requires 「已验证的用户结果」 section"
+            )
+
+    # Production: P5 filled without P2/P3
+    def _prod_field(prefix: str) -> str:
+        # Same-line only: do not let \s* after the colon jump to the next field.
+        m = re.search(rf"{prefix}[^：:\n]*[：:][ \t]*([^\n]*)", run)
+        return clean(m.group(1)) if m else ""
+
+    def _prod_filled(val: str) -> bool:
+        return val not in EMPTYISH and val.lower() not in {
+            "—",
+            "-",
+            "待填",
+            "n/a",
+            "不适用",
+            "tbd",
+        }
+
+    p2 = _prod_field(r"P2 发布方案")
+    p3 = _prod_field(r"P3 验证方案")
+    p5 = _prod_field(r"Deploy\s*/\s*rollback")
+    if _prod_filled(p5) and (not _prod_filled(p2) or not _prod_filled(p3)):
+        report.fail(
+            f"{spec_dir.name}/run.md: Production P5 filled but P2 or P3 empty "
+            "(Deploy gate: P2+P3 before P5)"
+        )
+
+    # Batch table (批次结果) — same rule
+    _, batch = parse_md_table_after(run, "批次结果")
+    for row in batch:
+        result = ""
+        evidence = ""
+        for key, val in row.items():
+            kl = key.lower()
+            if kl.startswith("结果") or kl == "result":
+                result = clean(val).lower()
+            if kl.startswith("证据") or kl.startswith("evidence"):
+                evidence = val
+        if result == "pass" and evidence_is_smoke_only(evidence):
+            report.fail(
+                f"{spec_dir.name}/run.md: batch Pass uses smoke-only Evidence "
+                f"({clean(evidence)!r})"
+            )
+
 
 def check_agents_readiness(host: Path, report: Report) -> None:
     agents = host / "AGENTS.md"
@@ -655,7 +873,15 @@ def check_spec_dir(
     req_rows = check_requirements_unverified(
         spec_dir, contract, report, structure_only=structure_only
     )
-    check_tests(spec_dir, tests, req_rows, report, structure_only=structure_only)
+    check_tests(
+        spec_dir,
+        tests,
+        req_rows,
+        report,
+        structure_only=structure_only,
+        contract=contract,
+        plan=plan,
+    )
     has_ui = detect_has_ui(contract, plan, tests)
     check_ui_surface(
         spec_dir,

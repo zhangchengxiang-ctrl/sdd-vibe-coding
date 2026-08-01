@@ -1,0 +1,22 @@
+---
+description: 无 Build 授权时禁止改业务代码（Shape / 讨论只写 docs/product）
+alwaysApply: true
+---
+
+# 写码前硬闸
+
+改业务代码（应用源码、配置契约、运行时行为）前，须满足至少一项：
+
+1. 已存在**已确认**实施 Spec：`<SDD docs root>/specs/<id>/`（含 Verify 后的 Repair）；或  
+2. 用户**本轮明示**「开始做 / 实现 / 按这个来 / 构建 / 批准 Build」
+
+皆无时，本轮只允许：
+
+- 写 `<SDD docs root>/product/`（及约定的产品讨论沉淀）
+- 只读调查代码与 `AGENTS.md`
+
+下列**不算**写码授权：「设计方案」「构建产品文档」「走查」「应该支持…」「优化体验」「讨论产品」「Shape」。
+
+trivial 豁免仅限纯笔误 / 单点 CSS / 已知 bug，且不改导航、跨表面入口、发布模型、角色可见性；否则仍走 Shape。
+
+本规则由 `sdd-vibe-coding` install 投影。

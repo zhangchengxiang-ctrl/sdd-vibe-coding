@@ -76,10 +76,13 @@ Fail/Repair、关版结论由 Build/Verify 填写。
 
 1. 每个 P0 Requirement 至少映射 **1 条 success + 1 条 failure/permission**（`T-xxx`）；
 2. 每条用例含完整 **Given / When / Then（Oracle）**；Then 为可观察断言；
-3. 层（V0–V3）与 Channel 已声明；自动化路径或 `manual-only` + 原因已写明；
-4. 上述齐套后再进入 Build。
+3. **Oracle 强度**：禁止弱 Then 独撑（见 [oracle-strength.md](./references/oracle-strength.md)）；
+4. **数据面**（list/dashboard 或分页/排序/筛选）：Then 须含可两态证伪的断言（同文件）；
+5. 层（V0–V3）与 Channel 已声明；自动化路径或 `manual-only` + 原因已写明；预期 Evidence Kind 建议写清；
+6. 上述齐套后再进入 Build。
 
 预期写在 `tests.md`；结果只写 `run.md`。Oracle 保持不变。
+Verify 执行证伪见 testing [`falsify-checklist.md`](../testing/references/falsify-checklist.md)。
 
 ## 纵向切片
 
@@ -130,9 +133,11 @@ python3 skills/spec/scripts/check_spec.py <host> <spec-id>
 ```
 
 校验：核心五件套、骨架文件名、事实映射列与填充、P0↔tests、Given/When/Then 正文、
-`plan.md` 架构与设计边界、`run.md` 诚实性（acceptance/可交付 vs Fail/Blocked）、
+弱 Oracle / 数据面证伪断言、`plan.md` 架构与设计边界、`run.md` 诚实性
+（acceptance/可交付 vs Fail/Blocked；Pass 禁纯 smoke Evidence）、
 可选 AGENTS 空槽 WARN。清单真源：
 [`design-standards/*.checklist.json`](../vibe-coding/references/design-standards/)。
+Oracle 强度说明：[oracle-strength.md](./references/oracle-strength.md)。
 
 阶段边界语义以 [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md) 为唯一真源。
 Plan 阶段全部工件**已落盘**后，按该合同向用户用一张卡汇总技术方案、纵向切片、测试合同、执行边界、

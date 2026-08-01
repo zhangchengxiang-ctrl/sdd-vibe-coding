@@ -8,6 +8,9 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .cursor/
+# Ship session hard-gate rules with the plugin (install links these)
+!templates/.cursor/
+!templates/.cursor/**
 .tmp/
 *.swp
 *.swo

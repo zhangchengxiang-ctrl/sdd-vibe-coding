@@ -2,7 +2,8 @@
 # Run `make` or `make help` for the command list.
 
 .PHONY: help install install-dev install-cursor install-claude install-codex \
-	scaffold codex-dispatch verify check-docs check-spec eval-live
+	scaffold codex-dispatch verify check-docs check-spec verify-deliver \
+	preflight-rail require-falsify phase3-negative eval-live
 
 HOST ?= .
 PROFILE ?= detect
@@ -15,6 +16,10 @@ UNIT ?= build
 PROMPT_FILE ?=
 EFFORT ?=
 TIMEOUT ?=
+SLICE ?=
+AUTHORIZED ?=
+LOG_DIR ?=
+RUN_ID ?=
 
 help:
 	@printf '%s\n' \
@@ -28,8 +33,12 @@ help:
 		'  make install-codex        只装 Codex' \
 		'  make scaffold HOST=路径   AGENTS.md + SDD 文档树（PROFILE=；SDD_ROOT=docs|docs/sdd；DRY_RUN=1）' \
 		'  make check-spec HOST=路径 SPEC=id   Spec 静态门（事实映射/tests/架构节/run 诚实性）' \
+		'  make verify-deliver HOST=路径 SPEC=id  Verify 关版门（check_spec + 证伪/可交付/P2·P3）' \
+		'  make preflight-rail HOST=路径 [AUTHORIZED=1]  Shape 写码闸（业务 dirty 则失败）' \
 		'  make codex-dispatch HOST=路径 UNIT=plan|build|goal PROMPT_FILE=文件' \
-		'                            派 Codex（唯一通道；never + 墙钟；Build/Goal 需 SPEC=）' \
+		'                            派 Codex（唯一通道；never + 墙钟；Build/Goal 需 SPEC=；Build 需 SLICE=）' \
+		'  make require-falsify LOG_DIR=路径 [RUN_ID=]  指挥侧证伪落盘门' \
+		'  make phase3-negative      Phase0–2 负向验收（规则投影/写码闸/dispatch/宿主入口）' \
 		'' \
 		'Maintainer (本地私有 · 需本机有 evals/)' \
 		'  make verify               一键：布局 + templates docs + routing + check_spec fixtures + scaffold' \
@@ -75,16 +84,40 @@ codex-dispatch:
 	if [ -n "$(EFFORT)" ]; then extra="$$extra --effort $(EFFORT)"; fi; \
 	if [ -n "$(TIMEOUT)" ]; then extra="$$extra --timeout $(TIMEOUT)"; fi; \
 	if [ -n "$(SPEC)" ]; then extra="$$extra --spec $(SPEC)"; fi; \
+	if [ -n "$(SLICE)" ]; then extra="$$extra --slice $(SLICE)"; fi; \
 	bash skills/dispatch-codex/scripts/codex-dispatch.sh \
 		--cwd "$(HOST)" --unit "$(UNIT)" $$extra -- "$$(cat "$(PROMPT_FILE)")"
 
 check-spec:
-	@extra=""; \
-	if [ -n "$(SPEC)" ]; then \
+	@if [ -n "$(SPEC)" ]; then \
 		bash skills/spec/scripts/check_spec.sh "$(HOST)" "$(SPEC)"; \
 	else \
 		bash skills/spec/scripts/check_spec.sh "$(HOST)" --all; \
 	fi
+
+verify-deliver:
+	@if [ -z "$(SPEC)" ]; then \
+		echo 'Usage: make verify-deliver HOST=<repo> SPEC=<id>'; \
+		exit 2; \
+	fi
+	bash scripts/verify-deliver.sh "$(HOST)" "$(SPEC)"
+
+preflight-rail:
+	@extra=""; \
+	if [ "$(AUTHORIZED)" = "1" ]; then extra="--authorized"; fi; \
+	bash scripts/preflight-rail.sh --cwd "$(HOST)" $$extra
+
+require-falsify:
+	@if [ -z "$(LOG_DIR)" ]; then \
+		echo 'Usage: make require-falsify LOG_DIR=<dir> [RUN_ID=]'; \
+		exit 2; \
+	fi
+	@extra=""; \
+	if [ -n "$(RUN_ID)" ]; then extra="--run-id $(RUN_ID)"; fi; \
+	bash skills/dispatch-codex/scripts/require-conductor-falsify.sh --log-dir "$(LOG_DIR)" $$extra
+
+phase3-negative:
+	bash scripts/phase3-negative-verify.sh
 
 verify:
 	@if [ ! -f evals/verify.sh ]; then \

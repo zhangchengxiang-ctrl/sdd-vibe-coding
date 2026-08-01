@@ -49,7 +49,7 @@
 4. **审批**：CLI 派单用 `approval_policy=never`（`codex-dispatch.sh` 写死）。
 5. **沙箱**：Plan 用 `workspace-write`；Build/Goal 默认 `danger-full-access`。
 6. **Oracle 齐才派 Build**：该片须有可观察的 success + failure/permission（`tests.md`）；否则先补 Plan。
-7. **maker ≠ grader**：指挥侧对照仓库产物（Spec 文件 / `run.md` / diff / 测试）验收后再向用户交付。Plan 通过条件见 `dispatch-codex` 验收清单（须有 `contract.md` 五件套）。超时后按仓库结案。
+7. **maker ≠ grader**：指挥侧对照仓库产物验收，并**亲自跑 ≥1 条证伪命令**（或复核其输出），不只读施工侧 `run.md`。Plan 通过条件见 `dispatch-codex` 验收清单（须有 `contract.md` 五件套）。超时后按仓库结案。
 8. **墙钟上限**：Plan ~15min / Build 单片 ~20min（脚本默认）；超时 exit 124 → 验收仓库。
 9. **失败打回**：经 CLI 再派（可升 high）或指挥侧自做。
 10. **多片长程**：可派「对该 Spec 开 Goal，完成条件=剩余切片+验证命令」；effort=**high**；指挥盯里程碑与证据。
@@ -112,7 +112,7 @@ trivial 豁免见 [`vibe-coding/SKILL.md`](../SKILL.md)。常见 Shape 话术（
 | 「批准了，开始做 / 实现」 | Build：Codex 默认只做**第一个**纵向切片（含行为验收）；Cursor/Claude 可连续整份 Spec |
 | 「派 Codex / 用 Codex 做」 | Cursor/Claude：指挥施工（Skill `dispatch-codex`）；一次一单元；sol×medium/high |
 | 「完整实施 / 不要中途停 / 把整份 Spec 做完」 | Codex：立即创建持久 Goal |
-| 「验收一下」 | Verify：行为/权限 Oracle 优先于文档自洽 |
+| 「验收一下」 | Verify：先证伪再 Pass；行为/权限 Oracle 优先于文档自洽；禁纯 smoke |
 | 「发布 / 上线 / 部署」 | Deploy：P2+P3 先于执行；P6 目标环境冒烟关版；health ≠ 交付 |
 
 插件已默认覆盖：事实映射、纵向切片、Verified 才进 Lock、Given/When/Then、真实阻塞判定、短交付卡、
@@ -174,10 +174,14 @@ Plan 阶段内：调查 → **直接落盘** `VERSION`/`contract`/`tests`/`plan`
 - 按需编写/更新自动化测试（分层与用语见 [automated-tests.md](./automated-tests.md)）；完成实现后冻结代码，列出并运行完整单元测试命令；记录全部失败后统一 Repair。
 - 行为验收优先：越权拒绝、成功路径等可观察断言。
 - 切片/完成单元收口：短报告「做成了什么 / 证据在哪 / 下一个切片」。
+- **硬门：** Build 轨只可报「实现完成」；禁止宣称「可交付」/ `acceptance-passed`（属 Verify）。
+- **硬门：** Build 轨禁止执行 Deploy P5/P6 或读写生产 deploy/reload；须路由 Skill `deploy` 并完成本轮 P4。
 
 ### Verify
 
-- 在不修改实现的前提下，运行完整集成/场景/端到端/真实环境探针。
+- 在不修改实现的前提下，**先按** testing [`falsify-checklist`](../../testing/references/falsify-checklist.md) **证伪**，再跑完整集成/场景/端到端/真实环境探针。
+- Evidence 写 `kind=`（见 evidence-contract §1.1）；Pass 禁止仅 window-smoke / health。
+- 同会话不得把 Build 冒烟原样誊为 Verify Pass。
 - 报告每个失败的命令、结果、影响范围和初步根因；环境、账号、主机或外部依赖失败须有原始证据。
 - 若存在可修实现问题，输出一份 Repair 方案：根因分组、修改面、风险、回归矩阵，然后进入 Repair。
 

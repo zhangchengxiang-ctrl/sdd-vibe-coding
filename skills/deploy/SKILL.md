@@ -12,6 +12,8 @@ description: >-
 仅在 vibe-coding 已路由到 **Deploy**，或用户显式调用本 Skill 时使用。  
 **不**替代 Shape/Plan/Build；**不**写业务功能代码（热修改码须另有 Build/Repair 授权）。
 
+**交叉硬门（Build 窜入）：** 若当前会话只批准了 Build /「开始做」、且本轮未明示「部署 / 上线 / 发布」，**禁止 P5**。缺 P2/P3（L1/L2）或未获本轮 P4 → 停并摘要，不执行生产命令。
+
 先读：
 
 1. 宿主 `AGENTS.md`（部署命令、环境、URL、单向门、部署授权）

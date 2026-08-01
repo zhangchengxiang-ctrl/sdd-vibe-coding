@@ -37,7 +37,8 @@ Job、Test（`tests.md`）、Effective Channel 和 Oracle。
 - Oracle 可观察结果 + 截图/日志落盘路径写入 `run.md`；
 - UI 切片另记 **Visual QA 三态**（视觉 / 控制台 / 网络）→ [bounded-verify.md](./bounded-verify.md)。
 
-**硬门：** 仅 API 冒烟、`curl /health`、首页 200、nginx 200 + SPA Not Found、仅单测绿、或错误主机 loopback，不构成 V2 通过。
+**硬门：** 仅 API 冒烟、`curl /health`、首页 200、nginx 200 + SPA Not Found、仅单测绿、window-smoke JSON、或错误主机 loopback，不构成 V2 通过。  
+数据面另遵 [falsify-checklist.md](./falsify-checklist.md)。
 
 ## 回写（Demo / V2 Gate）
 

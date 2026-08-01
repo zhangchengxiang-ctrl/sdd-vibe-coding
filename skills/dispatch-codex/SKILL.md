@@ -201,8 +201,14 @@ sandbox: danger-full-access
 ### Build 通过
 
 - [ ] diff 落在该切片相关路径
-- [ ] `run.md` 记录该片批次；T-xxx 有结果
+- [ ] `run.md` 记录该片批次；T-xxx 有结果（Evidence 含 `kind=`；禁仅 smoke）
 - [ ] 完成定义以该片行为证据收口（非整份 Spec done，除非 Goal 真做完且证据齐）
+- [ ] **指挥侧证伪**：亲自跑 ≥1 条 falsify（分页两 offset / 排序参数 / 合同 Then）；未跑不算验收通过
+- [ ] 证伪输出已 tee 到 `.codex-dispatch-logs/<run-id>_falsify.log`，且  
+      `make require-falsify LOG_DIR=<cwd>/.codex-dispatch-logs RUN_ID=<run-id>` 通过
+- [ ] 未向用户宣称「可交付」（除非已走 Verify 且证伪过）
+
+**Build 派单：** `--slice <id>` 或 prompt 含 `SLICE_ID=` / `S#`；禁止一次多片（多片 → `--unit goal` + `GOAL_APPROVED=1`）。
 
 未过 → 经 CLI 打回派单（具体缺陷一句）或指挥侧自做；对人只报真实验收结论。
 

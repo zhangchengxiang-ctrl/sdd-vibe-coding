@@ -1,0 +1,18 @@
+---
+description: Build ≠ Deploy；生产动作须 Deploy 轨 + P4 批准
+alwaysApply: true
+---
+
+# Deploy P4 硬门
+
+**Build ≠ Deploy。** Build / Repair 轨禁止执行生产发布、reload 上线、改生产 live 配置、对生产 SSH 部署。
+
+进入生产动作前必须：
+
+1. 路由到 Skill `deploy`（或用户本轮明示「部署 / 上线 / 发布 / 发版」）  
+2. L1/L2：先贴 **P2 发布方案** + **P3 验证方案**，再取得**本轮**明确 **P4** 批准  
+3. P5 之后按 P3 做目标环境冒烟（P6）；`/health`、进程 active、首页 200 **单独不构成**部署成功
+
+用户只说「批准 Build / 开始做 / 全部做完」→ **不得**上生产；须另开 Deploy 或本轮单独批准上线。
+
+本规则由 `sdd-vibe-coding` install 投影。

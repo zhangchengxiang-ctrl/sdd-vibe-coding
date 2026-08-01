@@ -13,17 +13,37 @@
 
 按当前风险选择最小充分组合。
 
+### 1.1 Evidence Kind（`run.md` Evidence 列）
+
+> 每种证据证明什么；**单独不足以支撑 Job Pass 的 Kind 不得标 Pass。**  
+> 写法：`kind=<名> · <路径或命令摘要>`。机检见 `check_spec`；执行见 testing
+> [`falsify-checklist.md`](../../testing/references/falsify-checklist.md)。
+
+| Kind | 证明 | 可单独支撑 Job Pass？ |
+|---|---|---|
+| `api-diff` | 两次请求/参数下响应可区分（分页 offset、排序、筛选） | 是（数据面 Oracle） |
+| `network-har` | 真实通道抓到的请求参数与状态码 | 是（须对齐 Then） |
+| `browser-job` | 浏览器走完 Job，Oracle 可观察 + 截图/日志 | 是（UI / 人工 Test） |
+| `unit` / `integration` | 自动化断言绿 | 仅当该 Test 层声明为 V0/V1 且非 UI Job |
+| `window-smoke` | 窗口/脚本冒烟 JSON、首屏探活 | **否**（旁证） |
+| `health` | `/health`、进程 active、首页 200 | **否**（旁证；P5 过程信号） |
+
+**硬门：** Pass 行的 Evidence 不得只有 `window-smoke` / `health` / 裸 `*smoke*.json`。  
+数据面（分页/排序/筛选/list|dashboard）的 success Pass 须含 `api-diff` 或 `network-har`（或 Then 已写明的等价证伪输出）。
+
 ### 行为优先于文档自洽
 
 1. 权限正确、用户 Job 成功、`code-ready` 须有行为/通道证据；编号对齐、manifest 计数、checklist 只证明文档自洽。
 2. 权限 / 隔离类 Spec：每个 In-scope 入口具备可观察的成功路径 + 越权失败路径证据（测试、探针或真实通道），再宣称该入口完成。
 3. 代码或 Schema 与 Spec 冲突时：先修 Spec 或标缺陷，再继续。
+4. **证伪优先于冒烟**：适用 Test 标 Pass 前须满足 Then 的可打假断言；冒烟文件存在 ≠ Oracle 达成。
 
 ## 2. 三个验证层次
 
 ### Build Validation
 
 Build 先证明整个 Spec 的实现状态；完成实现后运行完整单元测试批次，测试期间冻结改码。
+**Build 轨不得宣称「可交付」/ `acceptance-passed`**（只可报实现完成 + 单测批次）；关版结论属 Version Acceptance。
 Repair 只在 Verify 汇总全部 Fail 并形成统一方案后开始：
 
 - 直接相关检查；
@@ -34,14 +54,15 @@ Repair 只在 Verify 汇总全部 Fail 并形成统一方案后开始：
 
 ### Version Acceptance
 
-Verify 证明整份 Spec 集成后：
+Verify 证明整份 Spec 集成后（**先证伪，再写 Pass**；见 falsify-checklist）：
 
 - 核心成功路径；
 - 关键失败和降级；
 - 角色与权限；
 - 跨入口 / 跨模块集成；
 - 用户真实通道；
-- 适用回归和 UX Job。
+- 适用回归和 UX Job；
+- 数据面：分页/排序/筛选的两态可区分证据。
 
 ### Production Verification
 
@@ -137,7 +158,8 @@ Requirement
 ## 6. UI 与用户体验
 
 用户 Job 通过须有真实通道证据（至少一次 V2）。截图应能让读者判断场景和结果。  
-**硬门：** API 成功、控件存在、Toast、`/health` 或脚本旁路单独不构成 Job 通过。
+**硬门：** API 成功、控件存在、Toast、`/health`、window-smoke JSON 或脚本旁路单独不构成 Job 通过。  
+**硬门：** 「页面能打开 / 列表有数据 / 可以滚动」无两态对比时，不构成数据面 Pass。
 
 浏览器通道选型、证据落盘与身份切换细则见 testing Skill 的
 [`browser-verify.md`](../../testing/references/browser-verify.md)。

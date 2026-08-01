@@ -217,13 +217,59 @@ link_cursor_user_skills() {
   shopt -u nullglob
 }
 
+# Session hard gates: alwaysApply rules under templates/.cursor/rules → ~/.cursor/rules.
+link_cursor_user_rules() {
+  local rules_src="$1"
+  local user_rules="${HOME}/.cursor/rules"
+  local f name dst abs
+  if [[ ! -d "$rules_src" ]]; then
+    echo "  WARN: no rules dir at $rules_src" >&2
+    return 0
+  fi
+  mkdir -p "$user_rules"
+  shopt -s nullglob
+  for f in "$rules_src"/*.mdc; do
+    name="$(basename "$f")"
+    dst="$user_rules/$name"
+    abs="$(cd "$(dirname "$f")" && pwd)/$name"
+    if [[ -e "$dst" && ! -L "$dst" ]]; then
+      echo "  WARN: replace ~/.cursor/rules/$name (was a regular file) with plugin symlink" >&2
+    fi
+    ln -sfn "$abs" "$dst"
+    echo "  linked ~/.cursor/rules/$name → $abs"
+  done
+  shopt -u nullglob
+
+  # Migrate pre-plugin user rule: keep name, point readers at shipped sdd-codex-cli.
+  local legacy="${user_rules}/codex-mcp.mdc"
+  if [[ -e "$legacy" || -L "$legacy" ]]; then
+    if [[ -L "$legacy" ]]; then
+      # If someone already symlinked elsewhere, leave it.
+      :
+    else
+      cat >"$legacy" <<'EOF'
+---
+description: Deprecated stub — Codex CLI hard gate is sdd-codex-cli.mdc (plugin install)
+alwaysApply: true
+---
+
+# Deprecated: codex-mcp.mdc
+
+Codex 派发硬门已迁到插件投影 **`sdd-codex-cli.mdc`**（`make install-cursor`）。  
+本文件仅作兼容占位；以 `sdd-codex-cli.mdc` 为准。禁止 Codex MCP。
+EOF
+      echo "  migrated ~/.cursor/rules/codex-mcp.mdc → stub (see sdd-codex-cli.mdc)"
+    fi
+  fi
+}
+
 install_cursor() {
   if ! command -v rsync >/dev/null 2>&1; then
     echo "SKIP Cursor: rsync not found" >&2
     return 0
   fi
   populate_stage cursor
-  local stage dst skill_src
+  local stage dst skill_src rules_src
   stage="$(stage_dir cursor)"
   dst="${HOME}/.cursor/plugins/local/${PLUGIN_NAME}"
   mkdir -p "$(dirname "$dst")"
@@ -237,12 +283,16 @@ install_cursor() {
   # Prefer repo paths under --dev so skill edits are live for `/` discovery.
   if [[ "$DEV" == "1" ]]; then
     skill_src="$ROOT/skills"
+    rules_src="$ROOT/templates/.cursor/rules"
   else
     skill_src="$dst/skills"
+    rules_src="$dst/templates/.cursor/rules"
   fi
   link_cursor_user_skills "$skill_src"
+  link_cursor_user_rules "$rules_src"
   echo "OK Cursor: $dst (v$version)"
   echo "  Next: Developer: Reload Window → Plugins 见 ${PLUGIN_NAME}；Agent 输入 /vibe-coding"
+  echo "  Rules: ~/.cursor/rules/sdd-*.mdc（入口 / 写码闸 / Deploy P4 / Codex CLI）"
 }
 
 install_claude() {

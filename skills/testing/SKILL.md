@@ -15,7 +15,8 @@ description: >-
 用户体验场景再读 [UX Standards](./references/ux-standards.md)；有界面时按 Spec 的
 `UI surface`/`page_kind` 走
 [LOAD-MAP](../vibe-coding/references/design-standards/LOAD-MAP.md)（抽检项见该表 Verify 行）；
-遵守 [有界验收](./references/bounded-verify.md)；
+遵守 [有界验收](./references/bounded-verify.md) 与
+[证伪清单](./references/falsify-checklist.md)（**先证伪再 Pass**）；
 UI / 浏览器真实通道再读
 [浏览器验证](./references/browser-verify.md)；用户要 **UX 走查 / 体验审计** 时加读
 [UX 走查](./references/ux-walkthrough.md)，意见格式可参考
@@ -39,15 +40,18 @@ UI 回归定位可指向 [debug-playbook](../vibe-coding/references/design-stand
 2. 建立 Requirement → Test → Implementation → Evidence 追踪；
 3. 从宿主 `AGENTS.md` 取得真实命令、URL、账号和工具；有可复用测试凭据时自行切换角色/账号
    继续跑矩阵（个人账号 / OAuth / 生产密钥 → `Blocked` / `needs-authorization`）；
-4. 按风险选择 V0–V3 的最小充分组合；走查变体按 [ux-walkthrough](./references/ux-walkthrough.md)
+4. **先跑证伪**（[falsify-checklist](./references/falsify-checklist.md)）：数据面至少做分页/排序/筛选的两态对比；失败直接 Fail；
+5. 按风险选择 V0–V3 的最小充分组合；走查变体按 [ux-walkthrough](./references/ux-walkthrough.md)
    扩检查面，仍记录 `Pass | Fail | Blocked`；
-5. 按 `tests.md` 实际执行每个适用用例（Given/When/Then），记录结果；
-6. 记录命令、时间、环境、版本、观察值和证据路径；
-7. 对全部 Fail 统一归因、聚类并形成一份 Repair 方案；Verify 只读实现；
-8. 给出实际 Delivery Target、下一 Rail 建议和阶段总结，并等待用户批准后才转换。
+6. 按 `tests.md` 实际执行每个适用用例（Given/When/Then），记录结果；
+7. 记录命令、时间、环境、版本、观察值；Evidence 写 `kind=… · 路径`（见 evidence-contract §1.1）；
+8. 对全部 Fail 统一归因、聚类并形成一份 Repair 方案；Verify 只读实现；
+9. 给出实际 Delivery Target、下一 Rail 建议和阶段总结，并等待用户批准后才转换。
 
 UI/人工 Test 至少需要一次真实通道 V2（见 [browser-verify](./references/browser-verify.md)）。  
-**硬门：** Oracle 保持在 `tests.md`；观察结果只写 `run.md`。API/DOM/Toast/`/health`/脚本旁路单独不构成 Job 通过。
+**硬门：** Oracle 保持在 `tests.md`；观察结果只写 `run.md`。  
+**硬门：** API/DOM/Toast/`/health`/window-smoke/脚本旁路单独不构成 Job 通过。  
+**硬门：** 同会话 Build 冒烟结果不得原样誊为 Verify Pass。
 
 ## 用户前台输出
 
@@ -55,7 +59,7 @@ UI/人工 Test 至少需要一次真实通道 V2（见 [browser-verify](./refere
 
 - **结论**：可交付、不可交付或受阻，并用一句话说明原因；
 - **如何体验**：环境、入口、适用角色和代表性数据；
-- **已验证的用户结果**：每项写实际观察和可复核证据；
+- **已验证的用户结果**：每项写**操作 → 两态观察差 → 证据**；无两态差不得写「已通过」；
 - **未通过或无法验证**：写用户影响、严重度和原因，不能只写内部分类；
 - **已知限制**：包括未覆盖内容；
 - **上线状态**：未上线、已上线、未知或不适用；
@@ -65,6 +69,9 @@ UI/人工 Test 至少需要一次真实通道 V2（见 [browser-verify](./refere
 Matrix、commit、Workspace 等工程术语。正式报告仍保存完整工程证据；用户明确要求或走查变体
 需要分级发现时，在交付卡之后展开“技术详情（可选）”或 P0/P1/P2 列表。交付卡之后单列且只列
 一个“下一步”，用普通中文给出最小可执行动作。
+
+**话术硬门：** Build 结束只说「实现完成」；「可交付」仅在本轨证伪通过后使用。  
+关版前建议跑：`make verify-deliver HOST=<repo> SPEC=<id>`（`check_spec` + 证伪/可交付/P2·P3 机器闸）。
 
 ## Fail 路由
 
