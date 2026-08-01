@@ -198,6 +198,27 @@ def detect_design_read(contract: str, plan: str, tests: str) -> bool:
     return False
 
 
+def detect_job_brief(contract: str, plan: str, tests: str) -> bool:
+    """True if Job Brief block or Job+Consequence fields are present (product-judgment)."""
+    blob = f"{contract}\n{plan}\n{tests}"
+    if re.search(r"Job\s*Brief\s*[:：]", blob, flags=re.IGNORECASE):
+        return True
+    if re.search(r"(?m)^#{1,4}\s*Job\s*Brief\b", blob, flags=re.IGNORECASE):
+        return True
+    # Compact: Job: … plus Consequence/后果 somewhere in the same docs
+    has_job = re.search(
+        r"(?m)^\s*[-*]?\s*\*?\*?Job\*?\*?\s*[:：]\s*\S+",
+        blob,
+        flags=re.IGNORECASE,
+    )
+    has_consequence = re.search(
+        r"(?m)^\s*[-*]?\s*\*?\*?(Consequence|后果|Desired\s*outcome|期望结果)\*?\*?\s*[:：]\s*\S+",
+        blob,
+        flags=re.IGNORECASE,
+    )
+    return bool(has_job and has_consequence)
+
+
 def detect_anchor(contract: str, plan: str, tests: str) -> bool:
     blob = f"{contract}\n{plan}\n{tests}"
     if re.search(r"\banchor\s*[:：]\s*\S+", blob, flags=re.IGNORECASE):
@@ -607,6 +628,14 @@ def check_ui_surface(
     report.ok(f"{spec_dir.name}: UI surface={surface}")
     if surface == "n/a":
         return
+    if not detect_job_brief(contract, plan, tests):
+        report.warn(
+            f"{spec_dir.name}: has_ui but missing Job Brief "
+            "(`Job Brief:` or `Job:` + `Consequence:`/`Desired outcome:` — "
+            "see design-standards/product-judgment.md)"
+        )
+    else:
+        report.ok(f"{spec_dir.name}: Job Brief declared")
     if not detect_design_read(contract, plan, tests):
         report.warn(
             f"{spec_dir.name}: has_ui but missing Design Read "

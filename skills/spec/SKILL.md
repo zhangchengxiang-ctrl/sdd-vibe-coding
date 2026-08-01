@@ -28,11 +28,12 @@ description: >-
 4. `tests.md` 每个 P0 至少 1 success + 1 failure/permission，完整 Given/When/Then；
 5. 本阶段只落盘 Spec（不改业务代码）；
 6. 用户已说切 Spec/Plan → **直接写入** `docs/specs/<id>/`；
-7. 齐套后只出一张卡：能否批准进入 Build + Unverified 清单；
+7. 齐套后只出一张卡：能否批准进入 Build + Unverified 清单 + **必给「新对话 Build 提示词」**
+   （见 workflow-contract「Plan → Build 默认开新对话」；禁止只劝同聊回复）；
 8. **骨架**：落盘 `VERSION` / `contract` / `tests` / `plan` / `run`；
 9. **架构与设计边界轻门**：触及新入口 / 跨层 / 新存储 / 新权限模型 / 新部署单元时，
    `plan.md` 按 `system-architecture.md` §7 写明沿用或新开边界、C4 层级、ADR、Unverified；
-   有 UI 时按 LOAD-MAP 字段门控补 `UI surface` / Design Read / `page_kind|motif` / `anchor` 等。齐套后再请求 Build。
+   有 UI 时按 LOAD-MAP 字段门控补 Job Brief / `UI surface` / Design Read / `page_kind|motif` / `anchor` 等。齐套后再请求 Build。
 10. **机检**：宣称 Plan 可实施或派 Build 前，运行
     `python3 <plugin>/skills/spec/scripts/check_spec.py <host> <spec-id>`
    （见 [`scripts/check_spec.py`](./scripts/check_spec.py)）。通过后再进 Build / 派 Codex。
@@ -141,4 +142,5 @@ Oracle 强度说明：[oracle-strength.md](./references/oracle-strength.md)。
 
 阶段边界语义以 [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md) 为唯一真源。
 Plan 阶段全部工件**已落盘**后，按该合同向用户用一张卡汇总技术方案、纵向切片、测试合同、执行边界、
-风险和未决项（区分 Verified / Unverified），取得明确批准后进入 Build。
+风险和未决项（区分 Verified / Unverified）。卡尾**必须**附可复制的「新对话 Build 提示词」
+（填好 Spec 路径与切片顺序），并默认引导用户**开新对话粘贴**开工；同聊「批准 Build / 开始做」仅作备选。
