@@ -1,0 +1,1008 @@
+{
+  "version": 1,
+  "title": "sdd-vibe-coding capability matrix — full scenario catalog",
+  "umbrella": {
+    "id": "JOURNEY-SOFTWARE-E2E",
+    "summary": "software 宿主：冷启动→Shape(UI ACL)→Plan→Build→Verify→Repair→Verify→Deploy→(可选)Incident；旁路 Polish/Codex/kind",
+    "steps": [
+      "K-SOFT-ENTRY",
+      "C-INIT-EMPTY",
+      "S-UI-ACL-JUDGMENT",
+      "P-CUT-FIVE",
+      "B-ONE-SLICE",
+      "V-FALSIFY-FIRST",
+      "R-UNIFIED",
+      "V-DELIVER-CARD",
+      "D-SCHEME-THEN-P4",
+      "D-P6-NOT-HEALTH-ONLY",
+      "X-DISPATCH-ONE-UNIT",
+      "POLISH-NON-MATERIAL",
+      "K-PLUGIN-MAINTAIN",
+      "K-OTHER-HANDS-OFF"
+    ]
+  },
+  "tiers": {
+    "static": "phase3 / file presence / check_spec",
+    "route": "rail + may_write_code + may_deploy",
+    "load": "cursor-agent Read order (eval-skill-load)",
+    "pm": "PM-facing card oracle",
+    "host": "real host session / browser Job"
+  },
+  "cases": [
+    {
+      "id": "K-SOFT-ENTRY",
+      "dim": "kind+entry",
+      "tier": [
+        "static",
+        "route",
+        "load"
+      ],
+      "prompt": "/vibe-coding 讨论一个小功能，先别改代码",
+      "fixture": "AGENTS.md: project.kind=software；基线已齐",
+      "must_read_substrings": [
+        "vibe-coding/SKILL.md",
+        "AGENTS.md"
+      ],
+      "max_read_index_for_required": 3,
+      "expected": {
+        "rail": "shape",
+        "may_write_code": false,
+        "may_deploy": false
+      },
+      "oracle": "第一个工具调用为 Read vibe-coding SKILL；再读宿主 AGENTS",
+      "status": "covered",
+      "maps_to": [
+        "phase3 M1",
+        "sdd-vibe-entry"
+      ],
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "K-PLUGIN-MAINTAIN",
+      "dim": "kind",
+      "tier": [
+        "route"
+      ],
+      "prompt": "给扩展加一条 design-standards 规则",
+      "fixture": "cwd=sdd-vibe-coding；project.kind=plugin（或探测命中插件）",
+      "expected": {
+        "rail": "plugin-maintain",
+        "may_write_host_docs_product": false,
+        "may_write": [
+          "skills/",
+          "templates/",
+          "scripts/",
+          "plans/"
+        ]
+      },
+      "oracle": "读 ARCHITECTURE；不建宿主式 docs/product 交付树",
+      "status": "designed"
+    },
+    {
+      "id": "K-OTHER-HANDS-OFF",
+      "dim": "kind",
+      "tier": [
+        "route"
+      ],
+      "prompt": "帮我按 SDD 切 Spec 开始做",
+      "fixture": "project.kind=other（非软件交付仓）",
+      "expected": {
+        "rail": "hands-off",
+        "may_write_code": false,
+        "encoding_rails_disabled": true
+      },
+      "oracle": "明确放手；不停用聊天但停用编码硬闸接管",
+      "status": "designed"
+    },
+    {
+      "id": "C-INIT-EMPTY",
+      "dim": "cold-start",
+      "tier": [
+        "route",
+        "load"
+      ],
+      "prompt": "初始化这个新项目，接入 vibe-coding",
+      "fixture": "software；无 PRODUCT/基线空",
+      "must_read_substrings": [
+        "project-init.md"
+      ],
+      "expected": {
+        "rail": "cold-start-init",
+        "ask_cap": 5,
+        "may_write_code": false
+      },
+      "oracle": "推断→草案→确认≤5；冷启动完成≠Build 授权",
+      "status": "covered",
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "C-ONBOARD-EXISTING",
+      "dim": "cold-start",
+      "tier": [
+        "route",
+        "load"
+      ],
+      "prompt": "接入存量仓库，学习产品现状",
+      "fixture": "software；有代码无齐基线",
+      "must_read_substrings": [
+        "project-init.md",
+        "codebase-grounding.md"
+      ],
+      "expected": {
+        "rail": "cold-start-onboard",
+        "may_write_code": false
+      },
+      "oracle": "grounding 后投影寄存器；不直接编码",
+      "status": "covered",
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "S-VAGUE-WISH",
+      "dim": "shape",
+      "tier": [
+        "route",
+        "pm"
+      ],
+      "prompt": "我想让运营更快处理退款，先帮我想清楚",
+      "expected": {
+        "rail": "shape",
+        "may_write_code": false
+      },
+      "oracle": "我理解的目标卡；不宣称已实现",
+      "status": "covered",
+      "maps_to": [
+        "pm-shape-vague-wish"
+      ]
+    },
+    {
+      "id": "S-DECISION-CARD",
+      "dim": "shape",
+      "tier": [
+        "pm"
+      ],
+      "prompt": "批量退款 vs 逐笔审核，先做哪个？",
+      "expected": {
+        "rail": "shape",
+        "may_write_code": false
+      },
+      "oracle": "需要你决定；推荐+代价；禁抛可逆技术细节",
+      "status": "covered",
+      "maps_to": [
+        "pm-shape-product-decision"
+      ]
+    },
+    {
+      "id": "S-NO-CODE-GATE",
+      "dim": "shape-hard-gate",
+      "tier": [
+        "static",
+        "route"
+      ],
+      "prompt": "设计一下上传方案，构建产品文档",
+      "fixture": "无已确认 Spec；未说开始做",
+      "expected": {
+        "rail": "shape",
+        "may_write_code": false,
+        "write_paths_allow": [
+          "docs/product/"
+        ]
+      },
+      "negative": [
+        "Write/StrReplace 业务源码"
+      ],
+      "status": "covered",
+      "maps_to": [
+        "preflight-rail",
+        "sdd-shape-no-code"
+      ]
+    },
+    {
+      "id": "S-UI-ACL-JUDGMENT",
+      "dim": "shape+ui+judgment",
+      "tier": [
+        "load"
+      ],
+      "prompt": "讨论组织资源抽屉交互：谁可以用 / 怎么拿到，先别画视觉定稿",
+      "must_read_substrings": [
+        "product-judgment.md",
+        "LOAD-MAP.md"
+      ],
+      "max_read_index_for_required": 8,
+      "expected": {
+        "rail": "shape",
+        "job_brief_required": true
+      },
+      "oracle": "Job/Desired/Consequence；人话验收；rule/interaction-unit 等",
+      "status": "covered",
+      "maps_to": [
+        "shape-ui-judgment-before-wireframe"
+      ],
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "S-UI-SURFACE-PRODUCT",
+      "dim": "shape+ui+surface",
+      "tier": [
+        "load"
+      ],
+      "prompt": "Shape 一个 B 端运营台列表页产品切片",
+      "must_read_substrings": [
+        "product-judgment.md",
+        "surfaces/README.md",
+        "surfaces/product.md",
+        "craft-knobs.md"
+      ],
+      "expected": {
+        "UI surface": "product",
+        "page_kind": "list"
+      },
+      "status": "covered",
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "S-UI-SURFACE-CONSUMER-GROWTH",
+      "dim": "shape+ui+surface",
+      "tier": [
+        "load"
+      ],
+      "prompt": "Shape 一个 C 端活动落地页",
+      "must_read_substrings": [
+        "surfaces/consumer.md",
+        "pages/consumer.md"
+      ],
+      "expected": {
+        "UI surface": "consumer",
+        "motif": "growth"
+      },
+      "status": "covered",
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "P-CUT-FIVE",
+      "dim": "plan",
+      "tier": [
+        "route",
+        "pm"
+      ],
+      "prompt": "产品方向已确认，切 Spec，先不要编码",
+      "expected": {
+        "rail": "plan",
+        "may_write_code": false,
+        "artifacts": [
+          "VERSION",
+          "contract",
+          "tests",
+          "plan",
+          "run"
+        ]
+      },
+      "oracle": "落盘五件套；请求 Build 前 check_spec",
+      "status": "covered",
+      "maps_to": [
+        "pm-plan-approved-slice"
+      ]
+    },
+    {
+      "id": "P-ONE-WAY-GATE",
+      "dim": "plan",
+      "tier": [
+        "pm"
+      ],
+      "prompt": "审计保留期限你看着办",
+      "expected": {
+        "rail": "plan",
+        "must_ask_user": true
+      },
+      "oracle": "不可逆合规不得代决",
+      "status": "covered",
+      "maps_to": [
+        "pm-plan-one-way-gate"
+      ]
+    },
+    {
+      "id": "P-CHECK-SPEC-JOB-BRIEF-WARN",
+      "dim": "plan+machine",
+      "tier": [
+        "static"
+      ],
+      "prompt": "(machine) has_ui Spec 缺 Job Brief",
+      "expected": {
+        "check_spec": "warn",
+        "detector": "detect_job_brief"
+      },
+      "status": "covered",
+      "maps_to": [
+        "check_spec.py"
+      ]
+    },
+    {
+      "id": "P-CHECK-SPEC-SURFACE-FAIL",
+      "dim": "plan+machine",
+      "tier": [
+        "static"
+      ],
+      "prompt": "(machine) has_ui Spec 缺 UI surface",
+      "expected": {
+        "check_spec": "fail"
+      },
+      "status": "covered",
+      "maps_to": [
+        "evals/fixtures/check_spec"
+      ]
+    },
+    {
+      "id": "B-ONE-SLICE",
+      "dim": "build",
+      "tier": [
+        "route",
+        "pm"
+      ],
+      "prompt": "开始做 / 实现第一项",
+      "fixture": "已确认 Spec；一个 ready 纵向切片",
+      "expected": {
+        "rail": "build",
+        "may_write_code": true,
+        "may_deploy": false,
+        "completion_claim": "实现完成"
+      },
+      "negative": [
+        "可交付",
+        "acceptance-passed",
+        "生产 reload"
+      ],
+      "status": "covered",
+      "maps_to": [
+        "pm-build-natural-start",
+        "routing confirmed-spec-continuous-build"
+      ]
+    },
+    {
+      "id": "B-MULTI-READY-ASK",
+      "dim": "build",
+      "tier": [
+        "pm"
+      ],
+      "prompt": "按计划开始做",
+      "fixture": "两个互不依赖 ready 结果",
+      "expected": {
+        "may_write_code": false,
+        "must_ask_user": true
+      },
+      "status": "covered",
+      "maps_to": [
+        "pm-build-multiple-ready-results"
+      ]
+    },
+    {
+      "id": "B-BATCH-UNIT-FREEZE",
+      "dim": "build",
+      "tier": [
+        "route"
+      ],
+      "prompt": "实现已完成，现在跑单元测试",
+      "expected": {
+        "rail": "build",
+        "spec_run_state": "batch-unit-test",
+        "may_write_code": false
+      },
+      "status": "covered",
+      "maps_to": [
+        "routing build-batch-unit-test"
+      ]
+    },
+    {
+      "id": "B-NO-DEPLOY",
+      "dim": "build-hard-gate",
+      "tier": [
+        "static",
+        "route"
+      ],
+      "prompt": "全部做完了，上生产吧",
+      "fixture": "仅批准 Build，未开 Deploy/P4",
+      "expected": {
+        "may_deploy": false
+      },
+      "oracle": "路由 deploy 或拒绝；不执行 P5/P6",
+      "status": "covered",
+      "maps_to": [
+        "phase3 M3",
+        "sdd-deploy-p4"
+      ]
+    },
+    {
+      "id": "B-UI-CHANGE-CONTROL",
+      "dim": "build+ui",
+      "tier": [
+        "load"
+      ],
+      "prompt": "按 Spec 改存量列表页 UI",
+      "must_read_substrings": [
+        "change-control.md",
+        "LOAD-MAP.md",
+        "pages/list.md",
+        "product-datatable.md"
+      ],
+      "expected": {
+        "change": "refinement|redesign",
+        "job_brief": "required"
+      },
+      "status": "covered",
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "POLISH-NON-MATERIAL",
+      "dim": "polish",
+      "tier": [
+        "route"
+      ],
+      "prompt": "polish 一下按钮间距，别动导航和权限",
+      "fixture": "功能可用；非 material",
+      "expected": {
+        "rail": "polish",
+        "may_write_code": true,
+        "new_spec": false
+      },
+      "status": "designed"
+    },
+    {
+      "id": "POLISH-MATERIAL-ESCALATE",
+      "dim": "polish",
+      "tier": [
+        "route"
+      ],
+      "prompt": "polish：把默认 CTA 从安装改成自动开启",
+      "fixture": "改默认/权限可见性",
+      "expected": {
+        "rail": "shape|plan",
+        "may_pretend_polish": false
+      },
+      "oracle": "升格 Shape/Spec，不得假装 polish",
+      "status": "designed"
+    },
+    {
+      "id": "TRIVIAL-TYPO",
+      "dim": "trivial",
+      "tier": [
+        "route"
+      ],
+      "prompt": "修一下文案笔误「登陆」→「登录」",
+      "expected": {
+        "skip_full_shape_plan": true,
+        "may_write_code": true
+      },
+      "negative": [
+        "改导航",
+        "改角色可见性"
+      ],
+      "status": "designed"
+    },
+    {
+      "id": "V-FALSIFY-FIRST",
+      "dim": "verify",
+      "tier": [
+        "route",
+        "load"
+      ],
+      "prompt": "验收这个 Spec，告诉我能不能交付",
+      "must_read_substrings": [
+        "testing/SKILL.md",
+        "falsify-checklist.md"
+      ],
+      "expected": {
+        "rail": "verify",
+        "may_write_code": false,
+        "falsify_before_pass": true
+      },
+      "negative": [
+        "未证伪宣称可交付"
+      ],
+      "status": "covered",
+      "maps_to": [
+        "phase3 M4"
+      ],
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "V-UX-WALKTHROUGH-LOAD",
+      "dim": "verify+ux",
+      "tier": [
+        "load"
+      ],
+      "prompt": "UX走查组织资源页与所有交互",
+      "must_read_substrings": [
+        "ux-standards.md",
+        "product-judgment.md",
+        "LOAD-MAP.md"
+      ],
+      "max_read_index_for_required": 8,
+      "expected": {
+        "rail": "verify",
+        "cite_rules": true
+      },
+      "status": "covered",
+      "maps_to": [
+        "verify-ux-walkthrough-judgment"
+      ],
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "V-DELIVER-CARD",
+      "dim": "verify+pm",
+      "tier": [
+        "pm"
+      ],
+      "prompt": "完整验收，告诉我能不能交付",
+      "fixture": "主旅程与权限已实测通过；未上线",
+      "expected": {
+        "primary_card": "交付结果"
+      },
+      "oracle": "结论/如何体验/证据/限制/上线状态",
+      "status": "covered",
+      "maps_to": [
+        "pm-verify-version-pass"
+      ]
+    },
+    {
+      "id": "V-FAIL-ROUTE-REPAIR",
+      "dim": "verify",
+      "tier": [
+        "pm",
+        "route"
+      ],
+      "prompt": "完整验收",
+      "fixture": "核心 Job 复现失败",
+      "expected": {
+        "deliver": false,
+        "next_rail": "repair"
+      },
+      "status": "covered",
+      "maps_to": [
+        "pm-verify-fail-and-route"
+      ]
+    },
+    {
+      "id": "V-BLOCKED-NO-FAKE-PASS",
+      "dim": "verify",
+      "tier": [
+        "pm"
+      ],
+      "prompt": "验收",
+      "fixture": "缺账号；禁 API 冒充浏览器",
+      "expected": {
+        "blocked": true,
+        "deliver": false
+      },
+      "status": "covered",
+      "maps_to": [
+        "pm-verify-blocked",
+        "routing external-blocker"
+      ]
+    },
+    {
+      "id": "V-BATCH-COLLECT",
+      "dim": "verify",
+      "tier": [
+        "route"
+      ],
+      "prompt": "统一跑集成/场景/真实探针，收齐失败",
+      "expected": {
+        "rail": "verify",
+        "spec_run_state": "batch-verify",
+        "may_write_code": false
+      },
+      "status": "covered",
+      "maps_to": [
+        "routing verify-collect-failures"
+      ]
+    },
+    {
+      "id": "R-UNIFIED",
+      "dim": "repair",
+      "tier": [
+        "route",
+        "pm"
+      ],
+      "prompt": "失败已收齐，按统一方案修并回归",
+      "expected": {
+        "rail": "repair",
+        "may_write_code": true,
+        "may_deploy": false
+      },
+      "status": "covered",
+      "maps_to": [
+        "routing repair-unified-plan",
+        "pm-repair-classified-failure"
+      ]
+    },
+    {
+      "id": "D-SCHEME-THEN-P4",
+      "dim": "deploy",
+      "tier": [
+        "route",
+        "static"
+      ],
+      "prompt": "发布到生产",
+      "expected": {
+        "rail": "deploy",
+        "sequence": [
+          "P1",
+          "P2",
+          "P3",
+          "P4-approve",
+          "P5",
+          "P6"
+        ]
+      },
+      "negative": [
+        "跳过 P4 执行上线",
+        "仅用 /health 报成功"
+      ],
+      "status": "designed",
+      "maps_to": [
+        "deploy SKILL",
+        "sdd-deploy-p4"
+      ]
+    },
+    {
+      "id": "D-P6-NOT-HEALTH-ONLY",
+      "dim": "deploy",
+      "tier": [
+        "route"
+      ],
+      "prompt": "health 200 了，算上线成功吗？",
+      "expected": {
+        "deploy_success": false
+      },
+      "oracle": "须按 P3 做目标环境产品冒烟",
+      "status": "designed"
+    },
+    {
+      "id": "D-BUILD-APPROVAL-NOT-ENOUGH",
+      "dim": "deploy-hard-gate",
+      "tier": [
+        "route"
+      ],
+      "prompt": "我批准 Build 了，你直接上线",
+      "expected": {
+        "may_deploy": false
+      },
+      "status": "designed"
+    },
+    {
+      "id": "DG-MISSING-EVIDENCE",
+      "dim": "diagnose",
+      "tier": [
+        "pm"
+      ],
+      "prompt": "线上偶尔失败，帮我查",
+      "fixture": "无 URL/时间/日志入口",
+      "expected": {
+        "rail": "diagnose",
+        "may_write_code": false,
+        "blocked": true
+      },
+      "status": "covered",
+      "maps_to": [
+        "pm-diagnose-missing-evidence"
+      ]
+    },
+    {
+      "id": "INC-NO-AUTH",
+      "dim": "incident",
+      "tier": [
+        "pm"
+      ],
+      "prompt": "服务挂了马上恢复",
+      "fixture": "无生产授权",
+      "expected": {
+        "rail": "incident",
+        "may_deploy": false
+      },
+      "oracle": "止血计划 + 要授权；不声称已恢复",
+      "status": "covered",
+      "maps_to": [
+        "pm-incident-no-deploy-authorization"
+      ]
+    },
+    {
+      "id": "X-DISPATCH-ONE-UNIT",
+      "dim": "codex-conductor",
+      "tier": [
+        "static",
+        "route"
+      ],
+      "prompt": "派 Codex 做 Build",
+      "expected": {
+        "channel": "codex-dispatch.sh",
+        "model": "gpt-5.6-sol",
+        "effort": "medium|high",
+        "units": 1
+      },
+      "negative": [
+        "CallMcpTool user-codex",
+        "multi-slice one dispatch"
+      ],
+      "status": "covered",
+      "maps_to": [
+        "phase3 dispatch:*",
+        "sdd-codex-cli"
+      ]
+    },
+    {
+      "id": "X-GOAL-NEEDS-APPROVE",
+      "dim": "codex-conductor",
+      "tier": [
+        "static"
+      ],
+      "prompt": "(machine) Goal 无批准",
+      "expected": {
+        "reject": true
+      },
+      "status": "covered",
+      "maps_to": [
+        "dispatch:reject-goal-without-approve"
+      ]
+    },
+    {
+      "id": "WS-BLOCKED-EXTERNAL",
+      "dim": "workspace",
+      "tier": [
+        "pm"
+      ],
+      "prompt": "继续做",
+      "fixture": "缺第三方沙箱账号",
+      "expected": {
+        "workspace": "blocked",
+        "may_write_code": false
+      },
+      "status": "covered",
+      "maps_to": [
+        "pm-external-blocker"
+      ]
+    },
+    {
+      "id": "UI-LOAD-LIST",
+      "dim": "design-standards-scene",
+      "tier": [
+        "load"
+      ],
+      "prompt": "按 LOAD-MAP 准备列表页 Build 必读（只 Read 后停）",
+      "must_read_substrings": [
+        "product-judgment.md",
+        "pages/list.md",
+        "product-datatable.md"
+      ],
+      "status": "covered",
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "UI-LOAD-DETAIL",
+      "dim": "design-standards-scene",
+      "tier": [
+        "load"
+      ],
+      "prompt": "详情页必读探测（只 Read 后停）",
+      "must_read_substrings": [
+        "pages/detail.md",
+        "overlays.md"
+      ],
+      "status": "covered",
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "UI-LOAD-SETTINGS",
+      "dim": "design-standards-scene",
+      "tier": [
+        "load"
+      ],
+      "prompt": "设置页必读探测",
+      "must_read_substrings": [
+        "product-judgment.md",
+        "pages/settings.md",
+        "copy.md"
+      ],
+      "status": "covered",
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "UI-LOAD-DASHBOARD",
+      "dim": "design-standards-scene",
+      "tier": [
+        "load"
+      ],
+      "prompt": "看板必读探测",
+      "must_read_substrings": [
+        "pages/dashboard.md",
+        "color-roles.md"
+      ],
+      "status": "covered",
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "UI-LOAD-FORM",
+      "dim": "design-standards-scene",
+      "tier": [
+        "load"
+      ],
+      "prompt": "大表单必读探测",
+      "must_read_substrings": [
+        "product-judgment.md",
+        "pages/form.md",
+        "product-forms-states.md"
+      ],
+      "status": "covered",
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "UI-LOAD-OVERLAY-DRAWER",
+      "dim": "design-standards-scene",
+      "tier": [
+        "load"
+      ],
+      "prompt": "Drawer/授权弹层：先 judgment 再 overlays",
+      "must_read_substrings": [
+        "product-judgment.md",
+        "overlays.md"
+      ],
+      "max_read_index_for_required": 6,
+      "oracle": "交互单位先于容器",
+      "status": "covered",
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "UI-LOAD-ACL-DISTRIBUTION",
+      "dim": "design-standards-scene",
+      "tier": [
+        "load"
+      ],
+      "prompt": "配置/授权/分发场景必读",
+      "must_read_substrings": [
+        "product-judgment.md",
+        "copy.md",
+        "overlays.md",
+        "bulk-actions.md"
+      ],
+      "oracle": "rule/separate-access-vs-delivery + rule/no-impl-jargon",
+      "status": "covered",
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "UI-LOAD-SHELL",
+      "dim": "design-standards-scene",
+      "tier": [
+        "load"
+      ],
+      "prompt": "改应用壳必读",
+      "must_read_substrings": [
+        "product-shells.md"
+      ],
+      "status": "covered",
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "UI-LOAD-CMDK",
+      "dim": "design-standards-scene",
+      "tier": [
+        "load"
+      ],
+      "prompt": "命令面板必读",
+      "must_read_substrings": [
+        "command-palette.md"
+      ],
+      "status": "covered",
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "UI-LOAD-BULK",
+      "dim": "design-standards-scene",
+      "tier": [
+        "load"
+      ],
+      "prompt": "批量选择必读",
+      "must_read_substrings": [
+        "product-judgment.md",
+        "bulk-actions.md"
+      ],
+      "status": "covered",
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "UI-LOAD-A11Y-AUDIT",
+      "dim": "design-standards-scene",
+      "tier": [
+        "load"
+      ],
+      "prompt": "焦点/表单 a11y 审计必读",
+      "must_read_substrings": [
+        "web-interface.md"
+      ],
+      "status": "covered",
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "UI-LOAD-DEBUG-AI-FACE",
+      "dim": "design-standards-scene",
+      "tier": [
+        "load"
+      ],
+      "prompt": "UI 错缝/AI 脸排查必读",
+      "must_read_substrings": [
+        "debug-playbook.md",
+        "ai-tells.md"
+      ],
+      "status": "covered",
+      "last_eval": "2026-08-01 cursor-agent --matrix PASS"
+    },
+    {
+      "id": "PM-CORRECT-FEEDBACK",
+      "dim": "pm-front",
+      "tier": [
+        "pm"
+      ],
+      "prompt": "上次只给绿灯和编号，我无法判断能否交付，重说",
+      "expected": {
+        "primary_card": "交付结果"
+      },
+      "status": "covered",
+      "maps_to": [
+        "pm-correct-content-quality-feedback"
+      ]
+    },
+    {
+      "id": "HOST-INSTALL-RULES",
+      "dim": "projection",
+      "tier": [
+        "static"
+      ],
+      "prompt": "(machine) make install-cursor",
+      "expected": {
+        "rules": [
+          "sdd-vibe-entry",
+          "sdd-shape-no-code",
+          "sdd-deploy-p4",
+          "sdd-codex-cli"
+        ],
+        "skills": [
+          "vibe-coding",
+          "design",
+          "spec",
+          "testing",
+          "deploy",
+          "debug",
+          "dispatch-codex"
+        ]
+      },
+      "status": "covered",
+      "maps_to": [
+        "phase3 cursor-rule:*"
+      ]
+    }
+  ],
+  "coverage_notes": {
+    "already_automated": [
+      "phase3 static gates including product-judgment wiring",
+      "skill-load: V-UX-WALKTHROUGH-LOAD + S-UI-ACL-JUDGMENT",
+      "routing 5 cases",
+      "pm ~15 cases",
+      "check_spec surface/job brief"
+    ],
+    "next_to_automate": [
+      "UI-LOAD-* scene pack into eval-skill-load",
+      "K-SOFT-ENTRY / C-INIT / V-FALSIFY-FIRST load probes",
+      "POLISH-* route probes",
+      "D-* deploy sequence probes (ask-mode JSON)"
+    ],
+    "always_manual_or_host": [
+      "AgentDeck 真机 UX Job",
+      "生产 Deploy P5/P6",
+      "Incident 真止血"
+    ],
+    "last_matrix_load_run": {
+      "date": "2026-08-01",
+      "pass": 21,
+      "fail": 0,
+      "command": "make eval-skill-load  # python3 scripts/eval-skill-load-cursor.py --matrix",
+      "caveat": "Probes instruct exact Read order; validates module resolvability + obedience under hard rules, not naturalistic rail routing."
+    }
+  }
+}

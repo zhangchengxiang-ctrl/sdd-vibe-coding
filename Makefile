@@ -3,7 +3,7 @@
 
 .PHONY: help install install-dev install-cursor install-claude install-codex \
 	scaffold codex-dispatch verify check-docs check-spec verify-deliver \
-	preflight-rail require-falsify phase3-negative eval-live
+	preflight-rail require-falsify phase3-negative eval-live eval-skill-load
 
 HOST ?= .
 PROFILE ?= detect
@@ -39,6 +39,7 @@ help:
 		'                            派 Codex（唯一通道；never + 墙钟；Build/Goal 需 SPEC=；Build 需 SLICE=）' \
 		'  make require-falsify LOG_DIR=路径 [RUN_ID=]  指挥侧证伪落盘门' \
 		'  make phase3-negative      Phase0–2 负向验收（规则投影/写码闸/dispatch/宿主入口）' \
+		'  make eval-skill-load      cursor-agent 探测：UX/Shape 是否 Read product-judgment/LOAD-MAP' \
 		'' \
 		'Maintainer (本地私有 · 需本机有 evals/)' \
 		'  make verify               一键：布局 + templates docs + routing + check_spec fixtures + scaffold' \
@@ -118,6 +119,9 @@ require-falsify:
 
 phase3-negative:
 	bash scripts/phase3-negative-verify.sh
+
+eval-skill-load:
+	python3 scripts/eval-skill-load-cursor.py --matrix
 
 verify:
 	@if [ ! -f evals/verify.sh ]; then \

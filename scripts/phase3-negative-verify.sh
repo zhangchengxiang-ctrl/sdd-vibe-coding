@@ -51,8 +51,22 @@ fi
 
 grep -q "第一个工具调用" "$ROOT/templates/.cursor/rules/sdd-vibe-entry.mdc" \
   && ok "rule-text:sdd-vibe-entry" || bad "rule-text:sdd-vibe-entry" "missing 第一个工具调用"
+grep -q "project.kind" "$ROOT/templates/.cursor/rules/sdd-vibe-entry.mdc" \
+  && ok "rule-text:sdd-vibe-entry-kind" || bad "rule-text:sdd-vibe-entry-kind" "missing project.kind gate"
+grep -q "禁止默认假定" "$ROOT/templates/.cursor/rules/sdd-vibe-entry.mdc" \
+  && ok "rule-text:sdd-vibe-entry-no-default-software" || bad "rule-text:sdd-vibe-entry-no-default-software" "missing no-default-software"
 grep -q "不算" "$ROOT/templates/.cursor/rules/sdd-shape-no-code.mdc" \
   && ok "rule-text:sdd-shape-no-code" || bad "rule-text:sdd-shape-no-code" "missing"
+grep -q "项目类型门" "$ROOT/templates/.cursor/rules/sdd-shape-no-code.mdc" \
+  && ok "rule-text:sdd-shape-no-code-kind" || bad "rule-text:sdd-shape-no-code-kind" "missing kind gate"
+test -f "$ROOT/skills/vibe-coding/references/project-kind.md" \
+  && ok "skill:project-kind" || bad "skill:project-kind" "missing project-kind.md"
+test -f "$ROOT/skills/design/references/project-init.md" \
+  && ok "skill:project-init" || bad "skill:project-init" "missing project-init.md"
+grep -q "≤5\|<=5\|整轮拍板" "$ROOT/skills/design/references/project-init.md" \
+  && ok "skill:project-init-ask-cap" || bad "skill:project-init-ask-cap" "missing ≤5 ask cap"
+grep -q "冷启动" "$ROOT/skills/vibe-coding/SKILL.md" \
+  && ok "skill:vibe-cold-start-route" || bad "skill:vibe-cold-start-route" "missing 冷启动 route"
 grep -q "Build ≠ Deploy" "$ROOT/templates/.cursor/rules/sdd-deploy-p4.mdc" \
   && ok "rule-text:sdd-deploy-p4" || bad "rule-text:sdd-deploy-p4" "missing"
 grep -q "禁止" "$ROOT/templates/.cursor/rules/sdd-codex-cli.mdc" \
@@ -60,6 +74,24 @@ grep -q "禁止" "$ROOT/templates/.cursor/rules/sdd-codex-cli.mdc" \
 
 grep -q "FIRST ACTION" "$ROOT/skills/vibe-coding/SKILL.md" \
   && ok "skill:vibe-coding-FIRST-ACTION" || bad "skill:vibe-coding-FIRST-ACTION" "missing"
+
+# --- product-judgment gate (UI decision layer) ---
+test -f "$ROOT/skills/vibe-coding/references/design-standards/product-judgment.md" \
+  && ok "skill:product-judgment" || bad "skill:product-judgment" "missing product-judgment.md"
+grep -q "product-judgment.md" "$ROOT/skills/vibe-coding/references/design-standards/LOAD-MAP.md" \
+  && ok "skill:load-map-judgment" || bad "skill:load-map-judgment" "LOAD-MAP missing product-judgment"
+grep -q "Job Brief" "$ROOT/skills/vibe-coding/references/design-standards/LOAD-MAP.md" \
+  && ok "skill:load-map-job-brief" || bad "skill:load-map-job-brief" "LOAD-MAP missing Job Brief field"
+grep -q "product-judgment.md" "$ROOT/skills/design/SKILL.md" \
+  && ok "skill:design-judgment" || bad "skill:design-judgment" "design SKILL missing product-judgment"
+grep -q "FIRST ACTION" "$ROOT/skills/testing/SKILL.md" \
+  && grep -q "product-judgment.md" "$ROOT/skills/testing/SKILL.md" \
+  && ok "skill:testing-judgment-first" || bad "skill:testing-judgment-first" "testing SKILL missing FIRST ACTION→product-judgment"
+grep -q "product-judgment.md" "$ROOT/skills/testing/references/ux-walkthrough.md" \
+  && grep -q "FIRST ACTION" "$ROOT/skills/testing/references/ux-walkthrough.md" \
+  && ok "skill:ux-walkthrough-judgment" || bad "skill:ux-walkthrough-judgment" "ux-walkthrough missing judgment FIRST ACTION"
+grep -q "detect_job_brief" "$ROOT/skills/spec/scripts/check_spec.py" \
+  && ok "skill:check-spec-job-brief" || bad "skill:check-spec-job-brief" "check_spec missing detect_job_brief"
 
 # --- preflight-rail ---
 tmp=$(mktemp -d)
@@ -219,6 +251,7 @@ M3 Deploy@bi: 「批准 Build」only → must NOT touch prod; need Deploy+P4
 M4 Verify@agentdeck: refuse 可交付 without role×path falsify
 M5 Codex: no CallMcpTool user-codex; only codex-dispatch.sh
 M6 data-sage: 「写个产品 Spec」→ plugin five-piece, not spec-generate
+M7 UX走查@任意宿主: first Reads 含 product-judgment + LOAD-MAP（可用 make eval-skill-load）
 EOF
 
 [[ "$FAIL" -eq 0 ]]

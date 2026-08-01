@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "description": "cursor-agent probes: required design-standards modules must appear in Read tool_calls",
+  "cases": [
+    {
+      "id": "verify-ux-walkthrough-judgment",
+      "rail": "verify",
+      "timeout_sec": 180,
+      "prompt": "Use Skill testing (UX walkthrough). User intent: UX走查「组织资源授权抽屉」——谁可以用 / 怎么拿到 / 怎么改。\n\nHARD RULES for this probe:\n1) Do NOT open a browser, do NOT take screenshots, do NOT edit any files.\n2) Your FIRST tool uses MUST Read these plugin files (absolute paths under the plugin dir you were given):\n   - skills/testing/SKILL.md\n   - skills/testing/references/ux-standards.md\n   - skills/vibe-coding/references/design-standards/product-judgment.md\n   - skills/vibe-coding/references/design-standards/LOAD-MAP.md\n3) After those Reads, stop. Reply with ONLY a JSON object (no markdown fence):\n{\"probe\":\"verify-ux-walkthrough-judgment\",\"cited_rules\":[\"rule/no-impl-jargon\",\"rule/interaction-unit\"],\"ok\":true}\n",
+      "must_read_substrings": [
+        "product-judgment.md",
+        "LOAD-MAP.md",
+        "ux-standards.md"
+      ],
+      "max_read_index_for_required": 8,
+      "result_must_contain": ["rule/no-impl-jargon"]
+    },
+    {
+      "id": "shape-ui-judgment-before-wireframe",
+      "rail": "shape",
+      "timeout_sec": 180,
+      "prompt": "Use Skill design / vibe-coding Shape. User intent: 讨论组织资源抽屉的交互设计（谁可以用、怎么拿到），先出产品判断，不要写业务代码。\n\nHARD RULES for this probe:\n1) Do NOT write or edit files. Do NOT open a browser.\n2) BEFORE proposing any wireframe or layout, Read:\n   - skills/vibe-coding/SKILL.md OR skills/design/SKILL.md\n   - skills/vibe-coding/references/design-standards/LOAD-MAP.md\n   - skills/vibe-coding/references/design-standards/product-judgment.md\n3) Then reply with ONLY JSON (no fence):\n{\"probe\":\"shape-ui-judgment-before-wireframe\",\"job_brief\":{\"job\":\"管理员设定谁能用资源\",\"desired_outcome\":\"范围与分发可改且人话可懂\",\"consequence\":\"改变成员可见/安装方式\"},\"cited_rules\":[\"rule/job-before-chrome\"],\"ok\":true}\n",
+      "must_read_substrings": [
+        "product-judgment.md",
+        "LOAD-MAP.md"
+      ],
+      "max_read_index_for_required": 8,
+      "result_must_contain": ["job_brief", "rule/job-before-chrome"]
+    }
+  ]
+}
