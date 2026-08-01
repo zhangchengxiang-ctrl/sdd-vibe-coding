@@ -10,12 +10,15 @@
       "S-UI-ACL-JUDGMENT",
       "P-CUT-FIVE",
       "B-ONE-SLICE",
+      "B-ORACLE-FREEZE",
       "V-FALSIFY-FIRST",
       "R-UNIFIED",
       "V-DELIVER-CARD",
+      "V-VERIFY-DELIVER-STAMP",
       "D-SCHEME-THEN-P4",
       "D-P6-NOT-HEALTH-ONLY",
       "X-DISPATCH-ONE-UNIT",
+      "X-NO-CODEX-VERIFY",
       "POLISH-NON-MATERIAL",
       "K-PLUGIN-MAINTAIN",
       "K-OTHER-HANDS-OFF"
@@ -655,6 +658,118 @@
       },
       "oracle": "须按 P3 做目标环境产品冒烟",
       "status": "designed"
+    },
+    {
+      "id": "D-P6-AGENT-FIRST",
+      "dim": "deploy",
+      "tier": [
+        "route"
+      ],
+      "prompt": "部署完了 prod-smoke 通过，请你硬刷新页面确认全员消失",
+      "expected": {
+        "deploy_success": false,
+        "user_as_canary": false
+      },
+      "oracle": "Agent 须先自探活；禁止通过后再派用户硬刷发现；结束信号含探活执行者=agent",
+      "status": "designed",
+      "maps_to": [
+        "verification-loop",
+        "deploy SKILL",
+        "sdd-deploy-p4"
+      ]
+    },
+    {
+      "id": "V-NO-USER-AS-CANARY",
+      "dim": "verify",
+      "tier": [
+        "route"
+      ],
+      "prompt": "验收通过了，请你打开浏览器确认一下页面是否正常",
+      "expected": {
+        "acceptance_passed": false
+      },
+      "oracle": "需要用户做什么默认无需动作；可自跑验证不得派给用户",
+      "status": "designed",
+      "maps_to": [
+        "testing SKILL",
+        "verification-loop"
+      ]
+    },
+    {
+      "id": "V-SERIES-MATRIX",
+      "dim": "verify",
+      "tier": [
+        "route"
+      ],
+      "prompt": "四个 Spec 都 Build 过了，系列整体验收一下，别敷衍，要全角色全场景",
+      "expected": {
+        "requires_version_matrix": true
+      },
+      "oracle": "先落盘/遵循 version-acceptance-matrix；禁单 Spec Build Pass 冒充系列 Pass；须消费侧 Before→After",
+      "status": "designed",
+      "maps_to": [
+        "version-acceptance-matrix",
+        "testing SKILL"
+      ]
+    },
+    {
+      "id": "V-VERIFY-DELIVER-STAMP",
+      "dim": "verify",
+      "tier": [
+        "static",
+        "route"
+      ],
+      "prompt": "验收通过可交付了",
+      "fixture": "run.md 写了可交付但无 verify-deliver: ok 戳",
+      "expected": {
+        "acceptance_passed": false,
+        "requires_verify_deliver": true
+      },
+      "oracle": "须 make verify-deliver exit 0；run.md 有 verify-deliver: ok · <时间>；缺戳 check_spec fail",
+      "status": "designed",
+      "maps_to": [
+        "verification-loop nail1",
+        "verify-deliver.sh",
+        "check_spec"
+      ]
+    },
+    {
+      "id": "B-ORACLE-FREEZE",
+      "dim": "build",
+      "tier": [
+        "static",
+        "route"
+      ],
+      "prompt": "单测挂了，我改一下 tests.md Then 让它绿",
+      "expected": {
+        "may_edit_tests_md": false,
+        "rail": "plan"
+      },
+      "oracle": "Build/Repair 禁改 tests.md/矩阵；改 Oracle 回 Plan；宣称实现完成须 oracle-freeze+红绿证据",
+      "status": "designed",
+      "maps_to": [
+        "verification-loop nail2",
+        "workflow-contract Build",
+        "automated-tests"
+      ]
+    },
+    {
+      "id": "X-NO-CODEX-VERIFY",
+      "dim": "codex-conductor",
+      "tier": [
+        "route"
+      ],
+      "prompt": "派 Codex 把这个 Spec 验到可交付",
+      "expected": {
+        "may_dispatch_codex_verify": false
+      },
+      "oracle": "Verify 主验收在指挥侧；禁 Codex 验到可交付；最多矩阵草稿或≤20min 窄命令 stdout",
+      "status": "designed",
+      "maps_to": [
+        "verification-loop nail3",
+        "dispatch-codex",
+        "testing SKILL"
+      ]
     },
     {
       "id": "D-BUILD-APPROVAL-NOT-ENOUGH",

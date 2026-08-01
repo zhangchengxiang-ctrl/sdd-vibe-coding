@@ -53,19 +53,22 @@
 
 - 流程、状态词、完成声明、Harness 适配（含可选指挥施工）、证据分级：只改 `workflow-contract.md`
 - 验证层次、**Evidence Kind**、行为优先、Deliver Gate、Fail 分类：只改 `evidence-contract.md`
-  （证伪执行：`skills/testing/references/falsify-checklist.md`；弱 Oracle：`skills/spec/references/oracle-strength.md`）
-- 发布阶段 P0–P6、定级裁剪、方案模板：只改 `skills/deploy/`（关版硬门仍在 evidence-contract）
+  （证伪执行：`skills/testing/references/falsify-checklist.md`；弱 Oracle：`skills/spec/references/oracle-strength.md`；
+  **关版三钉**（verify-deliver 戳 / Oracle 冻结 / maker≠grader）：`verification-loop.md`；
+  系列全角色矩阵：`skills/testing/references/version-acceptance-matrix.md`）
+- 发布阶段 P0–P6、定级裁剪、方案模板：只改 `skills/deploy/`（关版硬门仍在 evidence-contract + verification-loop 钉 1）
 - Workspace / Worktree / Claim：只改 `workspace-contract.md`
 - 产品包章节与剪枝：只改 `skills/design/references/product-package.md`
 - 系统架构 / UX / 视觉 / 页面门控社区底线：只改 `skills/vibe-coding/references/design-standards/`
   （Verify 接线薄页 `skills/testing/references/ux-standards.md`；启发式正文在 design-standards）
 - 产品回归启用条件与分层：只改 `skills/testing/references/product-regression.md`
-- Build 期自动化测试通则：只改 `skills/vibe-coding/references/automated-tests.md`
-- 事实映射门、纵向切片、测试合同门、Plan 流程、**check_spec 机检**：只改 `skills/spec/`（含 `scripts/check_spec.py`）
-- Cursor/Claude → Codex 派单与指挥侧验收：只改 `skills/dispatch-codex/SKILL.md`（CLI 预检同目录 `scripts/`）
+- Build 期自动化测试通则（含红绿证据）：只改 `skills/vibe-coding/references/automated-tests.md`
+- 事实映射门、纵向切片、测试合同门、Plan 流程、**check_spec 机检**（含 verify-deliver 戳 / oracle-freeze）：只改 `skills/spec/`（含 `scripts/check_spec.py`）
+- Cursor/Claude → Codex 派单与指挥侧验收（禁 Codex 主验收）：只改 `skills/dispatch-codex/SKILL.md`（CLI 预检同目录 `scripts/`）
 - 单个 Rail 的前台话术与执行约束：改对应 `skills/<rail>/SKILL.md`
 - 宿主填写槽位与文档模板：改 `templates/docs/**` 与 `templates/AGENTS.md`
 - 结构校验规则：改本机 `evals/tools/check_docs.py`（公开仓无此目录）
+- 关版脚本：`scripts/verify-deliver.sh`（`make verify-deliver`）
 
 `templates/docs` 只保留最小落盘结构并链接合同真源；合同正文在 skills。
 
@@ -81,7 +84,8 @@
 | 调整项目类型 / 冷启动 Init·Onboard | `project-kind.md` + `design/references/project-init.md` | entry/shape 硬闸、`vibe-coding` 路由、`AGENTS` 槽 |
 | 调整产品包骨架 | `skills/design/references/product-package.md` | `design/SKILL.md` |
 | 调整设计规范包 | `skills/vibe-coding/references/design-standards/` | `design`/`spec`/`testing` SKILL、`ux-standards.md`、AGENTS 槽位、`check_spec` |
-| 调整 Spec 机检 | `skills/spec/scripts/check_spec.py` | `verify.sh` fixtures、`dispatch-codex` 预检、Makefile |
+| 调整 Spec 机检 | `skills/spec/scripts/check_spec.py` | `verify-deliver.sh`、`dispatch-codex` 预检、Makefile |
+| 调整关版三钉 | `verification-loop.md` | `check_spec`、`verify-deliver.sh`、testing/deploy/vibe/dispatch |
 | 调整测试合同结构 | `tests.md` 模板 + `spec/SKILL.md` | `check_docs.py`, `testing/SKILL.md` |
 | 调整指挥施工派单/验收 | `dispatch-codex/SKILL.md` + workflow「指挥施工」 | `vibe-coding/SKILL.md`, `verify.sh` |
 | 调整发布生命周期 | `skills/deploy/` | `evidence-contract` Deliver Gate、`run.md` 模板、`vibe-coding` 路由 |

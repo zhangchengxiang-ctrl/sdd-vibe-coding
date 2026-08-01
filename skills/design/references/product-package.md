@@ -13,7 +13,8 @@ docs/product/modules/<slug>/
 ├── 02-product-model.md
 ├── 03-presentation.md   # 可同号改名
 ├── 04-runtime.md        # 薄：产品级约束
-└── 05-delivery.md
+├── 05-delivery.md
+└── 06-acceptance-matrix.md  # 可选：系列 Version Acceptance
 ```
 
 读序钉死：体验 → 模型 → 呈现 → 运行时意图 → 交付。  
@@ -52,6 +53,12 @@ IA · 文案/视觉语义 · 组件/表面规格（无 UI → 整篇省略）
 ### 05 交付
 分期 · 配置/环境 · 联调检查 · 风险 · 关版 Test **索引**（正文在 Spec `tests.md`）
 
+### 06 验收矩阵（可选 · 大模块）
+
+多角色 × 多表面 / 多 Spec 系列的 **Version Acceptance 唯一 Oracle**（全角色全场景或等价浏览器剧本）。  
+写法通则：testing [`version-acceptance-matrix.md`](../../testing/references/version-acceptance-matrix.md)。  
+未触发系列验收时可省略；触发后 **不得**用单 Spec Build Pass 冒充本矩阵 Pass。
+
 ## 4. 剪枝表
 
 | 类型 | 剪枝 |
@@ -60,7 +67,7 @@ IA · 文案/视觉语义 · 组件/表面规格（无 UI → 整篇省略）
 | 纯体验愿景 | 可省略 04（README 声明） |
 | 单层 ≤~80 行 | 单文件豁免 |
 | 域特化呈现 | `03-cards` / `03-authoring` 等同号 |
-| 调研附录 | `05-research` / `06-*` 不占 01–05 合同位 |
+| 调研附录 | `05-research` / `07-*` 等不占 01–05 合同位；**06 验收矩阵**占用可选合同位（见上） |
 
 **硬门：** 04 概念保留在 04；交付不改号接到 03；关版以 Spec 验收为准（设计稿单独不构成关版）。
 
