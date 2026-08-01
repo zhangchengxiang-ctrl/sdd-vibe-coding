@@ -1,7 +1,9 @@
 # Falsify Checklist（证伪优先）
 
 > 防止用冒烟 JSON / 首屏截图洗白 Pass。Verify **先跑证伪**，再写 `run.md` Pass。  
-> Evidence Kind 真源：[`evidence-contract.md`](../../vibe-coding/references/evidence-contract.md) §1.1。
+> Evidence Kind 真源：[`evidence-contract.md`](../../vibe-coding/references/evidence-contract.md) §1.1。  
+> 结束信号 / Floor≠关版：[`verification-loop.md`](../../vibe-coding/references/verification-loop.md)。  
+> 系列全角色验收：[`version-acceptance-matrix.md`](./version-acceptance-matrix.md)。
 
 ## 硬门
 
@@ -9,6 +11,8 @@
 2. **Build 轨不得宣称可交付**：实现完成 + 单测批次只能报「实现完成」；`可交付` / `acceptance-passed` 仅 Verify 在证伪通过后写出。
 3. **同会话 Build→Verify**：禁止把 Build 期间的 window-smoke / health 结果原样誊为 Verify Pass；须重跑证伪或等价命令并记新证据。
 4. **指挥施工**：`maker ≠ grader` — 指挥侧至少亲自跑 **1 条** 证伪命令（或复核其输出），不只读施工侧 `run.md`。
+5. **关版戳（钉 1）**：对用户说可交付前须 `make verify-deliver`；`run.md` 有 `verify-deliver: ok · <时间>`。
+6. **禁改 Oracle（钉 2）**：证伪失败 → Result=`Fail`；禁止改 `tests.md` / 矩阵 Oracle 消 Fail。
 
 ## 默认证伪刀（按触及面选用）
 

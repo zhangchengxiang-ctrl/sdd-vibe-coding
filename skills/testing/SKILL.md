@@ -28,11 +28,14 @@ UX 走查变体再读 [`ux-walkthrough.md`](./references/ux-walkthrough.md)（**
 [`evidence-contract.md`](../vibe-coding/references/evidence-contract.md) 和适用
 `tests.md` 用例。
 有界面时按 Spec 的 `UI surface`/`page_kind` 继续 LOAD-MAP 场景册；
-遵守 [有界验收](./references/bounded-verify.md) 与
-[证伪清单](./references/falsify-checklist.md)（**先证伪再 Pass**）；
+遵守 [有界验收](./references/bounded-verify.md)、
+[证伪清单](./references/falsify-checklist.md)（**先证伪再 Pass**）与
+[验证环](../vibe-coding/references/verification-loop.md)（Floor≠关版；禁甩用户发现）；
 UI / 浏览器真实通道再读
 [浏览器验证](./references/browser-verify.md)；意见格式可参考
 [critique-format](../design/references/critique-format.md)。
+命中**整体验收 / 多 Spec 系列 / 多角色多表面 material** → 先读并落盘
+[Version Acceptance 矩阵](./references/version-acceptance-matrix.md)，**禁止**用单 Spec Build Pass 冒充系列 Pass。
 UI 回归定位可指向 [debug-playbook](../vibe-coding/references/design-standards/debug-playbook.md)（仍不改码）。
 
 ## 先声明验收层次
@@ -53,37 +56,45 @@ UI 回归定位可指向 [debug-playbook](../vibe-coding/references/design-stand
 3. 从宿主 `AGENTS.md` 取得真实命令、URL、账号和工具；有可复用测试凭据时自行切换角色/账号
    继续跑矩阵（个人账号 / OAuth / 生产密钥 → `Blocked` / `needs-authorization`）；
 4. **先跑证伪**（[falsify-checklist](./references/falsify-checklist.md)）：数据面至少做分页/排序/筛选的两态对比；失败直接 Fail；
-5. 按风险选择 V0–V3 的最小充分组合；走查变体按 [ux-walkthrough](./references/ux-walkthrough.md)
+5. 按触及面勾选验证层（见 [verification-loop](../vibe-coding/references/verification-loop.md)）；
+   **Floor 入场 ≠ 关版**；走查变体按 [ux-walkthrough](./references/ux-walkthrough.md)
    扩检查面，仍记录 `Pass | Fail | Blocked`；
-6. 按 `tests.md` 实际执行每个适用用例（Given/When/Then），记录结果；
+6. 单 Spec：按 `tests.md` 执行；系列/整体验收：按
+   [version-acceptance-matrix](./references/version-acceptance-matrix.md) 执行矩阵 P0；
 7. 记录命令、时间、环境、版本、观察值；Evidence 写 `kind=… · 路径`（见 evidence-contract §1.1）；
 8. 对全部 Fail 统一归因、聚类并形成一份 Repair 方案；Verify 只读实现；
 9. 给出实际 Delivery Target、下一 Rail 建议和阶段总结，并等待用户批准后才转换。
 
 UI/人工 Test 至少需要一次真实通道 V2（见 [browser-verify](./references/browser-verify.md)）。  
-**硬门：** Oracle 保持在 `tests.md`；观察结果只写 `run.md`。  
+**硬门：** Oracle 保持在 `tests.md`（或系列矩阵真源）；观察结果只写 `run.md`。  
 **硬门：** API/DOM/Toast/`/health`/window-smoke/脚本旁路单独不构成 Job 通过。  
-**硬门：** 同会话 Build 冒烟结果不得原样誊为 Verify Pass。
+**硬门：** 同会话 Build 冒烟结果不得原样誊为 Verify Pass。  
+**硬门：** 暖缓存/HIT 结果不得冒充用户冷路径 Pass。  
+**硬门：** 授权/配置类须消费侧 Before→After；管理面「已生效」单独不够。  
+**硬门（钉 3）：** Verify / 系列验收默认在本轨（Cursor/指挥侧）执行；**禁止**派 Codex 做主验收或「验到可交付」。Codex 最多生成矩阵草稿，或 ≤20min、完成条件=指定命令 stdout 的窄派单。  
+**硬门（钉 1）：** 宣称 `可交付` / `acceptance-passed` 前必须 `make verify-deliver HOST=<repo> SPEC=<id>` exit 0，且 `run.md` 有 `verify-deliver: ok · <时间>`。
 
 ## 用户前台输出
 
 验收结果先输出“交付结果”，再按需展开工程矩阵。交付卡包含：
 
 - **结论**：可交付、不可交付或受阻，并用一句话说明原因；
-- **如何体验**：环境、入口、适用角色和代表性数据；
+- **如何体验**：环境、入口、适用角色和代表性数据（**说明用**，不是派用户去发现故障）；
 - **已验证的用户结果**：每项写**操作 → 两态观察差 → 证据**；无两态差不得写「已通过」；
 - **未通过或无法验证**：写用户影响、严重度和原因，不能只写内部分类；
 - **已知限制**：包括未覆盖内容；
 - **上线状态**：未上线、已上线、未知或不适用；
-- **需要用户做什么**：体验确认、批准下一动作或无需动作；
+- **探活执行者**：`agent`（默认）或 `blocked-needs-auth`；
+- **需要用户做什么**：默认 **`无需动作`**；仅允许：批准下一轨 / Repair、真人 SSO/个人 OAuth、生产密钥；
 
 聊天前台默认不显示 Requirement、Test、Oracle、V0–V3、Rail、Delivery Target、
 Matrix、commit、Workspace 等工程术语。正式报告仍保存完整工程证据；用户明确要求或走查变体
-需要分级发现时，在交付卡之后展开“技术详情（可选）”或 P0/P1/P2 列表。交付卡之后单列且只列
-一个“下一步”，用普通中文给出最小可执行动作。
+需要分级发现时，在交付卡之后展开“技术详情（可选）”或 P0/P1/P2 列表。  
+若确有待决，交付卡后可单列一句「下一步」——**禁止**把可自跑的打开/硬刷/确认是否正常写成下一步。
 
 **话术硬门：** Build 结束只说「实现完成」；「可交付」仅在本轨证伪通过后使用。  
-关版前建议跑：`make verify-deliver HOST=<repo> SPEC=<id>`（`check_spec` + 证伪/可交付/P2·P3 机器闸）。
+**话术硬门：** 禁止「有条件可交付」掩盖未证 P0；未证 = Fail 或 Blocked。  
+**关版硬门：** 对用户说可交付前跑通：`make verify-deliver HOST=<repo> SPEC=<id>`（写入 `verify-deliver: ok · <时间>`；缺戳则 `check_spec` fail）。
 
 ## Fail 路由
 

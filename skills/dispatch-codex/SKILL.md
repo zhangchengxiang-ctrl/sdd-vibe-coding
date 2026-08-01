@@ -31,9 +31,11 @@ description: >-
 | 用户明示派 Codex / 用 Codex 施工 | 用户未提 Codex |
 | 已批准有界单元，用 Sol 离场施工 | 已在 Codex 会话里（走纯 Codex Harness） |
 | 指挥侧 PATH 上有 `codex` CLI | 无 Oracle 的 Build（先 Plan） |
-| | Shape / 产品拍板 / 验收对话 |
+| 矩阵/剧本**草稿**（非关版） | Shape / 产品拍板 / **验收对话** |
+| ≤20min 窄派单（完成条件=指定命令 stdout） | **Verify / 系列验收 / 「验到可交付」**（钉 3：禁 Codex 主验收） |
 
-未触发「派 Codex」时：复杂 Plan 默认指挥侧自做。
+未触发「派 Codex」时：复杂 Plan 默认指挥侧自做。  
+**硬门（钉 3）：** 禁止派 Codex 做主验收或「验到可交付」；超时窄派单 = 失败，不得扩成关版。
 
 ## 模型与思考深度
 
@@ -201,16 +203,24 @@ sandbox: danger-full-access
 ### Build 通过
 
 - [ ] diff 落在该切片相关路径
+- [ ] **diff 不含** Spec `tests.md`、产品包 `06-acceptance-matrix` 等验收矩阵（钉 2；改 Oracle 须回 Plan）
+- [ ] `run.md` 有 `oracle-freeze: intact` + 红绿证据（或 `N/A · polish|trivial|无自动化`）
 - [ ] `run.md` 记录该片批次；T-xxx 有结果（Evidence 含 `kind=`；禁仅 smoke）
 - [ ] 完成定义以该片行为证据收口（非整份 Spec done，除非 Goal 真做完且证据齐）
 - [ ] **指挥侧证伪**：亲自跑 ≥1 条 falsify（分页两 offset / 排序参数 / 合同 Then）；未跑不算验收通过
 - [ ] 证伪输出已 tee 到 `.codex-dispatch-logs/<run-id>_falsify.log`，且  
       `make require-falsify LOG_DIR=<cwd>/.codex-dispatch-logs RUN_ID=<run-id>` 通过
-- [ ] 未向用户宣称「可交付」（除非已走 Verify 且证伪过）
+- [ ] 未向用户宣称「可交付」（除非已走 Verify + `make verify-deliver` 且戳在）
 
 **Build 派单：** `--slice <id>` 或 prompt 含 `SLICE_ID=` / `S#`；禁止一次多片（多片 → `--unit goal` + `GOAL_APPROVED=1`）。
 
 未过 → 经 CLI 打回派单（具体缺陷一句）或指挥侧自做；对人只报真实验收结论。
+
+### Verify 禁派（钉 3）
+
+- [ ] 未把「验收 / 验到可交付 / 系列 Version Acceptance」派给 Codex 做主验收
+- [ ] 若仅派窄命令：墙钟 ≤20min、完成条件=指定命令 stdout；超时=失败
+- [ ] 关版前指挥侧亲自 ≥1 条证伪；可交付前 `make verify-deliver`
 
 ## 对人前台
 

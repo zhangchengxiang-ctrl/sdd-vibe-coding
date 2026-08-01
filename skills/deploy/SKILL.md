@@ -45,15 +45,21 @@ P0 范围锁定（sha / Spec / Delivery Target）
  → P6 按 P3 在目标环境冒烟 → 标签 → 回写 run.md
 ```
 
-L0：P2+P3 可极简（触及面 + 最小冒烟），仍禁止仅用 health 报成功。
+L0：P2+P3 可极简（触及面 + Agent 跑的最小产品冒烟），仍禁止仅用 health 报成功。
 
 ## 谁做什么
 
 | 谁 | 做什么 |
 |----|--------|
 | 宿主脚本 / 适配器（若有） | 列 units、path signals、候选 sidecar、可选生产对比；**提醒**冒烟层 |
-| Agent / 人 | 定级；写 P2+P3；采纳或延期 sidecar；批准后执行；跑 P6；关版标签 |
+| Agent / 人 | 定级；写 P2+P3；采纳或延期 sidecar；批准后执行；**Agent 跑 P6**；关版标签 |
 | Skill `testing` | 用户只要「验收生产」时可只跑 P6 核对；不擅自开 P5 |
+
+**硬门：** 宣称 `prod-smoke 通过` 前须自探活；禁止「通过 + 请你硬刷确认」。见
+[`verification-loop.md`](../vibe-coding/references/verification-loop.md)。  
+**硬门（钉 1）：** 宣称 `prod-smoke 通过` 前必须
+`make verify-deliver HOST=<repo> SPEC=<id>` exit 0，且 `run.md` 有
+`verify-deliver: ok · <时间>`（缺戳 → `check_spec` fail）。
 
 ## 关版
 
@@ -63,5 +69,6 @@ L0：P2+P3 可极简（触及面 + 最小冒烟），仍禁止仅用 health 报�
 - `[部署·L2·prod-smoke 未过/Blocked: 反向代理未同步 live]`
 
 延期 MUST 必须 Open 到下次 P1。Deliver Gate 回写字段见 `evidence-contract.md`。
+关版前跑 `make verify-deliver`；标签写「通过」时戳必须已在。
 
 对人前台：说清要发什么、风险级、批准点、冒烟是否通过；不堆内部阶段号，除非用户追问。

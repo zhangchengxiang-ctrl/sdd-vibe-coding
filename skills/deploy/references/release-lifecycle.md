@@ -118,10 +118,13 @@ Spec 仍为 `dev-effective` 却要上生产：定级旁必须写 **风险接受*
 ## P6 · 生产验证 + 关版
 
 1. 按 P3 在**目标环境**执行；Dev 结果不可填「prod-smoke 通过」  
-2. 完成标签强制带冒烟态：  
+2. **Agent 先探活**：有 Browser MCP / 宿主 smoke 命令则自行打开目标 URL 或跑脚本；挂了打 `未过/Blocked` 并给回滚建议，**禁止**请用户打开/硬刷当第一发现人  
+3. 完成标签强制带冒烟态：  
    `[部署·L#·prod-smoke 通过]` / `[部署·L#·prod-smoke 未过/Blocked: …]`  
-3. 回写 Spec `run.md` Deliver Gate 字段；延期 sidecar 挂 **Open MUST** 到下次 P1  
-4. 仅 P6 通过且声明目标为生产时，才可写 `production-delivered`
+4. 回写 Spec `run.md` Deliver Gate 字段（含 `探活执行者` / 产品冒烟证据 / `需要用户做什么`）；延期 sidecar 挂 **Open MUST** 到下次 P1  
+5. 仅 P6 通过且声明目标为生产时，才可写 `production-delivered`
+
+通则：[`verification-loop.md`](../../vibe-coding/references/verification-loop.md)。
 
 ## 发布方案模板（贴对话 · 缺块即不合格）
 
@@ -162,6 +165,9 @@ Spec 仍为 `dev-effective` 却要上生产：定级旁必须写 **风险接受*
 ### P5 / P6（执行后填写）
 - 实际执行:
 - 产品冒烟: 通过 | 未过 | Blocked+原因
+- 探活执行者: agent | blocked-needs-auth
+- 产品冒烟证据: kind=… · …
+- 需要用户做什么: 无需动作 | …
 - 完成标签: [部署·L#·prod-smoke …]
 - Open MUST（延期项）:
 ```
