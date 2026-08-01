@@ -16,10 +16,12 @@
 - 已覆盖入口：
 - 未覆盖入口：
 - 实现冻结时间（开始单元测试前）：
+- oracle-freeze: `intact`（禁改 `tests.md` / 验收矩阵；改 Oracle 须回 Plan）
+- 红绿证据: `red <cmd> exit=<n> · green <cmd> exit=0` | `N/A · polish|trivial|无自动化`
 
 ## 结果
 
-> 测试开始后冻结改码；先收齐结果。
+> 测试开始后冻结改码；先收齐结果。有自动化则先红后绿，退出码写入上方「红绿证据」。
 
 ### 批次结果
 
@@ -53,6 +55,7 @@
 
 ### 结论
 
+- verify-deliver: （宣称可交付 / acceptance-passed / prod-smoke 通过前须 `make verify-deliver`；成功后由脚本写入 `ok · <时间>`）
 - 是否可以交付：`可交付 | 不可交付 | 受阻`
 - 一句话原因：
 - 本次验收覆盖：
@@ -88,8 +91,9 @@
 
 ### 需要用户做什么
 
-- 用户验收动作：
-- 下一步：
+- 探活执行者：`agent` | `blocked-needs-auth`
+- 需要用户做什么：`无需动作`（默认）| 批准… | 真人SSO/密钥…
+- 下一步：（无待决则写「无」；禁止派打开/硬刷发现故障）
 
 ## 终态
 
@@ -107,7 +111,7 @@
 ## Production Verification（适用时）
 
 > 产品冒烟（目标环境 · P6）态写入后再报生产交付。`/health` 与进程 active 是 P5 过程信号。
-> 通则见 `evidence-contract.md` Deliver Gate；阶段见 Skill `deploy` / `release-lifecycle.md`。
+> 通则见 `evidence-contract.md` Deliver Gate 与 `verification-loop.md`；阶段见 Skill `deploy`。
 
 - 声明目标 / 实际达到：
 - 定级 + 理由（若适用）：
@@ -117,6 +121,9 @@
 - Health（过程）：
 - 环境门禁：
 - 产品冒烟（目标环境 · P6）：通过 | 未过 | Blocked+原因
+- 探活执行者：`agent` | `blocked-needs-auth`
+- 产品冒烟证据：`kind=… · …`
+- 需要用户做什么：`无需动作` | …
 - 完成标签：`[部署·L#·prod-smoke …]`
 - Open MUST（延期项 → 下次 P1）：
 - 原始故障信号：

@@ -33,7 +33,7 @@ help:
 		'  make install-codex        只装 Codex' \
 		'  make scaffold HOST=路径   AGENTS.md + SDD 文档树（PROFILE=；SDD_ROOT=docs|docs/sdd；DRY_RUN=1）' \
 		'  make check-spec HOST=路径 SPEC=id   Spec 静态门（事实映射/tests/架构节/run 诚实性）' \
-		'  make verify-deliver HOST=路径 SPEC=id  Verify 关版门（check_spec + 证伪/可交付/P2·P3）' \
+		'  make verify-deliver HOST=路径 SPEC=id  Verify 关版门（戳 verify-deliver: ok · <时间>）' \
 		'  make preflight-rail HOST=路径 [AUTHORIZED=1]  Shape 写码闸（业务 dirty 则失败）' \
 		'  make codex-dispatch HOST=路径 UNIT=plan|build|goal PROMPT_FILE=文件' \
 		'                            派 Codex（唯一通道；never + 墙钟；Build/Goal 需 SPEC=；Build 需 SLICE=）' \

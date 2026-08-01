@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-# Close the Verify shallow-pass gap: check_spec honesty + deliver-mode gates.
+# Verify / Deploy close gate: honesty checks + stamp run.md.
+#
+# Hard gate: before claiming 可交付 / acceptance-passed / prod-smoke 通过,
+# Agent must run this script (make verify-deliver) to exit 0.
+# On success writes: `verify-deliver: ok · <ISO8601>` into run.md.
 #
 # Usage:
 #   bash scripts/verify-deliver.sh <host-root> <spec-id>
@@ -14,16 +18,17 @@ fi
 HOST="$(cd "$1" && pwd)"
 SPEC="$2"
 
-echo "== verify-deliver: check_spec =="
-python3 "$ROOT/skills/spec/scripts/check_spec.py" "$HOST" "$SPEC" --skip-agents
+echo "== verify-deliver: check_spec (pre-stamp) =="
+python3 "$ROOT/skills/spec/scripts/check_spec.py" \
+  "$HOST" "$SPEC" --skip-agents --allow-unstamped-deliver
 
-# Extra chat-honesty heuristics on run.md (beyond check_spec)
+# Extra chat-honesty heuristics + stamp (beyond check_spec)
 python3 - "$HOST" "$SPEC" <<'PY'
 import re, sys
+from datetime import datetime, timezone
 from pathlib import Path
 
 host, spec = Path(sys.argv[1]), sys.argv[2]
-# resolve SDD root like check_spec
 agents = host / "AGENTS.md"
 root_name = "docs"
 if agents.is_file():
@@ -33,7 +38,6 @@ if agents.is_file():
 docs = host / root_name
 spec_dir = docs / "specs" / spec
 if not spec_dir.is_dir():
-    # allow absolute-ish
     cand = host / spec
     if cand.is_dir():
         spec_dir = cand
@@ -53,6 +57,27 @@ mode = ""
 m = re.search(r"当前模式：\s*`?([^`|\n]+)`?", text)
 if m:
     mode = m.group(1).strip().lower()
+
+status = ""
+m = re.search(r"-\s*状态：\s*`?([^`|\n]+)`?", text)
+if m:
+    status = m.group(1).strip().split("|")[0].strip()
+
+acceptance = ""
+m = re.search(r"-\s*Acceptance：\s*`?([^`|\n]+)`?", text)
+if m:
+    acceptance = m.group(1).strip().split("|")[0].strip()
+
+claims_smoke = bool(
+    re.search(r"\[部署[^\]]*prod-smoke\s*通过", text)
+    or re.search(r"产品冒烟[^：:\n]*[：:][ \t]*通过\b", text)
+)
+claimed_pass = (
+    deliver == "可交付"
+    or "acceptance-passed" in status
+    or acceptance == "acceptance-passed"
+    or claims_smoke
+)
 
 if deliver == "可交付":
     if mode and mode not in {"verify", "verifying"} and "verify" not in mode:
@@ -78,10 +103,76 @@ def filled(m):
 if filled(p5) and (not filled(p2) or not filled(p3)):
     errs.append("Production: Deploy/rollback (P5) filled but P2 or P3 empty — refuse")
 
+def field(prefix):
+    m = re.search(rf"{prefix}[^：:\n]*[：:][ \t]*([^\n]*)", text)
+    return (m.group(1).strip() if m else "")
+
+if claims_smoke:
+    probe = field(r"探活执行者")
+    evid = field(r"产品冒烟证据")
+    user_act = field(r"需要用户做什么")
+    if probe.lower().replace("_", "-") not in {"agent", "blocked-needs-auth"}:
+        errs.append("prod-smoke 通过 requires 探活执行者: agent | blocked-needs-auth")
+    if not evid or (
+        re.search(r"(?i)\bhealth\b|/health|window-smoke", evid)
+        and not re.search(
+            r"(?i)kind\s*=\s*(browser-job|api-diff|network-har|integration|unit)",
+            evid,
+        )
+    ):
+        errs.append("prod-smoke 通过 requires strong 产品冒烟证据 (kind=…)")
+    if re.search(r"硬刷|打开浏览器|打开页面|请.*刷新|开无痕", user_act):
+        errs.append("prod-smoke 通过 forbids user-as-canary 需要用户做什么")
+
+if deliver == "可交付":
+    for m in re.finditer(
+        r"需要用户做什么[：:][ \t]*([^\n]+)|下一步[：:][ \t]*([^\n]+)", text
+    ):
+        act = (m.group(1) or m.group(2) or "").strip()
+        if re.search(r"硬刷|打开浏览器|打开页面|请.*刷新|开无痕", act):
+            errs.append(f"可交付 forbids user-as-canary step: {act!r}")
+
 if errs:
     for e in errs:
         print(f"verify-deliver: FAIL {e}", file=sys.stderr)
     sys.exit(1)
+
+# Stamp close-gate record (Nail 1). Always stamp on success so chat can claim.
+stamp_line = f"verify-deliver: ok · {datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')}"
+stamp_re = re.compile(r"^([ \t]*[-*]?\s*)?verify-deliver\s*:\s*.+$", re.I | re.M)
+if stamp_re.search(text):
+    text = stamp_re.sub(rf"\1{stamp_line}", text, count=1)
+else:
+    # Prefer 关版/结论 block; else append under 关版
+    insert = f"- {stamp_line}\n"
+    if re.search(r"### 结论\n", text):
+        text = re.sub(
+            r"(### 结论\n)",
+            rf"\1{insert}",
+            text,
+            count=1,
+        )
+    elif re.search(r"## 关版\n", text):
+        text = re.sub(
+            r"(## 关版\n)",
+            rf"\1\n### 结论\n{insert}",
+            text,
+            count=1,
+        )
+    else:
+        text = text.rstrip() + f"\n\n## 关版\n\n### 结论\n{insert}"
+
+run.write_text(text, encoding="utf-8")
+print(f"verify-deliver: stamped `{stamp_line}`")
+if not claimed_pass:
+    print(
+        "verify-deliver: note — no 可交付/acceptance-passed/prod-smoke 通过 claim yet; "
+        "stamp still written after honesty pass"
+    )
 print("verify-deliver: ok")
 sys.exit(0)
 PY
+
+echo "== verify-deliver: check_spec (post-stamp) =="
+python3 "$ROOT/skills/spec/scripts/check_spec.py" \
+  "$HOST" "$SPEC" --skip-agents

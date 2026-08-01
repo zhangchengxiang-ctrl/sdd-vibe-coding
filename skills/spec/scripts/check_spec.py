@@ -673,7 +673,33 @@ def check_ui_surface(
             )
 
 
-def check_run_honesty(spec_dir: Path, run: str, report: Report, *, structure_only: bool) -> None:
+# Close-gate stamp written by scripts/verify-deliver.sh after exit 0.
+VERIFY_DELIVER_STAMP_RE = re.compile(
+    r"verify-deliver\s*:\s*ok\s*[·•]\s*\S+",
+    re.I,
+)
+ORACLE_FREEZE_RE = re.compile(r"oracle-freeze\s*:\s*intact\b", re.I)
+RED_GREEN_RE = re.compile(
+    r"红绿证据\s*[：:]\s*(.+?)(?:\n|$)",
+    re.I,
+)
+RED_GREEN_NA_OK = re.compile(
+    r"N/A\s*[·•]\s*(polish|trivial|无自动化)",
+    re.I,
+)
+RED_GREEN_PAIR_OK = re.compile(
+    r"(?i)(?:red|红).{0,80}exit\s*=\s*\d+.{0,120}(?:green|绿).{0,80}exit\s*=\s*0",
+)
+
+
+def check_run_honesty(
+    spec_dir: Path,
+    run: str,
+    report: Report,
+    *,
+    structure_only: bool,
+    allow_unstamped_deliver: bool = False,
+) -> None:
     if structure_only or not run:
         return
     status = ""
@@ -697,18 +723,34 @@ def check_run_honesty(spec_dir: Path, run: str, report: Report, *, structure_onl
         if clean(r.get("Test", "")) not in EMPTYISH
     ]
     bad = [r for r in results if r in {"fail", "blocked"}]
+    claims_smoke_pass = bool(
+        re.search(r"\[部署[^\]]*prod-smoke\s*通过", run)
+        or re.search(r"产品冒烟[^：:\n]*[：:][ \t]*通过\b", run)
+    )
     claimed_pass = (
         "acceptance-passed" in status
         or acceptance == "acceptance-passed"
         or deliver == "可交付"
+        or claims_smoke_pass
     )
     if claimed_pass and bad:
         report.fail(
             f"{spec_dir.name}/run.md: claims acceptance/可交付 but matrix has "
             f"Fail/Blocked ({len(bad)})"
         )
-    elif claimed_pass:
+    elif claimed_pass and not claims_smoke_pass:
         report.ok(f"{spec_dir.name}: run honesty ok (no Fail/Blocked vs acceptance)")
+
+    # Nail 1: close-gate stamp (verify-deliver exit 0 record)
+    if claimed_pass and not allow_unstamped_deliver:
+        if not VERIFY_DELIVER_STAMP_RE.search(run):
+            report.fail(
+                f"{spec_dir.name}/run.md: claims 可交付/acceptance-passed/prod-smoke 通过 "
+                "but missing `verify-deliver: ok · <time>` "
+                "(run `make verify-deliver HOST=<repo> SPEC=<id>` first)"
+            )
+        else:
+            report.ok(f"{spec_dir.name}: verify-deliver stamp present")
 
     # UX N/A vs evidence — only when acceptance claimed and UI tests present
     if claimed_pass and "UX: N/A" not in run and "ux: n/a" not in run.lower():
@@ -730,7 +772,6 @@ def check_run_honesty(spec_dir: Path, run: str, report: Report, *, structure_onl
         result = clean(row.get("Result", "")).lower()
         if result != "pass":
             continue
-        # Evidence column may be named with parenthetical hint
         evidence = ""
         for key, val in row.items():
             if key.lower().startswith("evidence"):
@@ -770,9 +811,52 @@ def check_run_honesty(spec_dir: Path, run: str, report: Report, *, structure_onl
                 f"{spec_dir.name}/run.md: 可交付 requires 「已验证的用户结果」 section"
             )
 
+    # Nail 2: Build 宣称实现完成 → oracle-freeze + 红绿证据
+    _, batch = parse_md_table_after(run, "批次结果")
+    freeze_filled = bool(re.search(r"实现冻结时间[^：:\n]*[：:][ \t]*\S", run))
+    batch_has_result = False
+    for row in batch:
+        for k, v in row.items():
+            if k.lower().startswith("结果") or k.lower() == "result":
+                if clean(v).lower() in {"pass", "fail", "blocked"}:
+                    batch_has_result = True
+                break
+    claimed_impl = "实现完成" in run or (
+        mode in {"build", "building", "repair", "repairing"}
+        and freeze_filled
+        and batch_has_result
+    )
+    if claimed_impl and mode in {
+        "build",
+        "building",
+        "repair",
+        "repairing",
+        "",
+    }:
+        if not ORACLE_FREEZE_RE.search(run):
+            report.fail(
+                f"{spec_dir.name}/run.md: Build/Repair claims 实现完成 but missing "
+                "`oracle-freeze: intact` (禁改 tests.md / 06-acceptance-matrix; "
+                "改 Oracle 须回 Plan + 用户批准)"
+            )
+        rg = RED_GREEN_RE.search(run)
+        if not rg:
+            report.fail(
+                f"{spec_dir.name}/run.md: Build claims 实现完成 but missing "
+                "`红绿证据:` (red…exit=N · green…exit=0 | N/A · polish|trivial|无自动化)"
+            )
+        else:
+            body = clean(rg.group(1))
+            if not (RED_GREEN_NA_OK.search(body) or RED_GREEN_PAIR_OK.search(body)):
+                report.fail(
+                    f"{spec_dir.name}/run.md: 红绿证据 malformed ({body!r}); "
+                    "need red+green exit codes or N/A · polish|trivial|无自动化"
+                )
+            else:
+                report.ok(f"{spec_dir.name}: Build oracle-freeze + 红绿证据 ok")
+
     # Production: P5 filled without P2/P3
     def _prod_field(prefix: str) -> str:
-        # Same-line only: do not let \s* after the colon jump to the next field.
         m = re.search(rf"{prefix}[^：:\n]*[：:][ \t]*([^\n]*)", run)
         return clean(m.group(1)) if m else ""
 
@@ -795,8 +879,63 @@ def check_run_honesty(spec_dir: Path, run: str, report: Report, *, structure_onl
             "(Deploy gate: P2+P3 before P5)"
         )
 
+    # P6 pass requires agent-first probe fields (verification-loop)
+    if claims_smoke_pass:
+        probe = _prod_field(r"探活执行者")
+        evidence = _prod_field(r"产品冒烟证据")
+        user_act = _prod_field(r"需要用户做什么")
+        probe_ok = probe.lower().replace("_", "-") in {
+            "agent",
+            "blocked-needs-auth",
+        }
+        if not _prod_filled(probe) or not probe_ok:
+            report.fail(
+                f"{spec_dir.name}/run.md: prod-smoke 通过 requires "
+                "探活执行者: agent | blocked-needs-auth "
+                "(see verification-loop / evidence-contract Deliver Gate)"
+            )
+        strong = bool(
+            re.search(
+                r"(?i)kind\s*=\s*(browser-job|api-diff|network-har|integration|unit)",
+                evidence,
+            )
+        )
+        weak_only = bool(
+            re.search(r"(?i)\bhealth\b|/health|window-smoke|进程\s*active", evidence)
+        ) and not strong
+        if not _prod_filled(evidence) or weak_only:
+            report.fail(
+                f"{spec_dir.name}/run.md: prod-smoke 通过 requires "
+                "产品冒烟证据 with kind=browser-job|api-diff|network-har|… "
+                "(not health/window-smoke alone)"
+            )
+        if user_act and re.search(
+            r"硬刷|打开浏览器|打开页面|确认.*是否|请.*刷新|请.*验收|开无痕",
+            user_act,
+        ):
+            report.fail(
+                f"{spec_dir.name}/run.md: prod-smoke 通过 forbids "
+                "需要用户做什么 that assigns open/refresh discovery to user "
+                f"({user_act!r})"
+            )
+
+    # Deliver 可交付: ban user-as-canary next steps
+    if deliver == "可交付":
+        for m in re.finditer(
+            r"需要用户做什么[：:][ \t]*([^\n]+)|下一步[：:][ \t]*([^\n]+)",
+            run,
+        ):
+            act = clean(m.group(1) or m.group(2) or "")
+            if re.search(
+                r"硬刷|打开浏览器|打开页面|确认.*是否正常|请.*刷新|开无痕",
+                act,
+            ):
+                report.fail(
+                    f"{spec_dir.name}/run.md: 可交付 forbids user-as-canary "
+                    f"next step ({act!r}); Agent must probe first"
+                )
+
     # Batch table (批次结果) — same rule
-    _, batch = parse_md_table_after(run, "批次结果")
     for row in batch:
         result = ""
         evidence = ""
@@ -811,6 +950,7 @@ def check_run_honesty(spec_dir: Path, run: str, report: Report, *, structure_onl
                 f"{spec_dir.name}/run.md: batch Pass uses smoke-only Evidence "
                 f"({clean(evidence)!r})"
             )
+
 
 
 def check_agents_readiness(host: Path, report: Report) -> None:
@@ -886,6 +1026,8 @@ def check_spec_dir(
     spec_dir: Path,
     report: Report,
     checklist_dir: Path,
+    *,
+    allow_unstamped_deliver: bool = False,
 ) -> None:
     structure_only = is_template_dir(spec_dir)
     label = f"{spec_dir.name} ({'structure-only' if structure_only else 'full'})"
@@ -929,7 +1071,13 @@ def check_spec_dir(
         structure_only=structure_only,
         checklist_dir=checklist_dir,
     )
-    check_run_honesty(spec_dir, run, report, structure_only=structure_only)
+    check_run_honesty(
+        spec_dir,
+        run,
+        report,
+        structure_only=structure_only,
+        allow_unstamped_deliver=allow_unstamped_deliver,
+    )
 
 
 def main() -> int:
@@ -950,6 +1098,11 @@ def main() -> int:
         "--skip-agents",
         action="store_true",
         help="Skip AGENTS readiness warnings",
+    )
+    parser.add_argument(
+        "--allow-unstamped-deliver",
+        action="store_true",
+        help="Skip verify-deliver stamp check (used by verify-deliver.sh before stamping)",
     )
     args = parser.parse_args()
     host = Path(args.host).resolve()
@@ -984,7 +1137,12 @@ def main() -> int:
         if not d.is_dir():
             report.fail(f"Spec path not a directory: {d}")
             continue
-        check_spec_dir(d, report, checklist_dir)
+        check_spec_dir(
+            d,
+            report,
+            checklist_dir,
+            allow_unstamped_deliver=args.allow_unstamped_deliver,
+        )
 
     print(f"---\nerrors={report.errors} warnings={report.warnings}")
     return 1 if report.errors else 0

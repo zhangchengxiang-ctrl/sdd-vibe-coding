@@ -59,7 +59,7 @@ make install         # 推荐：有 CLI 的端都装；缺则 SKIP
 | `make install-codex` | 只装 Codex | 只动一端 |
 | `make scaffold HOST=/path/to/repo` | 宿主生成 `AGENTS.md` + `docs/`（默认 `HOST=.`，`PROFILE=detect`） | 空仓 / **存量**宿主初始化 |
 | `make check-spec HOST=/path/to/repo SPEC=id` | Spec 静态门（事实映射 / tests / 架构节 / run 诚实性） | Plan 齐套后、派 Build 前 |
-| `make verify-deliver HOST=/path SPEC=id` | Verify 关版门（可交付 / 证伪 / Deploy P2·P3） | 宣称可交付前 |
+| `make verify-deliver HOST=/path SPEC=id` | Verify 关版门（check_spec + 戳 `verify-deliver: ok · <时间>`） | 宣称可交付 / prod-smoke 通过前 |
 | `make preflight-rail HOST=/path` | Shape 写码闸（业务 dirty 无授权则失败） | 讨论/设计会话自检 |
 | `make codex-dispatch HOST=/path UNIT=plan\|build\|goal PROMPT_FILE=…` | 派 Codex（never + 墙钟；Build 需 `SPEC=`+`SLICE=`；Goal 需 `GOAL_APPROVED=1`） | 指挥侧外包有界单元 |
 | `make require-falsify LOG_DIR=… RUN_ID=…` | 指挥侧证伪落盘门 | Codex Build 返回后、对人结案前 |
