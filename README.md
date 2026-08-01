@@ -20,6 +20,7 @@ Cursor 另经 `make install-cursor` 投影 **`~/.cursor/rules/sdd-*.mdc`**（入
 | 「我希望…」「优化这个体验」 | **Shape**：澄清并沉淀产品决策 | 不改业务代码 |
 | 「按这个方向拆解」「准备实施」 | **Plan**：整份 Spec 执行合同与测试矩阵 | 不在规划对话编码 |
 | 「开始做」「实施并验收这个 Spec」 | **Build**：连续实现与直接证据 | 不静默扩大 Scope |
+| 「polish」「按 refinement 修」「修本批走查 P0–P1」 | **Polish**：非 material 前端小改，不新开 Spec | 不改导航/权限/主路径（material → Shape） |
 | 「派 Codex 做」「用 Codex 施工」 | **指挥施工**（Cursor/Claude）：派单 + 验收 | 不把整包一次塞给 Codex |
 | 「完整验收」 | **Verify**：按矩阵验证并分类问题 | 不边验边修 |
 | 「修复这些验收问题」 | **Repair**：同根因集中修 | 不顺手扩需求 |
@@ -33,10 +34,11 @@ Shape → Plan → Build(Spec) → Verify
                       ↑         │
                       └ Repair ─┘
 
+UI 小改（非 material）→ Polish（旁路，不新开 Spec）
 Production issue → Diagnose → Incident / Repair / Plan / Blocked
 ```
 
-写代码前硬闸见 `skills/vibe-coding/references/workflow-contract.md`（需已确认 Spec，或明示「开始做」且切片已确认）。
+写代码前硬闸见 `skills/vibe-coding/references/workflow-contract.md`（已确认 Spec，或明示「开始做」，或明示 Polish 档且非 material）。
 
 ## 安装与常用命令（Make）
 

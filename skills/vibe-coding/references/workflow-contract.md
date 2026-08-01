@@ -77,17 +77,39 @@
 |---|---|
 | **(a)** | 已存在**已确认**的实施 Spec：`docs/specs/<id>/`（含 Verify 后转入的 Repair） |
 | **(b)** | 用户本轮**明示**「开始做 / 实现 / 按这个来 / 构建」，且产品切片已确认 |
+| **(c)** | 用户本轮**明示**轻量 UI 授权（见下「Polish 档」），且变更判定为 **非 material** |
 
-demand pool 条目、`modules/` 设计稿、聊天清单或截图不算 (a)/(b)。
+demand pool 条目、`modules/` 设计稿、聊天清单或截图不算 (a)/(b)/(c)。
 
-**(a)/(b) 皆无时，本轮只做：**
+**(a)/(b)/(c) 皆无时，本轮只做：**
 
 1. 写 `docs/product/`（demand pool / modules 草稿 / 理解卡沉淀）；
 2. 只读调查宿主代码与 `AGENTS.md`。
 
-Spec 由用户批准进入 Plan 后创建。空仓或未 scaffold 的宿主：先跑 `scripts/scaffold.sh`（见 [docs-root.md](./docs-root.md)）。scaffold 不算 (a)/(b)。
+Spec 由用户批准进入 Plan 后创建。空仓或未 scaffold 的宿主：先跑 `scripts/scaffold.sh`（见 [docs-root.md](./docs-root.md)）。scaffold 不算 (a)/(b)/(c)。
 
-trivial 豁免见 [`vibe-coding/SKILL.md`](../SKILL.md)。常见 Shape 话术（「优化 X」「编号清单 + 截图」「很明确直接改」）→ 停留 Shape、沉淀切片，见 Skill `design`。
+### Polish 档（(c) · 可不新开 Spec）
+
+> 功能已可用、只动前端交互/抛光时用。细则与 material 门见
+> [`change-control.md`](./design-standards/change-control.md)；缩读义务见
+> [`LOAD-MAP.md`](./design-standards/LOAD-MAP.md) 豁免表。
+
+**明示授权话术（命中其一即可，须本轮）：**
+
+- polish / 抛光 / 前端小改 / 交互微调  
+- 按 refinement 修 / 按走查修 P0–P1 / 修本批走查  
+
+**仍不算 (c)：**「优化体验」「应该更好看」「走查一下」「讨论产品」「设计方案」
+→ 停留 Shape 或 Verify，见 Skill `design` / `testing`。
+
+**Agent 义务（走 (c) 时）：**
+
+1. 开改前声明 `change: refinement`（默认）并做 material 判定；  
+2. **material**（主路径/默认 CTA/导航/权限可见性/shell 等）→ **停**，升格 Shape 或补 Spec，不得假装 polish；  
+3. 非 material → 不新开 Spec、不写完整产品包；按 LOAD-MAP 豁免缩读 + 改动面最小验证；  
+4. 完成单元 = 本轮点名的控件/走查条目（默认含 P0–P1；P2 仅用户点名才做）。
+
+trivial 豁免（笔误 / 单点 CSS / 已知单控件 bug）见 [`vibe-coding/SKILL.md`](../SKILL.md)，可并入 (c) 或单独最小修复。
 
 ## 模式与权限
 
@@ -96,6 +118,7 @@ trivial 豁免见 [`vibe-coding/SKILL.md`](../SKILL.md)。常见 Shape 话术（
 | Shape | 澄清产品结果与范围 | 否 |
 | Plan | 形成 Spec、场景与验收策略 | 否 |
 | Build | 实现确认 Spec 的全部内容 | 是 |
+| **Polish** | 非 material 前端小改 / 走查抛光（硬闸 (c)；不新开 Spec） | 是（仅豁免范围） |
 | Verify | 只运行批量验收、记录结果并归类失败 | 否 |
 | Repair | 按统一方案集中修复已收齐的失败 | 是 |
 | Deploy | 目标环境发布：P0–P6（证据 → 发布+验证方案 → 批准 → 执行 → 冒烟关版） | 仅经批准的发布动作；不写新功能 |
@@ -108,8 +131,9 @@ trivial 豁免见 [`vibe-coding/SKILL.md`](../SKILL.md)。常见 Shape 话术（
 
 | 用户只需说 | 插件默认做到 |
 |---|---|
-| 「按这个产品包切 Spec / Plan / 拆到能编码」 | Plan：先事实映射 → 纵向切片 → 完整 `tests.md` G/W/T → 落盘整份 Spec；本轮只改 docs |
-| 「批准了，开始做 / 实现」 | Build：Codex 默认只做**第一个**纵向切片（含行为验收）；Cursor/Claude 可连续整份 Spec |
+| 「按这个产品包切 Spec / Plan / 拆到能编码」 | Plan：先事实映射 → 纵向切片 → 完整 `tests.md` G/W/T → 落盘整份 Spec；本轮只改 docs；齐套后**默认给新对话 Build 提示词** |
+| 「批准了，开始做 / 实现」（或粘贴 Plan 卡内 Build 提示词） | Build：Codex 默认只做**第一个**纵向切片（含行为验收）；Cursor/Claude 可连续整份 Spec |
+| 「polish / 按 refinement 修 / 修本批走查 P0–P1」 | **Polish 档**：非 material 直接改；不新开 Spec；material 升格 Shape |
 | 「派 Codex / 用 Codex 做」 | Cursor/Claude：指挥施工（Skill `dispatch-codex`）；一次一单元；sol×medium/high |
 | 「完整实施 / 不要中途停 / 把整份 Spec 做完」 | Codex：立即创建持久 Goal |
 | 「验收一下」 | Verify：先证伪再 Pass；行为/权限 Oracle 优先于文档自洽；禁纯 smoke |
@@ -126,6 +150,24 @@ trivial 豁免见 [`vibe-coding/SKILL.md`](../SKILL.md)。常见 Shape 话术（
 
 Plan 阶段内：调查 → **直接落盘** `VERSION`/`contract`/`tests`/`plan`/`run` → 结束时只出
 **进入 Build** 的批准卡。
+
+**Plan → Build 默认开新对话：** 批准卡**必须**含一块可复制的「新对话 Build 提示词」
+（用户习惯：Shape/Plan 同聊收口，Build 另开短聊）。同对话回复「批准 Build / 开始做」仍有效，
+但前台**默认引导新对话粘贴**，禁止只写「本对话回复即可」而不给提示词。
+
+提示词须自包含冷启动信息（薄、可粘贴），至少含：
+
+1. 授权语：`批准 Build` 或 `开始做`；
+2. Spec id 与相对路径：`<SDD docs root>/specs/<id>/`；
+3. 完成单元：按 `plan.md` 切片顺序（可写 `S1→…` 或「整份 Spec」）；
+4. 边界一句：本对话只做 Build，不宣称可交付 / 不进 Deploy。
+
+模板（Agent 填槽后原样给出，用 fenced code 便于一键复制）：
+
+```text
+批准 Build。Spec：<SDD docs root>/specs/<id>/
+按 plan.md 切片 <S1→S2→… 或 整份> 实现；本对话只做 Build（完成后只报实现完成）。
+```
 
 仍须跨阶段批准的只有：`Shape → Plan`、`Plan → Build`、`Build/Verify →` 下一阶段，以及
 **Deploy P4**（L1/L2 发布方案+验证方案批准）与其他生产动作。
@@ -152,16 +194,18 @@ Plan 阶段内：调查 → **直接落盘** `VERSION`/`contract`/`tests`/`plan`
 | Shape 下清单已清楚 | 沉淀 demand pool / 理解卡，走硬闸后再改码 |
 | 路径字段是绝对路径 | 先按业务 ID / owner 关系验证能否派生根；仅 Verified 无法派生才可阻断 |
 | 未达完成单元 | 继续做，不以进度汇报收口 |
-| 用户已说切 Spec/Plan | **直接落盘**；齐后请求批准进入 Build |
+| 用户已说切 Spec/Plan | **直接落盘**；齐后出批准卡（**含新对话 Build 提示词**） |
 | 无产品互斥 | 按默认质量条执行；理解偏差在交付卡里说明 |
 
 ### 建议开新对话的信号
 
-下列情况才建议用户开新对话（或明确换目标）：
+下列情况建议用户开新对话（或明确换目标）：
 
+0. **Plan 齐套 → Build（默认）**：Spec 五件套已落盘且 `check_spec` 通过 → 批准卡给出可粘贴 Build 提示词，**默认**开新对话开工；同聊续做仅作备选。
 1. **同区二次修复仍失败**：同一根因面已按统一 Repair 方案修过一轮并回验仍 Fail → 停补丁，开新对话做 Diagnose 或重开 Plan。
 2. **会话混入第二个不相关产品目标**：当前 Spec / 阶段尚未收束 → 先收束或 Blocked；新目标开新对话走 Shape。
 3. **Verify 不通过且统一 Repair 面过大**：先交付 Verify 总结与 Repair 方案，建议新对话专跑 Repair（或先回 Plan 修订合同）。
+4. **Build 单元完成 → Verify（建议）**：实现完成后可另开短聊验收；若同聊续做须先总结并取得明确批准。
 
 ## 实施与验收清单
 
@@ -169,7 +213,7 @@ Plan 阶段内：调查 → **直接落盘** `VERSION`/`contract`/`tests`/`plan`
 
 - 覆盖当前完成单元（整份 Spec 或一个纵向切片）的入口、数据流、错误语义；先按事实映射核对再修改。
 - 用户只说「开始做」且未点名切片时：Codex = `plan.md` **第一个**纵向切片；Cursor/Claude = 默认可连续整份 Spec（仍可按切片推进）。
-- **新建 / 大改用户可见页面**：先读 [LOAD-MAP.md](./design-standards/LOAD-MAP.md)（字段门控 + 场景必读）；需要时用 [ui-page-gate.md](./design-standards/ui-page-gate.md) 评审模板；输出前扫 ai-tells。
+- **新建 / 大改用户可见页面**：先读 [LOAD-MAP.md](./design-standards/LOAD-MAP.md)（字段门控 + 场景必读）与 [product-judgment.md](./design-standards/product-judgment.md)（Job Brief 先于视觉）；需要时用 [ui-page-gate.md](./design-standards/ui-page-gate.md) 评审模板；输出前扫 ai-tells。
 - 实现期间可做编译、格式化、静态分析等非验收性检查；完成以行为验收为准。
 - 按需编写/更新自动化测试（分层与用语见 [automated-tests.md](./automated-tests.md)）；完成实现后冻结代码，列出并运行完整单元测试命令；记录全部失败后统一 Repair。
 - 行为验收优先：越权拒绝、成功路径等可观察断言。

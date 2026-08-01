@@ -2,10 +2,12 @@
 name: vibe-coding
 description: >-
   Spec-Driven Delivery 跨端主入口（Cursor / Claude / Codex）。触发即须先 Read 本 SKILL.md，
-  再读宿主 AGENTS.md。触发：我希望 / 优化体验 / 讨论产品 / 聊聊方向 / 拆解 /
-  学习这个 repo / 排期 / 准备实施 / 切 Spec / 开始做 / 实现 / 构建 / 验收 /
-  UX走查 / 发布 / 上线 / 部署 / 修复 / 排障 / vibe / 派 Codex / 用 Codex 做。
-  未明示开始做且无已确认 Spec → 只写 docs/product/，不改业务代码。质量条默认执行。
+  再读宿主 AGENTS.md。触发：初始化项目 / 接入存量 / 我希望 / 优化体验 / 讨论产品 /
+  聊聊方向 / 拆解 / 学习这个 repo / 排期 / 准备实施 / 切 Spec / 开始做 / 实现 /
+  构建 / polish / 抛光 / 前端小改 / 验收 / UX走查 / 发布 / 上线 / 部署 / 修复 /
+  排障 / vibe / 派 Codex / 用 Codex 做。先判 project.kind；software 且基线未齐 →
+  冷启动 Init/Onboard。未明示开始做/polish 且无已确认 Spec → 只写 docs/product/，
+  不改业务代码。质量条默认执行。
   Codex：整份 Spec 须 Goal；普通回合只承诺一个纵向切片。Cursor/Claude 明示派 Codex
   时走指挥施工（Skill dispatch-codex）。
 ---
@@ -21,32 +23,47 @@ Cursor 会话硬闸另见 install 投影的 `~/.cursor/rules/sdd-*.mdc`。
 
 ## FIRST ACTION（硬门）
 
+### 0. 项目类型（先于一切轨）
+
+**禁止默认 `project.kind=software`。** 仅三档：`software` | `plugin` | `other`。  
+先读 `AGENTS.md` / 可选 `PROJECT.md`，否则探测。见 [`project-kind.md`](./references/project-kind.md)。
+
+| 有效 kind | 本 Skill |
+|---|---|
+| `software` | 下方「software 宿主」 |
+| `plugin` | 维护本插件：读 ARCHITECTURE；改 skills/templates/scripts；笔记 plans/ |
+| `other` | **放手**（停用编码硬闸，不接管） |
+
+### software 宿主
+
 命中本 Skill 任一触发语时：
 
 1. **第一个工具调用** = Read 本文件（`vibe-coding/SKILL.md`）；
-2. 再读宿主 `AGENTS.md`（含 SDD docs root）；
+2. 再读宿主 `AGENTS.md`（含 SDD docs root 与 `project.kind`）；
 3. 判轨后再读下方合同。未完成 1–2 → 禁止改业务代码 / 禁止可交付 / 禁止生产部署。
 
 ## 10 行操作卡（日常）
 
-1. **FIRST ACTION**：Read 本 Skill → 宿主 `AGENTS.md`。
-2. 判轨：Shape / Plan / Build / Verify / Deploy / Diagnose / Incident（或「派 Codex」）。
-3. Shape：只写 `product/`；有 UI 先读 design-standards **LOAD-MAP**（字段门控唯一真源）。
-4. Plan：落盘五件套；跑 `check_spec`；通过才请求 Build。
+1. **FIRST ACTION**：判 `project.kind` → 仅 software 才走宿主轨 → `AGENTS.md`。
+2. 判轨：基线未齐 → **冷启动** Init/Onboard（`design`→`project-init`）；否则 Shape / Plan / Build / **Polish** / Verify / Deploy / Diagnose / Incident（或「派 Codex」）。
+3. Shape：只写 `product/`；有 UI 先读 design-standards **LOAD-MAP**（字段门控唯一真源）→ **product-judgment**（Job Brief 先于视觉）。
+4. Plan：落盘五件套；跑 `check_spec`；通过后出批准卡并**必给新对话 Build 提示词**（默认另开短聊）。
 5. Build：只做当前完成单元；测前冻结改码；改存量 UI 先 change-control（见 LOAD-MAP）。  
    **硬门：** 只可报「实现完成」；禁「可交付」；**禁 P5/P6 生产动作**（须 Deploy 轨 + P4）。
-6. Verify：先证伪再写 Pass；`kind=` Evidence；不改 Oracle；先交付卡；有界轮次 + Visual QA。  
+6. **Polish**：用户明示 polish/抛光/按 refinement 修/修走查 P0–P1 → 非 material 直接改，不新开 Spec；material → Shape。缩读见 LOAD-MAP 豁免。
+7. Verify：有 UI/走查先 Read **product-judgment + LOAD-MAP**（testing FIRST ACTION）；再证伪写 Pass；`kind=` Evidence；不改 Oracle；先交付卡；有界轮次 + Visual QA。  
    **硬门：** 未跑证伪 → 禁止对用户说可交付。
-7. Deploy：P1 证据 → P2+P3 方案 → 批准 → 执行 → P6 目标环境冒烟关版（禁仅 health）。
-8. Fail → 统一 Repair，再回验整批。
-9. 派 Codex：先 `check_spec`；经 CLI `codex-dispatch.sh`；sol×medium|high + approval never。  
-   **硬门：** 不经 `user-codex` / `CallMcpTool`；指挥侧重跑 ≥1 条证伪。
-10. 仅 Verified 进 P0/Lock；代码事实优先于文档自洽。深合同按需再读下方「必读」。
+8. Deploy：P1 证据 → P2+P3 方案 → 批准 → 执行 → P6 目标环境冒烟关版（禁仅 health）。
+9. Fail → 统一 Repair，再回验整批。
+10. 派 Codex：先 `check_spec`；经 CLI `codex-dispatch.sh`；sol×medium|high + approval never。  
+   **硬门：** 不经 `user-codex` / `CallMcpTool`；指挥侧重跑 ≥1 条证伪。仅 Verified 进 P0/Lock。
 
 ## 必读
 
 在完成 **FIRST ACTION** 后，按当前问题读取（**SDD docs root** 见 [docs-root.md](./references/docs-root.md)）：
 
+- [Project Kind](./references/project-kind.md)：`project.kind` 枚举、探测、非 software 停用编码轨；
+- 冷启动 → Skill `design` → [`project-init.md`](../design/references/project-init.md)（Init/Onboard；推断确认 ≤5 问）；
 - [Workflow Contract](./references/workflow-contract.md)：目标、授权、**薄提示词**、**Harness 适配**（含可选指挥施工）、证据分级、推进和完成语义；
 - [Workspace Contract](./references/workspace-contract.md)：Local、Worktree、分支和 PR（含托管 / CLI Worktree）；
 - [Evidence Contract](./references/evidence-contract.md)：验证层次、**Evidence Kind**、行为优先、Deliver Gate 和完成声明；
@@ -60,10 +77,12 @@ Cursor 会话硬闸另见 install 投影的 `~/.cursor/rules/sdd-*.mdc`。
 
 | 用户意图（自然语言即可） | 当前模式 |
 |---|---|
-| 澄清愿望、体验和产品方向（含聊聊/辩论、拆解 repo） | Shape → Skill `design` |
+| 初始化项目 / 新开 / 立项 / 接入存量 / 基线空或刚 scaffold | **冷启动** → Skill `design` → `project-init`（Init 或 Onboard） |
+| 澄清愿望、体验和产品方向（含聊聊/辩论、拆解 repo；基线已齐） | Shape → Skill `design` |
 | **派 Codex / 用 Codex 做 / 让 Codex 施工**（且当前在 Cursor/Claude） | **指挥施工** → Skill `dispatch-codex`（一次一单元；sol×medium/high） |
 | 切 Spec / Plan / 按产品包拆到能编码 | Plan → Skill `spec`（**直接落盘**） |
 | Spec 批准了 / 开始做 / 实现 | Build（Codex 默认首个纵向切片；指挥模式下改派 Codex） |
+| polish / 抛光 / 前端小改 / 交互微调 / 按 refinement 修 / 修本批走查 | **Polish**（写码硬闸 (c)；非 material；见下） |
 | 验收 / UX 走查 | Verify → Skill `testing`（指挥模式下建议指挥侧验收，maker ≠ grader） |
 | 发布 / 上线 / 部署 / 发版 / 生产部署 | Deploy → Skill `deploy`（P0–P6；先方案后执行） |
 | 只定位复杂或线上问题 | Diagnose |
@@ -71,22 +90,26 @@ Cursor 会话硬闸另见 install 投影的 `~/.cursor/rules/sdd-*.mdc`。
 
 已在 **Codex** 会话中时：忽略「派 Codex」，按纯 Codex Harness 自行 Plan/Build。
 
-### trivial 豁免（可跳过完整 Shape→Plan）
+### 轻量 UI 三档（可跳过完整 Shape→Plan）
 
-同时满足下列条件时，可不走完整 `Shape → Plan`，直接最小修复并做对应验证：
+> 写码授权细节真源：[`workflow-contract.md`](./references/workflow-contract.md)（a/b/c）。  
+> material / refinement 真源：[`change-control.md`](./references/design-standards/change-control.md)。  
+> 缩读义务：[`LOAD-MAP.md`](./references/design-standards/LOAD-MAP.md) 豁免表。
 
-1. 纯笔误；或
-2. 单点 CSS；或
-3. 已知 bug；
-4. **且**不改产品合同、导航结构、跨表面入口、发布模型、角色可见性。
+| 档 | 何时 | 授权 | 做法 |
+|---|---|---|---|
+| **trivial** | 纯笔误 / 单点 CSS / 已知单控件 bug | 可并入 (c)，或用户点名即修 | 最小 diff + 对应验证；跳过产品包与 Spec |
+| **Polish** | 非 material 交互/抛光（五态、错缝、文案微调、a11y label、走查 P0–P1 抛光项） | 本轮明示 (c) 话术 | 声明 `change: refinement`；LOAD-MAP 豁免缩读；**不**新开 Spec / 完整产品包 |
+| **升格** | material：主任务路径、默认 CTA/筛选、导航、跨面入口、权限可见性、shell、发布模型 | 无 (c) 捷径 | Shape 或更新既有 Spec 后再 Build |
 
-触及导航结构、跨表面入口、发布模型或角色可见性 → 走 Shape（或已有 Spec 的 Plan/Build）。
-`workspace-contract.md` 的「trivial / small fix」只决定选 Local，不跳过 Shape。写代码前硬闸见
-[`workflow-contract.md`](./references/workflow-contract.md)。
+触及导航结构、跨表面入口、发布模型或角色可见性 → **升格**，不得用 polish 绕过。  
+`workspace-contract.md` 的「trivial / small fix」只决定选 Local，不单独跳过 Shape。  
+「优化体验」「应该支持…」无 (c) 话术 → 仍停留 Shape。
 
 每个阶段在自身范围内连续完成；`Shape → Plan → Build → Verify → Deploy → Repair` 的跨阶段切换须先总结并
 取得用户明确批准。闸门与宿主完成单元见 [`workflow-contract.md`](./references/workflow-contract.md)。
-（Deploy 可紧接 Verify 后生产交付，或用户单独要求「上线」时进入；P4 批准不可跳过。）
+（Deploy 可紧接 Verify 后生产交付，或用户单独要求「上线」时进入；P4 批准不可跳过。  
+Polish 为 Build 旁路轻量档，完成后做改动面验证；跨轨仍须批准。）
 
 ## 持续交付规则
 
