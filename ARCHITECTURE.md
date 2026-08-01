@@ -2,6 +2,18 @@
 
 本文件给维护者说明「哪里是唯一真源、改动应落在哪一层、如何避免双写」。
 
+## 项目类型门（硬边界）
+
+入口先判 `project.kind`，**仅三档**（合同：[`project-kind.md`](./skills/vibe-coding/references/project-kind.md)）：
+
+| kind | 谁 | 怎么工作 |
+|---|---|---|
+| `plugin`（**本仓库**） | 插件源码仓 | 笔记 `plans/`；改 `skills/`·`templates/`·`scripts/`；禁止宿主式 `docs/product/` |
+| `software` | 用户产品/服务仓 | vibe-coding 全轨 + 冷启动 |
+| `other` | 其余 | 放手（只停用编码硬闸） |
+
+在本仓讨论「加能力 / 改流程」→ 直接改插件真源（或先写 `plans/`）。
+
 ## 分层模型
 
 ```text
@@ -66,6 +78,7 @@
 | 调整 Workspace 字段 | `workspace-contract.md` | `plan.md`, `spec/SKILL.md`, `check_docs.py` |
 | 调整 optional 文档策略 | `optional/README.md` | 对应 optional 模板 |
 | 调整产品回归策略 | `skills/testing/references/product-regression.md` | `regression-register.md`, `regression-map.md` |
+| 调整项目类型 / 冷启动 Init·Onboard | `project-kind.md` + `design/references/project-init.md` | entry/shape 硬闸、`vibe-coding` 路由、`AGENTS` 槽 |
 | 调整产品包骨架 | `skills/design/references/product-package.md` | `design/SKILL.md` |
 | 调整设计规范包 | `skills/vibe-coding/references/design-standards/` | `design`/`spec`/`testing` SKILL、`ux-standards.md`、AGENTS 槽位、`check_spec` |
 | 调整 Spec 机检 | `skills/spec/scripts/check_spec.py` | `verify.sh` fixtures、`dispatch-codex` 预检、Makefile |

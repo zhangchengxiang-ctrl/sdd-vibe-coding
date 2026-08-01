@@ -8,7 +8,7 @@
 
 - SDD docs root: docs
 - **入口：** 产品 / 编码 / 验收 / 发布意图 → 先加载插件 skill **`vibe-coding`**，再读本文件。
-- 未明示「开始做 / 实现 / 按这个来 / 构建」、且无已确认 `<SDD docs root>/specs/<id>/` → 只写 `<SDD docs root>/product/`，**不改业务代码**。
+- 未明示「开始做 / 实现 / 按这个来 / 构建」或「polish / 抛光 / 前端小改 / 按 refinement 修 / 修本批走查」、且无已确认 `<SDD docs root>/specs/<id>/` → 只写 `<SDD docs root>/product/`，**不改业务代码**。Polish 仅覆盖非 material UI；material 仍须 Shape/Spec。
 - **Build ≠ Deploy：** 生产发布须 Deploy 轨（P2+P3 → 本轮 P4 → P5 → P6）；仅「批准 Build」不得上生产。
 - 无 `AGENTS.md` / SDD 文档树时先跑插件 `scripts/scaffold.sh`（存量推荐 `PROFILE=minimal` 或默认 `detect`；宿主已占用 `docs/product` 时用 `--root=docs/sdd`）；scaffold **不算**编码许可。硬冲突见探测输出的 `BLOCK`。
 - 技能里写的 `docs/product`、`docs/specs` 均相对本文件的 **SDD docs root**（默认 `docs`）。
@@ -23,10 +23,13 @@
 
 ## 项目
 
+- project.kind: software | plugin | other
 - 产品/服务：
 - 主要技术栈：
 - 代码入口：
 - 默认分支：
+
+> 仅三档。`software` = 编码交付全轨；`plugin` = 插件源仓维护；`other` = 放手。**禁止**缺省臆测为 software。详见 `vibe-coding/references/project-kind.md`。
 
 ## 项目就绪度
 
