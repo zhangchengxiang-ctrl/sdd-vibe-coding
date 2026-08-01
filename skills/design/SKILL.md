@@ -1,23 +1,36 @@
 ---
 name: design
 description: >-
-  面向略懂技术产品经理的 Shape 专项 Skill：澄清问题与首个价值切片；支持探索对话、
-  代码库 grounding（拆解/学习 repo）与产品包分层。触发亦含：讨论产品、辩论、
-  帮我想想、聊聊方向、拆解、deconstruct。仅在 vibe-coding 已路由到 Shape，或用户
-  显式调用时使用；不隐式接管普通产品诉求，不写业务代码。
+  面向略懂技术产品经理的 Shape 专项 Skill：项目冷启动（Init/Onboard）、澄清问题与
+  首个价值切片；支持探索对话、代码库 grounding 与产品包分层。触发亦含：初始化项目、
+  接入存量、讨论产品、辩论、帮我想想、聊聊方向、拆解、deconstruct。仅在 vibe-coding
+  已路由到 Shape/冷启动，或用户显式调用时使用；不隐式接管普通产品诉求，不写业务代码。
 ---
 
 # Design：Shape 产品诉求
 
-本 Skill 只负责已确认的 Shape Rail。先读宿主 `AGENTS.md`、产品真源和
+本 Skill 只负责已确认的 Shape Rail（含冷启动子流程）。先读宿主 `AGENTS.md`、
+[`project-kind.md`](../vibe-coding/references/project-kind.md)、产品真源和
 [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)。
 有体验或 UI 诉求时：**先打开**
 [`design-standards/LOAD-MAP.md`](../vibe-coding/references/design-standards/LOAD-MAP.md)
-（字段门控、Design Read、surface、page_kind/motif、anchor 时机只认该表）。
+（字段门控唯一真源），并**立刻**读
+[`product-judgment.md`](../vibe-coding/references/design-standards/product-judgment.md)：
+先写 Job Brief（Job / Desired outcome / Consequence），再谈控件与视觉；
+填不出三必填 → 停问，禁止线框定稿。  
 改存量 UI 先读 [change-control.md](../vibe-coding/references/design-standards/change-control.md)。
 具体页面评审输出用 [`ui-page-gate.md`](../vibe-coding/references/design-standards/ui-page-gate.md)。
-评审意见用 [critique-format.md](./references/critique-format.md)。
+评审意见用 [critique-format.md](./references/critique-format.md)（须对照 Job Brief / `rule/*`）。
 用户描述产品问题、判断取舍和确认结果即可。
+
+## 冷启动（优先于普通 Shape）
+
+基线未齐或用户在做项目初始化 / 存量接入时：**先读并执行**
+[`project-init.md`](./references/project-init.md)（Init / Onboard）。
+
+- 前台：推断 → 基线草案 → 确认；整轮拍板 **≤5**；禁止长表填写。  
+- `project.kind` 仅 `software`\|`plugin`\|`other`；只有 `software` 走编码表单全量。
+- 确认投影后才进入下方「普通 Shape」；冷启动完成 **≠** Build 授权。
 
 ## 目标
 
@@ -33,7 +46,8 @@ description: >-
 
 Shape 产出：`docs/product/` 切片与理解卡。  
 **硬门：** 本轨不创建实施 Spec、不改业务代码、不部署；技术偏好不替代产品决定。  
-**交叉硬门：** 「设计方案 / 构建产品文档 / 走查 / 应该支持…」**不是** Build 授权；用户未明示「开始做 / 批准 Build」前禁止 Write/StrReplace 业务源码。  
+**交叉硬门：** 「设计方案 / 构建产品文档 / 走查 / 应该支持… / 优化体验」**不是**写码授权；用户未明示「开始做 / 批准 Build」或 Polish 档话术（见 workflow-contract (c)）前禁止 Write/StrReplace 业务源码。  
+若用户本轮明示 polish / 按 refinement 修 / 修走查 P0–P1：本 Skill **结束 Shape**，交回 vibe-coding **Polish** 档（[`change-control.md`](../vibe-coding/references/design-standards/change-control.md) §3）；material 仍留 Shape。  
 写代码前硬闸 → [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)。  
 权限 / 数据边界类诉求：进入 Plan 前先有可读的代码与 Schema 事实（见 Plan「事实映射门」）。
 
@@ -43,8 +57,9 @@ Shape 产出：`docs/product/` 切片与理解卡。
 
 | 意图 | 做法 |
 |------|------|
+| 初始化项目 / 新开 / 立项 / 接入存量 / 基线空 | **先** [项目冷启动](./references/project-init.md)（Init 或 Onboard） |
 | 聊方向 / 辩论 / 帮我想想（未要求锁切片） | 先走 [探索对话](./references/debate-style.md)，收敛后再出理解卡 |
-| 拆解 / 学习 repo / 产品文档落后于代码 / 存量首次接入 | 先走 [代码库 grounding](./references/codebase-grounding.md)（含 Brownfield bootstrap），再 Shape |
+| 拆解 / 学习 repo / 产品文档落后于代码 | [代码库 grounding](./references/codebase-grounding.md)；若属首次接入则走 Onboard |
 | 成块能力蓝图 | 下方「产品包」；简单诉求可只写 demand pool / 单页 |
 
 默认结构化路径：
@@ -111,8 +126,10 @@ docs/product/modules/<slug>/
 
 简单诉求可以只写 demand pool 或单页设计，不强制五层产品包。
 
-有 UI 时，落盘或确认产品包前按 [LOAD-MAP](../vibe-coding/references/design-standards/LOAD-MAP.md)
+有 UI 时，落盘或确认产品包前：Job Brief + 人话验收齐套，再按
+[LOAD-MAP](../vibe-coding/references/design-standards/LOAD-MAP.md)
 对应场景自检（失败与权限路径、状态可见、可访问性底线）；违反项写入切片非目标或待决。
+配置/授权/分发面强制 `rule/separate-access-vs-delivery` 与 `rule/no-impl-jargon`。
 系统架构分层归 Plan。`ux.md` / `visual.md` 仅为原则索引，不作施工入口。
 
 ## 交付给 Plan
