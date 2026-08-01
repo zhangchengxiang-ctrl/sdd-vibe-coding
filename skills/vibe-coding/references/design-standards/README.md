@@ -8,8 +8,9 @@
 | 路径 | 内容 |
 |------|------|
 | **[LOAD-MAP.md](./LOAD-MAP.md)** | **任务→必读（入口）** |
+| [product-judgment.md](./product-judgment.md) | **交互决策层**：Job Brief · 人话验收 · 交互单位（先于视觉） |
 | [craft-knobs.md](./craft-knobs.md) | Design Read · variance/motion/density · visitor_mode |
-| [change-control.md](./change-control.md) | refinement/redesign · material 门 |
+| [change-control.md](./change-control.md) | refinement/redesign · material 门 · **Polish 轨** |
 | [debug-playbook.md](./debug-playbook.md) | UI 回归 / 错缝 |
 | [anchor.md](./anchor.md) | 参考锚点（Build 前硬门；Shape 可后置） |
 | [copy.md](./copy.md) | UX Writing |
@@ -33,6 +34,7 @@ Spec ≫ AGENTS.md / docs/product/{PRODUCT,DESIGN}.md ≫ docs/architecture/ ≫
 ## Surface + page_kind
 
 ```text
+Job Brief 未齐 → 不定视觉、不输出线框定稿（product-judgment）
 未声明 surface → 不定视觉、不写新页
 未写 Design Read → 不定视觉（craft-knobs）
 product → surfaces/product +（改壳）product-shells + pages/<kind> + components…
@@ -45,7 +47,7 @@ page_kind 与 motif 等价；Build 前 anchor 必填；改存量先 change-contr
 ## 机读
 
 [ui-surface.checklist.json](./ui-surface.checklist.json) · [plan-architecture.checklist.json](./plan-architecture.checklist.json)  
-`check_spec.py`：有 UI 缺 surface → fail；缺 Design Read / page_kind|motif / anchor → warn。
+`check_spec.py`：有 UI 缺 surface → fail；缺 Job Brief / Design Read / page_kind|motif / anchor → warn。
 
 ## 明确不做
 

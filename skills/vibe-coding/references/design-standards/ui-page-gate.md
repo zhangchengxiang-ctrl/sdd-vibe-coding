@@ -8,21 +8,27 @@
 ## 何时启用
 
 新建路由、大改布局/主任务、含表单的 Dialog/Sheet/Drawer。  
-trivial / 非 material refinement → 见 LOAD-MAP **豁免**；可不跑完整评审。
+trivial / Polish / 非 material refinement → 见 LOAD-MAP **豁免**；可不跑完整评审。
+
+## 阶段〇：Job Brief（硬门）
+
+先完成 [product-judgment.md](./product-judgment.md)：Job / Desired outcome / Consequence 必填；2–4 条人话验收。  
+填不出 → **停，问用户**；禁止进入阶段二画 IA/控件。
 
 ## 阶段一：五问 → 页面定位
 
 1. 谁 2. 核心任务 3. 频率 4. 决策信息 5. 失败边界 → 一句页面定位。  
-必填字段按 LOAD-MAP 字段门控表落盘（Design Read、surface、page_kind/motif、anchor…）。
+必填字段按 LOAD-MAP 字段门控表落盘（Job Brief、Design Read、surface、page_kind/motif、anchor…）。
 
 ## 阶段二：IA
 
 | 决策 | |
 |------|--|
+| 交互单位 | 跟 Job 走，不跟内部类型表（product-judgment `rule/interaction-unit`） |
 | 骨架 | 服从 pages/`page_kind`；混任务拆页；redundancy hunt（[pages/README](./pages/README.md)） |
 | 主次 / 披露 / 密度 / 路径 | ID 优先选择器 |
 
-覆盖层：新建短表→Modal；行预览→Sheet；单字段→行内（[components/overlays.md](./components/overlays.md)）。
+覆盖层：先定交互单位与批量规则，再选容器——新建短表→Modal；行预览→Sheet；单字段→行内（[components/overlays.md](./components/overlays.md)）。
 
 ## 阶段三：探测宿主资源
 
@@ -32,13 +38,15 @@ AGENTS / PRODUCT.md / DESIGN.md / 现有 API 与组件；DS 绑定见 AGENTS。
 
 ```text
 ### 页面设计评审：[名]
+Job Brief（User / Job / Desired / Consequence / Permissions）：
+人话验收：…
 Design Read：…
 定位：…
 UI surface / page_kind|motif / shell / visitor_mode：
 knobs（v/m/d）：
 change（new|refinement|redesign）：
 anchor / diverge：
-设计决策：…
+设计决策（含交互单位 / 引用 rule/*）：…
 信息架构：…
 字段清单：…
 主干流程：…

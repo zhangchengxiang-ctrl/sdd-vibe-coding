@@ -6,6 +6,9 @@
   "note": "Plan 优先勾 load_map…anchor；Build 按 page_kind 展开 when 项；Verify 抽检 ai_tells/a11y/copy。强度见 LOAD-MAP 字段表。",
   "items": [
     {"id": "load_map", "phase": "plan|build", "prompt": "已按 LOAD-MAP 加载本任务必读册（非只读 visual/ux 开头）"},
+    {"id": "job_brief", "phase": "plan|build", "prompt": "已写 Job Brief（Job / Desired outcome / Consequence；见 product-judgment）"},
+    {"id": "plain_acceptance", "phase": "plan|build", "prompt": "已写 2–4 条人话验收；无实现黑话"},
+    {"id": "interaction_unit", "phase": "build", "prompt": "交互单位跟 Job 走（非内部类型 Tab 当主路径）"},
     {"id": "design_read", "phase": "plan|build", "prompt": "已写 Design Read 一行（craft-knobs）"},
     {"id": "surface_declared", "phase": "plan|build", "prompt": "已声明 UI surface: product|consumer|n/a"},
     {"id": "page_kind_declared", "phase": "plan|build", "prompt": "已声明 page_kind 或 motif（等价）"},

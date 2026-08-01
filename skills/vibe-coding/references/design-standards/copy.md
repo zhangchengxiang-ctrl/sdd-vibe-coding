@@ -54,7 +54,8 @@
 ## product 口径
 
 - 指标名与宿主/数据口径一致；歧义写在 caption。  
-- ID 展示可读名；复制 ID 为次要。
+- ID 展示可读名；复制 ID 为次要。  
+- **禁实现黑话上屏**（`rule/no-impl-jargon`）：主体、投影、registry、shadowing、内部风险码等 → 用人话或产品名；见 [product-judgment.md](./product-judgment.md)。
 
 ## 自检
 

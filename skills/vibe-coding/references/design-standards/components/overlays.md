@@ -1,6 +1,8 @@
 # Overlays（Modal / Sheet / Drawer / 行内）
 
-> 蒸馏自 taste-saas sheets + overlays。主轴是 **提交 vs 阅读**，不是「大或小」。
+> 蒸馏自 taste-saas sheets + overlays。主轴是 **提交 vs 阅读**，不是「大或小」。  
+> **先定交互单位与 Job**（[product-judgment.md](../product-judgment.md)），再选本册容器。  
+> 容器选对 ≠ 任务设计对：Drawer 里仍可能是失败的授权/分发 IA。
 
 ## 决策表
 
