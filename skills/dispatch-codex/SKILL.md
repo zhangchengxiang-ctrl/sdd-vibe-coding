@@ -104,7 +104,7 @@ description: >-
 - [ ] Build/Goal 的 `sandbox` = `danger-full-access`（或接受脚本默认）
 - [ ] Build/Goal 已过 `check_spec`（或脚本 `--spec`）
 - [ ] Plan：`--spec` + 落盘后 `assert_plan_artifacts`（脚本默认执行）
-- [ ] 片间：`require-conductor-falsify` 且日志含 `VERDICT: … PASS`（`wish-orchestrate` 默认强制）
+- [ ] 片间：`require-conductor-falsify` 且日志为**结构化取证**（`COMMAND`+`EXIT_CODE: 0`+`VERDICT: … PASS`；见 `falsify-attestation.md`）
 - [ ] 一次只一个完成单元
 - [ ] prompt **无**合同大段 / tests 全文
 - [ ] 调用勿用会吞失败码的管道（若 `| tee`，须 `set -o pipefail`）
@@ -133,13 +133,15 @@ bash skills/dispatch-codex/scripts/codex-dispatch.sh \
 <薄派单正文>
 EOF
 
-# Wish 逐片：每片后 exit 3 直至 falsify VERDICT: PASS，再派下一片
+# Wish 逐片：每片后 exit 3 直至 structured falsify PASS，再派下一片（幂等跳过已 PASSED）
 bash skills/dispatch-codex/scripts/wish-orchestrate.sh \
   --cwd <HOST_ROOT> --spec <SPEC_ID> --slice S1
-# 证伪日志须含：VERDICT: S1 PASS
+make record-falsify LOG_DIR=<HOST>/.codex-dispatch-logs RUN_ID=<from meta> SLICE=S1 \
+  CMD='<falsify command>'
 make require-falsify LOG_DIR=<HOST>/.codex-dispatch-logs RUN_ID=<from meta>
 bash skills/dispatch-codex/scripts/wish-orchestrate.sh \
   --cwd <HOST_ROOT> --spec <SPEC_ID> --slice S2
+# 状态：wish-orchestrate … --status
 
 # Goal（默认 60min / danger-full-access / high）
 bash skills/dispatch-codex/scripts/codex-dispatch.sh \
@@ -153,7 +155,9 @@ EOF
 - 脚本写死 `approval_policy=never`
 - **每单前置 CLI authorization 块**：覆盖宿主「先聊计划再等人批」；禁 `doc-coauthoring` / 反问收尾
 - **许愿 Plan：禁止中途「待批准」**；Codex exit 0 但未落盘五件套 → 派发失败（exit 2）
-- **falsify 须 `VERDICT: PASS`**；仅有日志或 `VERDICT: FAIL` → `require-conductor-falsify` 失败
+- **falsify 须结构化取证**（`COMMAND`+`EXIT_CODE: 0`+`VERDICT: PASS`）；仅有日志或裸 `VERDICT` → 失败
+  （见 [`falsify-attestation.md`](./references/falsify-attestation.md)）
+- **wish-orchestrate：** flock 防并发；`PASSED_SLICES` 幂等跳过；`--force-slice` 才重派
 - 墙钟到点会 `SIGTERM`/`SIGKILL` 并 exit `124`——之后对照仓库验收
 - 默认 `--json`：事件写入 `<cwd>/.codex-dispatch-logs/<unit>_<ts>_<pid>.jsonl`（可 `--log-dir` / `--no-json`）
 - Make：`make codex-dispatch HOST=… UNIT=plan|build|goal PROMPT_FILE=…`（Plan/Build/Goal 传 `SPEC=`；Build 传 `SLICE=`）
@@ -247,7 +251,8 @@ sandbox: danger-full-access
 - [ ] `run.md` 记录该片批次；T-xxx 有结果（Evidence 含 `kind=`；禁仅 smoke）
 - [ ] 完成定义以该片行为证据收口（非整份 Spec done，除非 Goal 真做完且证据齐）
 - [ ] **指挥侧证伪**：亲自跑 ≥1 条 falsify（分页两 offset / 排序参数 / 合同 Then）；未跑不算验收通过
-- [ ] 证伪输出已 tee 到 `.codex-dispatch-logs/<run-id>_falsify.log`，且  
+- [ ] 证伪输出经 `record-conductor-falsify`（或等价字段）写入
+      `.codex-dispatch-logs/<run-id>_falsify.log`，且
       `make require-falsify LOG_DIR=<cwd>/.codex-dispatch-logs RUN_ID=<run-id>` 通过
 - [ ] 未向用户宣称「可交付」（除非已走 Verify + `make verify-deliver` 且戳在）
 

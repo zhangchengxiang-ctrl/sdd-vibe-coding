@@ -47,7 +47,7 @@ Cursor 会话硬闸另见 install 投影的 `~/.cursor/rules/sdd-*.mdc`。
 1. **FIRST ACTION**：判 `project.kind` → 仅 software 才走宿主轨 → `AGENTS.md`。
 2. **判轨**：基线未齐 → 冷启动；愿望/讨论 → Shape 出产品方案；**确认方案** → 许愿自动编排；经典 Rail 名 → 逐步闸门；Deploy / Diagnose / 派 Codex 各走专轨。
 3. **Shape**：只写 `product/`；LOAD-MAP → product-judgment；产出**产品方案**并请人确认（见 wish-delivery）。
-4. **方案确认后（许愿）**：Plan + `check_spec` → **每片 Context Pack → Codex Build**（`wish-orchestrate`）→ 指挥侧证伪 → Verify → **人类验收包**。
+4. **方案确认后（许愿半自动）**：Plan + `check_spec` → **每片 Context Pack → Codex Build**（`wish-orchestrate` 幂等+锁）→ **结构化证伪** → Verify → **人类验收包**（不含 Deploy）。
 5. **Build**：默认一完成单元；测前冻结；禁「可交付」；禁生产 Deploy；钉 2 Oracle 冻结 + 红绿证据。
 6. **Polish**：明示 polish/走查抛光 → 非 material 直改；material → Shape。
 7. **Verify**：证伪 + 人类验收包；`awaiting-human-acceptance`；**人通过前禁止可关版**；钉 1/3。
@@ -60,6 +60,7 @@ Cursor 会话硬闸另见 install 投影的 `~/.cursor/rules/sdd-*.mdc`。
 在完成 **FIRST ACTION** 后，按当前问题读取（**SDD docs root** 见 [docs-root.md](./references/docs-root.md)）：
 
 - [Wish Delivery](./references/wish-delivery.md)：许愿四步与质量内核；
+- [Runtime Hooks](./references/runtime-hooks.md)：可选 Cursor/Claude 写码/Deploy 硬闸 + 旅程状态机；
 - [Project Kind](./references/project-kind.md)：`project.kind` 枚举、探测、非 software 停用编码轨；
 - 冷启动 → Skill `design` → [`project-init.md`](../design/references/project-init.md)（Init/Onboard；推断确认 ≤5 问）；
 - [Workflow Contract](./references/workflow-contract.md)：许愿闸门、授权、薄提示词、Harness、完成语义；

@@ -70,8 +70,14 @@
 - 事实映射门、纵向切片、测试合同门、Plan 流程、**check_spec 机检**（含 verify-deliver 戳 / oracle-freeze）：只改 `skills/spec/`（含 `scripts/check_spec.py`）
 - Cursor/Claude → Codex 派单与指挥侧验收（禁 Codex 主验收）：只改 `skills/dispatch-codex/`
   （`SKILL.md`；Context Pack：`references/context-pack.md` + `scripts/build_context_pack.py`；
-  许愿逐片：`scripts/wish-orchestrate.sh`；`codex-dispatch.sh`；
+  许愿逐片：`scripts/wish-orchestrate.sh`（幂等 PASSED_SLICES + flock）；
+  结构化证伪：`references/falsify-attestation.md` + `record-conductor-falsify.sh` /
+  `require-conductor-falsify.sh`；`codex-dispatch.sh`；
   **禁反问授权块：** `references/cli-authorization.md`）
+- 公开 CI 门（无 evals）：`scripts/public-gates.sh` / `make public-gates`
+  （selftest + hooks-selftest + `check-contract-sync.sh` + `PHASE3_PLUGIN_ONLY=1`）
+- 运行时 hooks / 旅程状态机：`scripts/hooks/`、`scripts/wish-journey.sh`、
+  [`runtime-hooks.md`](./skills/vibe-coding/references/runtime-hooks.md)
 - 单个 Rail 的前台话术与执行约束：改对应 `skills/<rail>/SKILL.md`
 - 宿主填写槽位与文档模板：改 `templates/docs/**` 与 `templates/AGENTS.md`
 - 结构校验规则：改本机 `evals/tools/check_docs.py`（公开仓无此目录）
@@ -94,7 +100,8 @@
 | 调整 Spec 机检 | `skills/spec/scripts/check_spec.py` | `verify-deliver.sh`、`dispatch-codex` 预检、Makefile |
 | 调整关版三钉 | `verification-loop.md` | `check_spec`、`verify-deliver.sh`、testing/deploy/vibe/dispatch |
 | 调整测试合同结构 | `tests.md` 模板 + `spec/SKILL.md` | `check_docs.py`, `testing/SKILL.md` |
-| 调整指挥施工 / Context Pack / 许愿逐片 | `dispatch-codex/` + workflow 许愿节 | `vibe-coding/SKILL.md`, Makefile |
+| 调整指挥施工 / Context Pack / 许愿逐片 | `dispatch-codex/` + workflow 许愿节 | `vibe-coding/SKILL.md`, Makefile, `public-gates` |
+| 调整证伪取证字段 | `falsify-attestation.md` + require/record 脚本 | selftest、phase3、verification-loop 钉 3 |
 | 调整发布生命周期 | `skills/deploy/` | `evidence-contract` Deliver Gate、`run.md` 模板、`vibe-coding` 路由 |
 
 ## Spec 文件名迁移（历史对照）
@@ -118,5 +125,15 @@
 
 ## 维护者附录：外借实践（BORROW）
 
-记录外项目吸收决策时，可在插件仓或宿主 `docs/product/decisions/` 自建笔记；
-不进入默认 scaffold。建议字段：状态、日期、来源、吸收层、明确不吸收、撤销条件。
+| 来源 | 状态 | 吸收层 | 明确不吸收 | 撤销条件 |
+|------|------|--------|------------|----------|
+| OpenAI Codex Pack / AGENTS 地图 | **已吸收** | Context Pack；薄 AGENTS | AGENTS 百科化 | Pack 字段漂移且无宿主证据 |
+| OpenAI harness「机械约束>长文」 | **部分** | check_spec / dispatch / hooks | 全量自定义 lint 平台 | — |
+| GitHub Spec Kit 流程 | **同构** | Shape→Plan→Build | 整套 Spec Kit CLI / constitution 产品 | — |
+| OpenSpec 状态机清晰度 | **已吸收** | `wish-journey.sh` 磁盘相位 | 再造一套 Spec 模板 | 相位表与 workflow 冲突时以 workflow 为准 |
+| Claude Code Hooks | **已吸收** | `scripts/hooks/*` + scaffold `--hooks` | 自建第二调度器 | Cursor/Claude 取消 hook API |
+| Claude Agent Teams | **观察** | — | 现在不吸（平台未稳） | 团队默认开启且 API 稳定后再议 |
+| BMAD 多 persona | **不吸收** | — | 角色剧场 / 全 SDLC persona | 永不默认；仅笔记 |
+| Preview-before-prod 社区工作流 | **未吸** | 宿主 AGENTS 可自填 | 插件不绑死 Vercel | 有通用预览约定再抽 |
+
+记录新外借时：补一行上表；冲突以 `workflow-contract.md` 为准。

@@ -3,7 +3,8 @@
 
 .PHONY: help install install-dev install-cursor install-claude install-codex \
 	scaffold codex-dispatch wish-orchestrate context-pack verify check-docs check-spec verify-deliver \
-	preflight-rail require-falsify dispatch-gates-selftest phase3-negative eval-live eval-skill-load
+	preflight-rail require-falsify record-falsify dispatch-gates-selftest public-gates contract-sync \
+	phase3-negative eval-live eval-skill-load hooks-selftest sdd-authorize wish-journey
 
 HOST ?= .
 PROFILE ?= detect
@@ -11,6 +12,7 @@ DRY_RUN ?=
 ALLOW_PARTIAL ?=
 SDD_ROOT ?= docs
 DOC_ROOT ?= ./templates
+WITH_HOOKS ?=
 SPEC ?=
 UNIT ?= build
 PROMPT_FILE ?=
@@ -20,6 +22,12 @@ SLICE ?=
 AUTHORIZED ?=
 LOG_DIR ?=
 RUN_ID ?=
+CMD ?=
+KIND ?=
+SET ?=
+TRANSITION ?=
+STATUS ?=
+ASSERT ?=
 
 help:
 	@printf '%s\n' \
@@ -31,16 +39,21 @@ help:
 		'  make install-cursor       只装 Cursor' \
 		'  make install-claude       只装 Claude Code' \
 		'  make install-codex        只装 Codex' \
-		'  make scaffold HOST=路径   AGENTS.md + SDD 文档树（PROFILE=；SDD_ROOT=docs|docs/sdd；DRY_RUN=1）' \
+		'  make scaffold HOST=路径   AGENTS.md + SDD 文档树（PROFILE=；SDD_ROOT=；WITH_HOOKS=1）' \
+		'  make sdd-authorize HOST=路径 KIND=build|deploy-p4  运行时授权标记（hooks）' \
+		'  make wish-journey HOST=路径 SPEC=id [STATUS=1|SET=phase|TRANSITION=phase]' \
 		'  make check-spec HOST=路径 SPEC=id   Spec 静态门（事实映射/tests/架构节/run 诚实性）' \
 		'  make verify-deliver HOST=路径 SPEC=id  Verify 关版门（戳 verify-deliver: ok · <时间>）' \
 		'  make preflight-rail HOST=路径 [AUTHORIZED=1]  Shape 写码闸（业务 dirty 则失败）' \
 		'  make codex-dispatch HOST=路径 UNIT=plan|build|goal PROMPT_FILE=文件' \
 		'                            派 Codex（唯一通道；never + 墙钟；Build/Goal 需 SPEC=；Build 需 SLICE=）' \
 		'  make context-pack HOST=路径 SPEC=id SLICE=S1   生成 Codex Context Pack（stdout）' \
-		'  make wish-orchestrate HOST=路径 SPEC=id [SLICE=S1]  许愿：逐片 Pack→Codex Build' \
-		'  make require-falsify LOG_DIR=路径 [RUN_ID=]  指挥侧证伪落盘门（须 VERDICT: PASS）' \
-		'  make dispatch-gates-selftest  离线硬门自检（Plan 落盘 / falsify VERDICT）' \
+		'  make wish-orchestrate HOST=路径 SPEC=id [SLICE=S1]  许愿：逐片 Pack→Codex Build（幂等+锁）' \
+		'  make record-falsify LOG_DIR=路径 RUN_ID=id SLICE=S1 CMD="…"  结构化证伪取证' \
+		'  make require-falsify LOG_DIR=路径 [RUN_ID=]  指挥侧证伪门（须 COMMAND+EXIT_CODE+VERDICT）' \
+		'  make dispatch-gates-selftest  离线硬门自检（Plan / structured falsify / wish）' \
+		'  make hooks-selftest       运行时 hooks + wish-journey 自检' \
+		'  make public-gates         公开 CI 门（selftest+hooks+contract-sync+phase3 plugin-only）' \
 		'  make phase3-negative      Phase0–2 负向验收（规则投影/写码闸/dispatch/宿主入口）' \
 		'  make eval-skill-load      cursor-agent 探测：UX/Shape 是否 Read product-judgment/LOAD-MAP' \
 		'' \
@@ -51,7 +64,7 @@ help:
 		'' \
 		'热载说明：默认 install 是拷贝；改仓库后需重新 make install（或 install-dev）。' \
 		'Cursor 再 Reload Window；Claude /reload-plugins；Codex 新开任务。' \
-		'evals/ plans/ minutes/ 不进入公开仓库（见 .gitignore）。'
+		'evals/ plans/ minutes/ 不进入公开仓库（见 .gitignore）。公开克隆请跑 make public-gates。'
 
 install:
 	bash scripts/install.sh
@@ -74,6 +87,7 @@ scaffold:
 	if [ -n "$(SDD_ROOT)" ]; then extra="$$extra --root $(SDD_ROOT)"; fi; \
 	if [ "$(DRY_RUN)" = "1" ]; then extra="$$extra --dry-run"; fi; \
 	if [ "$(ALLOW_PARTIAL)" = "1" ]; then extra="$$extra --allow-partial"; fi; \
+	if [ "$(WITH_HOOKS)" = "1" ]; then extra="$$extra --hooks"; fi; \
 	bash scripts/scaffold.sh "$(HOST)" $$extra
 
 # Conductor→Codex dispatch via codex-dispatch.sh.
@@ -142,9 +156,64 @@ require-falsify:
 	if [ -n "$(RUN_ID)" ]; then extra="--run-id $(RUN_ID)"; fi; \
 	bash skills/dispatch-codex/scripts/require-conductor-falsify.sh --log-dir "$(LOG_DIR)" $$extra
 
-# Offline hard-gate selftest (no Codex): Plan artifacts + falsify VERDICT.
+# Record structured falsify attestation (runs CMD, writes COMMAND/EXIT_CODE/VERDICT).
+# Example: make record-falsify LOG_DIR=… RUN_ID=… SLICE=S1 CMD='pytest -k s1'
+record-falsify:
+	@if [ -z "$(LOG_DIR)" ] || [ -z "$(RUN_ID)" ] || [ -z "$(CMD)" ]; then \
+		echo 'Usage: make record-falsify LOG_DIR=<dir> RUN_ID=<id> [SLICE=S1] CMD="<falsify command>"'; \
+		exit 2; \
+	fi
+	@extra=""; \
+	if [ -n "$(SLICE)" ]; then extra="$$extra --slice $(SLICE)"; fi; \
+	bash skills/dispatch-codex/scripts/record-conductor-falsify.sh \
+		--log-dir "$(LOG_DIR)" --run-id "$(RUN_ID)" $$extra -- bash -c "$(CMD)"
+
+# Offline hard-gate selftest (no Codex): Plan artifacts + structured falsify + wish status.
 dispatch-gates-selftest:
 	bash skills/dispatch-codex/scripts/selftest-gates.sh
+
+# Public CI gates (no private evals/): selftest + hooks + contract-sync + phase3 plugin-only.
+public-gates:
+	bash scripts/public-gates.sh
+
+contract-sync:
+	bash scripts/check-contract-sync.sh
+
+hooks-selftest:
+	bash scripts/hooks/selftest-hooks.sh
+
+# Runtime authorization markers for hooks.
+# Example: make sdd-authorize HOST=. KIND=build
+#          make sdd-authorize HOST=. KIND=deploy-p4
+sdd-authorize:
+	@if [ -z "$(KIND)" ]; then \
+		echo 'Usage: make sdd-authorize HOST=<repo> KIND=build|deploy-p4'; \
+		exit 2; \
+	fi
+	bash scripts/hooks/authorize.sh --cwd "$(HOST)" --kind "$(KIND)"
+
+# Wish journey disk state machine.
+# Examples:
+#   make wish-journey HOST=. SPEC=id STATUS=1
+#   make wish-journey HOST=. SPEC=id SET=design-ready
+#   make wish-journey HOST=. SPEC=id TRANSITION=planning
+#   make wish-journey HOST=. SPEC=id ASSERT=build
+wish-journey:
+	@if [ -z "$(SPEC)" ]; then \
+		echo 'Usage: make wish-journey HOST=<repo> SPEC=<id> [STATUS=1|SET=phase|TRANSITION=phase|ASSERT=write|build|deploy]'; \
+		exit 2; \
+	fi
+	@if [ "$(STATUS)" = "1" ]; then \
+		bash scripts/wish-journey.sh --cwd "$(HOST)" --spec "$(SPEC)" --status; \
+	elif [ -n "$(SET)" ]; then \
+		bash scripts/wish-journey.sh --cwd "$(HOST)" --spec "$(SPEC)" --set "$(SET)"; \
+	elif [ -n "$(TRANSITION)" ]; then \
+		bash scripts/wish-journey.sh --cwd "$(HOST)" --spec "$(SPEC)" --transition "$(TRANSITION)"; \
+	elif [ -n "$(ASSERT)" ]; then \
+		bash scripts/wish-journey.sh --cwd "$(HOST)" --spec "$(SPEC)" --assert "$(ASSERT)"; \
+	else \
+		bash scripts/wish-journey.sh --cwd "$(HOST)" --spec "$(SPEC)" --status; \
+	fi
 
 phase3-negative:
 	bash scripts/phase3-negative-verify.sh
@@ -154,7 +223,7 @@ eval-skill-load:
 
 verify:
 	@if [ ! -f evals/verify.sh ]; then \
-		echo 'SKIP: evals/ 不在公开树（本地维护者目录）。'; \
+		echo 'SKIP: evals/ 不在公开树（本地维护者目录）。跑 make public-gates 作公开门。'; \
 		exit 0; \
 	fi
 	bash evals/verify.sh

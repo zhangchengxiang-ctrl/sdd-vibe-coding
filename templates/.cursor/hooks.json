@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": ".cursor/hooks/sdd-before-shell.sh",
+        "failClosed": false,
+        "timeout": 15
+      }
+    ],
+    "preToolUse": [
+      {
+        "command": ".cursor/hooks/sdd-before-write.sh",
+        "matcher": "Write|StrReplace|Delete",
+        "failClosed": false,
+        "timeout": 15
+      }
+    ]
+  }
+}

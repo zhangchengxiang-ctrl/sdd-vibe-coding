@@ -20,7 +20,7 @@ Cursor 另经 `make install-cursor` 投影 **`~/.cursor/rules/sdd-*.mdc`** 作�
 | 你这样说 | 体系做什么 | 不会做什么 |
 |----------|------------|------------|
 | 「我希望…」「我想要…」 | **产品方案**：澄清并请你确认 | 不改业务代码 |
-| 「就按这个做」「确认方案」 | **自动研发**：拆 Spec、实现、单测、走查，交出验收包 | 不替你关版、不上生产 |
+| 「就按这个做」「确认方案」 | **半自动研发**：拆 Spec、逐片 Pack+Codex、结构化证伪、走查，交出验收包 | 不替你关版、不上生产 |
 | 「按这个方向拆解」「准备实施」 | **Plan**（经典）：整份 Spec 执行合同 | 不在规划对话编码 |
 | 「开始做」「实施这个 Spec」 | **Build**：按完成单元实现 | 不静默扩大 Scope、不宣称可交付 |
 | 「polish」「按 refinement 修」 | **Polish**：非 material 前端小改 | 不改导航/权限/主路径 |
@@ -67,8 +67,13 @@ make install         # 推荐：有 CLI 的端都装；缺则 SKIP
 | `make verify-deliver HOST=/path SPEC=id` | Verify 关版门（check_spec + 戳 `verify-deliver: ok · <时间>`） | 宣称可交付 / prod-smoke 通过前 |
 | `make preflight-rail HOST=/path` | Shape 写码闸（业务 dirty 无授权则失败） | 讨论/设计会话自检 |
 | `make codex-dispatch HOST=/path UNIT=plan\|build\|goal PROMPT_FILE=…` | 派 Codex（never + 墙钟；Build 需 `SPEC=`+`SLICE=`；Goal 需 `GOAL_APPROVED=1`） | 指挥侧外包有界单元 |
-| `make require-falsify LOG_DIR=… RUN_ID=…` | 指挥侧证伪落盘门 | Codex Build 返回后、对人结案前 |
-| `make phase3-negative` | Phase0–2 负向验收（规则投影 / 写码闸 / dispatch / 宿主入口） | 修完纪律后自检 |
+| `make require-falsify LOG_DIR=… [RUN_ID=]` | 指挥侧结构化证伪门 | Codex Build 返回后、下一片前 |
+| `make record-falsify LOG_DIR=… RUN_ID=… CMD="…"` | 跑证伪命令并写取证日志 | 片间 falsify |
+| `make scaffold HOST=/path WITH_HOOKS=1` | 同上并安装运行时 hooks | 要把写码/Deploy 升到 hook 硬闸 |
+| `make sdd-authorize HOST=. KIND=build\|deploy-p4` | 写 `.sdd/authorize.*` 标记 | 方案确认后 / 本轮批准上线后 |
+| `make wish-journey HOST=. SPEC=id …` | 磁盘旅程相位 | 许愿半自动可恢复 |
+| `make public-gates` | 公开 CI 门（无 evals） | PR / 克隆自检 |
+| `make phase3-negative` | Phase0–2 负向验收 | 修完纪律后自检 |
 
 安装在 cache stage **生成**各端清单（**不写入本仓库**），再注册。改仓库后 **不会自动热载**：再跑 `make install`（或开发期 `make install-dev`），然后：
 

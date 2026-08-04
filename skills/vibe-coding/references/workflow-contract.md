@@ -4,8 +4,8 @@
 > 纵向切片（见 Skill `spec`）是 Spec 内的可独立完成与验收单位；切片轴为真实用户入口，而非横向基础设施模块。
 >
 > **对人北极星（许愿 × 高质量）：** 见 [`wish-delivery.md`](./wish-delivery.md)。  
-> 人：许愿 → 确认产品方案 → 按验收包自验 → 关版上线。  
-> AI：方案确认后自动研发编排；质量内核不可省。上下文 / Subagent 仅为执行细节。
+> 人：许愿 → 确认产品方案 → 按验收包自验关版 →（另批）上线。  
+> AI：方案确认后自动研发编排至验收包；**禁止**自动上生产。质量内核不可省。
 
 ## 许愿式交付（对人语义 · 默认）
 
@@ -18,16 +18,17 @@
 3. **AI 研发团队** — 方案确认后**自动** Plan → 按完成单元 Build → 单测 → 证伪/走查 → Repair，直至交出人类验收包。  
 4. **人验收关版** — 人按验收包自验；通过后才 `acceptance-passed`；上线另走 Deploy。
 
-### 两道人闸（质量）
+### 人闸（质量两钉 + 生产另钉）
 
 | 闸 | 人做什么 | 未过之前禁止 |
 |----|----------|--------------|
 | **方案闸** | 确认产品方案（「就按这个做 / 确认方案 / 按这个方案做」等） | 改业务代码、落实施 Spec（已有已确认 Spec 的 Repair、或 Polish (c) 除外） |
-| **验收闸** | 按[人类验收包](../../testing/references/human-acceptance-pack.md)自验并明示通过/关版 | 宣称 `acceptance-passed` / 请人关版后的生产发布 |
+| **验收闸** | 按[人类验收包](../../testing/references/human-acceptance-pack.md)自验并明示通过/关版 | 宣称 `acceptance-passed` |
+| **Deploy P4**（生产另钉） | 本轮明示「发布 / 上线 / 部署」并批准 P2+P3 后的执行 | 任何生产发布、reload、改 live 配置（关版通过也**不**自动授权） |
 
 ### 方案确认后的自动编排
 
-取得方案确认后，Agent **不必再等人**说 Plan / Build / 验收，连续执行质量条至「待你验收」：
+取得方案确认后，Agent **不必再等人**说 Plan / Build / 验收，连续执行质量条至「待你验收」——**止于人类验收包，不含 Deploy**：
 
 1. Plan 落盘（事实映射、纵向切片、强 Oracle、`check_spec`）— 可指挥侧自做或派 Codex Plan；  
    **许愿路径禁止中途「待批准」**；`codex-dispatch --unit plan --spec` 成功后须磁盘五件套（`assert_plan_artifacts`）  
@@ -35,10 +36,14 @@
    `build_context_pack.py` → `codex-dispatch.sh --unit build`  
    （或 `wish-orchestrate.sh --spec …`）。**禁止**指挥侧同会话连做多片实现。  
    Pack 合同：[`context-pack.md`](../../dispatch-codex/references/context-pack.md)。  
-3. 每片后指挥侧 ≥1 条证伪（钉 3），日志须含 **`VERDICT: PASS`**；  
-   `wish-orchestrate` / `require-conductor-falsify` **机检**后方可下一片（缺省/FAIL → 阻断）  
+3. 每片后指挥侧 ≥1 条**结构化证伪**（钉 3），见
+   [`falsify-attestation.md`](../../dispatch-codex/references/falsify-attestation.md)
+   （`COMMAND` + `EXIT_CODE: 0` + `VERDICT: … PASS`）；  
+   `wish-orchestrate`（幂等 PASSED_SLICES + flock）/ `require-conductor-falsify` **机检**后方可下一片  
 4. 全部切片工程侧收口后：Agent Verify（证伪 + 走查）→ 人类验收包  
 5. Fail → 统一 Repair → 回验  
+
+> **机检范围：** Pack→Build→结构化证伪→下一片。Plan / Verify / 验收包由指挥侧 Agent 调度；**止于验收包，不含 Deploy**。
 
 无 `codex` CLI → 标 `blocked`（许愿 Build 编排不可用），不得假装已隔离上下文。
 
@@ -227,8 +232,8 @@ Plan 阶段内：调查 → **直接落盘** `VERSION`/`contract`/`tests`/`plan`
 ### A. 许愿路径（默认优先识别）
 
 1. Shape 出产品方案 → **等人确认方案**。  
-2. 方案确认后 → 自动 Plan → Build（按完成单元）→ Agent Verify → 人类验收包 → **等人验收**。  
-3. 人验收通过 → `acceptance-passed`；上线须另批 Deploy。  
+2. 方案确认后 → 自动 Plan → Build（按完成单元）→ Agent Verify → 人类验收包 → **等人验收**（**不含** Deploy）。  
+3. 人验收通过 → `acceptance-passed`；**询问**是否上线；须本轮明示「发布/上线」+ Deploy P4 才执行。  
 4. 阶段内暂停条件同下「阶段内暂停」。
 
 ### B. 经典路径（用户说了 Rail 名）

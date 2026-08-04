@@ -33,20 +33,25 @@ expect_exit() {
 
 echo "== Phase 3 negative verify =="
 echo "ROOT=$ROOT"
+PLUGIN_ONLY="${PHASE3_PLUGIN_ONLY:-0}"
 
-# --- Plugin rules / skills projection ---
-for f in sdd-vibe-entry sdd-shape-no-code sdd-deploy-p4 sdd-codex-cli; do
-  if [[ -L "$HOME/.cursor/rules/${f}.mdc" || -f "$HOME/.cursor/rules/${f}.mdc" ]]; then
-    ok "cursor-rule:$f"
+# --- Plugin rules / skills projection (skip when PHASE3_PLUGIN_ONLY=1 for public CI) ---
+if [[ "$PLUGIN_ONLY" != "1" ]]; then
+  for f in sdd-vibe-entry sdd-shape-no-code sdd-deploy-p4 sdd-codex-cli; do
+    if [[ -L "$HOME/.cursor/rules/${f}.mdc" || -f "$HOME/.cursor/rules/${f}.mdc" ]]; then
+      ok "cursor-rule:$f"
+    else
+      bad "cursor-rule:$f" "missing ~/.cursor/rules/${f}.mdc (run make install-cursor)"
+    fi
+  done
+
+  if [[ -L "$HOME/.cursor/skills/vibe-coding" || -d "$HOME/.cursor/skills/vibe-coding" ]]; then
+    ok "cursor-skill:vibe-coding"
   else
-    bad "cursor-rule:$f" "missing ~/.cursor/rules/${f}.mdc (run make install-cursor)"
+    bad "cursor-skill:vibe-coding" "not linked"
   fi
-done
-
-if [[ -L "$HOME/.cursor/skills/vibe-coding" || -d "$HOME/.cursor/skills/vibe-coding" ]]; then
-  ok "cursor-skill:vibe-coding"
 else
-  bad "cursor-skill:vibe-coding" "not linked"
+  skip "cursor-install-projection" "PHASE3_PLUGIN_ONLY=1"
 fi
 
 grep -q "第一个工具调用" "$ROOT/templates/.cursor/rules/sdd-vibe-entry.mdc" \
@@ -125,7 +130,7 @@ expect_exit 2 "dispatch:reject-goal-without-approve" \
   env GOAL_APPROVED=0 bash "$DISPATCH" --cwd "$ROOT" --unit goal --spec fake -- \
   "full spec please"
 
-# --- require-falsify ---
+# --- require-falsify (structured attestation) ---
 flog=$(mktemp -d)
 expect_exit 1 "falsify:missing-log" \
   bash "$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh" \
@@ -134,14 +139,19 @@ echo 'offset0!=offset1' >"$flog/r1_falsify.log"
 expect_exit 1 "falsify:no-verdict-pass" \
   bash "$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh" \
   --log-dir "$flog" --run-id r1
-printf '%s\n' 'offset0!=offset1' 'VERDICT: S1 FAIL' >"$flog/r2_falsify.log"
+printf '%s\n' 'COMMAND: probe' 'EXIT_CODE: 1' 'VERDICT: S1 FAIL' >"$flog/r2_falsify.log"
 expect_exit 1 "falsify:verdict-fail" \
   bash "$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh" \
   --log-dir "$flog" --run-id r2
+# bare VERDICT PASS without COMMAND/EXIT_CODE must fail
 printf '%s\n' 'offset0!=offset1' 'VERDICT: S1 PASS' >"$flog/r3_falsify.log"
-expect_exit 0 "falsify:verdict-pass" \
+expect_exit 1 "falsify:unstructured-pass" \
   bash "$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh" \
   --log-dir "$flog" --run-id r3
+printf '%s\n' 'COMMAND: echo probe' 'EXIT_CODE: 0' 'SLICE: S1' 'VERDICT: S1 PASS' >"$flog/r4_falsify.log"
+expect_exit 0 "falsify:structured-pass" \
+  bash "$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh" \
+  --log-dir "$flog" --run-id r4
 rm -rf "$flog"
 
 # --- check_run_honesty ---
@@ -175,7 +185,18 @@ else
   bad "check_spec:deliver+deploy-negative" "expected >=4 honesty errors"
 fi
 
-# --- Hosts ---
+# --- Hosts (skip in public CI) ---
+if [[ "$PLUGIN_ONLY" == "1" ]]; then
+  skip "hosts" "PHASE3_PLUGIN_ONLY=1"
+  echo
+  echo "======== SUMMARY ========"
+  printf '%s\n' "${RESULTS[@]}"
+  echo "-------------------------"
+  echo "PASS=$PASS FAIL=$FAIL SKIP=$SKIP"
+  [[ "$FAIL" -eq 0 ]]
+  exit 0
+fi
+
 AGENTDECK="${PHASE3_AGENTDECK:-/home/zcx/code/agentdeck}"
 BI="${PHASE3_BI:-/home/zcx/code/bi-kaonai-dashboard}"
 DATASAGE="${PHASE3_DATASAGE:-/home/zcx/code/data-sage}"

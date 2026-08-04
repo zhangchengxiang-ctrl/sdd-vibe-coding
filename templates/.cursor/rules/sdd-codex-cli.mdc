@@ -1,26 +1,16 @@
 ---
-description: Codex 派发只经 CLI codex-dispatch.sh；禁止 Codex MCP
+description: Codex 派发只经 CLI；禁止 Codex MCP。真源 workflow-contract + dispatch-codex
 alwaysApply: true
 ---
 
 # Codex 派发硬门（CLI）
 
-**适用范围：** 派 Codex 施工 / 成本路由外包 / Skill `dispatch-codex`。
+**真源：** 插件 `skills/dispatch-codex/SKILL.md` + `vibe-coding/references/workflow-contract.md`（指挥施工）。
 
-**通道：** `skills/dispatch-codex/scripts/codex-dispatch.sh`（或 `make codex-dispatch`）。包装缺失时用裸 `codex exec` + 外层 `timeout`。
+**硬门（不可违反）：**
 
-**硬门：**
+1. 派发只经 `codex-dispatch.sh` / `make codex-dispatch`（或包装缺失时的裸 `codex exec`+timeout）  
+2. **禁止** Codex MCP：`user-codex` / `CallMcpTool`（`codex` / `codex-reply`）及依赖其的 Subagent  
+3. 模型 `gpt-5.6-sol`；effort 仅 `medium`|`high`；`approval-policy=never`；一次一个完成单元  
 
-- 派发只经上述 CLI  
-- **禁止** Codex MCP：`user-codex` / `CallMcpTool`（`codex` / `codex-reply`）  
-- **禁止**内部走 Codex MCP 的 `codex-reviewer` / `codex-tester` Subagent  
-- 模型固定 `gpt-5.6-sol`；effort 仅 `medium`|`high`  
-- `approval-policy=never`（脚本写死）  
-- Plan：`workspace-write`；Build/Goal：`danger-full-access`  
-- 一次一个完成单元（Plan 整份 Spec 或 Build **一个**纵向切片）
-
-评审与测试：当前 Agent、普通非 Codex Subagent 或本地测试。
-
-档位真源：Plan AD-P · 2026-07-27；Build AD-B · 2026-07-28（`evals/fixtures/codex-live/`）。
-
-本规则由 `sdd-vibe-coding` install 投影；取代旧用户级 `codex-mcp.mdc` 全文（若仍存在，以本文件为准）。
+本规则由 `sdd-vibe-coding` install 投影。

@@ -1,33 +1,23 @@
 ---
-description: 仅 software：无 Build 授权时禁止改业务代码；先判 project.kind
+description: 写码前须方案/Spec/Polish 授权。真源 workflow-contract (a)(b)(c)
 alwaysApply: true
 ---
 
 # 写码前硬闸
 
+**真源：** 插件 `vibe-coding/references/workflow-contract.md`（写码授权）+ `project-kind.md`。
+
 ## 0. 项目类型门
 
 先按 `sdd-vibe-entry` 解析 `project.kind`（`software` | `plugin` | `other`）。
 
-- **`plugin`**：不适用本节；改 skills/templates/scripts 等插件真源。
-- **`other`**：不适用本节；**放手**，不建宿主式 `docs/product/` 交付树。
+- **`plugin`**：不适用本节；改 skills/templates/scripts。  
+- **`other`**：放手，不建宿主式 `docs/product/`。  
 - **禁止**把非 `software` 仓强行当成宿主编码项目。
 
 ## software 宿主
 
-改业务代码（应用源码、配置契约、运行时行为）前，须满足至少一项：
-
-1. 已存在**已确认**实施 Spec：`<SDD docs root>/specs/<id>/`（含 Verify 后的 Repair）；或  
-2. 用户**本轮明示**「开始做 / 实现 / 按这个来 / 构建 / 批准 Build / 就按这个做 / 确认方案 / 按这个方案做」；或  
-3. 用户**本轮明示** Polish 档：「polish / 抛光 / 前端小改 / 交互微调 / 按 refinement 修 / 修本批走查」，且变更**非 material**
-
-皆无时，本轮只允许：
-
-- 写 `<SDD docs root>/product/`（及约定的产品讨论沉淀）
-- 只读调查代码与 `AGENTS.md`
-
-下列**不算**写码授权：「设计方案」「构建产品文档」「走查」「应该支持…」「优化体验」「讨论产品」「Shape」。
-
-trivial / Polish：笔误、单点 CSS、已知单控件 bug、非 material 交互抛光 — 可不新开 Spec；触及导航、跨表面入口、发布模型、角色可见性或其它 material → 仍走 Shape。细则见插件 `change-control.md` 与 `workflow-contract.md` (c)。
+改业务代码前至少一项：已确认 Spec；或本轮明示「开始做 / 确认方案 / …」；或明示 Polish 且非 material。  
+皆无 → 只写 product/ + 只读调查。下列**不算**写码授权：「设计方案」「走查」「优化体验」「Shape」。
 
 本规则由 `sdd-vibe-coding` install 投影。

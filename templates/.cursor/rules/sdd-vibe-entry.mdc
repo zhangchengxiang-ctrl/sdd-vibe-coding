@@ -1,34 +1,25 @@
 ---
-description: 先判 project.kind（software|plugin|other）；仅 software 走 vibe-coding 编码入口
+description: SDD 入口：先判 project.kind；software 须先 Read vibe-coding
 alwaysApply: true
 ---
 
 # SDD 入口硬门
 
+**真源：** 插件 `vibe-coding/SKILL.md` + `references/project-kind.md` + `workflow-contract.md`。
+
 ## 0. 先判项目类型（`project.kind`）
 
-**禁止默认假定当前工作区是 coding / 软件交付仓。** 仅三档：`software` | `plugin` | `other`。
+**禁止默认假定**当前工作区是 coding / 软件交付仓。仅 `software` | `plugin` | `other`。
 
-解析顺序：
-
-1. 宿主 `AGENTS.md`（或约定的 `PROJECT.md`）中的 `project.kind`；
-2. 否则启发式探测（见下）；
-3. 仍模糊 → 推荐三选一，确认前不要按 `software` 硬闸执行。
-
-| kind | 探测信号（示例） | 入口 |
-|---|---|---|
-| `plugin` | `package.json` name=`sdd-vibe-coding` 且有 `skills/vibe-coding/SKILL.md`+`templates/AGENTS.md`+`scripts/scaffold.sh`；或同类 skill 包 | 读 `ARCHITECTURE.md`；改 skills/templates/scripts；笔记 `plans/`。**不**走宿主 Shape→`docs/product/` |
-| `software` | 应用代码入口 + 软件交付意图（通常可 scaffold SDD） | 下方「software 宿主」 |
-| `other` | 其余 | **放手**：停用编码交付全轨；本插件不接管 |
-
-真源：插件 skill `vibe-coding/references/project-kind.md`。
+| kind | 入口 |
+|---|---|
+| `plugin` | 读 `ARCHITECTURE.md`；改 skills/templates/scripts |
+| `software` | 下方 |
+| `other` | 放手 |
 
 ## software 宿主
 
-命中任一意图时，**第一个工具调用**必须是 Read 已安装插件 skill `vibe-coding` 的 `SKILL.md`（常见路径：`~/.cursor/skills/vibe-coding/SKILL.md`），然后再读宿主 `AGENTS.md`：
+命中产品/编码/验收/发布意图时，**第一个工具调用**必须是 Read 已安装 `vibe-coding` 的 `SKILL.md`，再读宿主 `AGENTS.md`。  
+未完成 → **禁止**改业务代码、禁止宣称可交付、禁止生产部署。
 
-初始化项目 / 接入存量 / 讨论产品 / 聊聊方向 / 拆解 / 我希望 / 我想要 / 确认方案 / 就按这个做 / 切 Spec / Plan / 开始做 / 实现 / Build / polish / 抛光 / 前端小改 / 验收 / UX走查 / 关版 / 发布 / 上线 / 部署 / 排障 / 派 Codex / vibe
-
-未完成上述 Read → **禁止**改业务代码、禁止宣称可交付、禁止生产部署。
-
-本规则由 `sdd-vibe-coding` 的 `make install-cursor` 投影到 `~/.cursor/rules/`。
+本规则由 `sdd-vibe-coding` install 投影。

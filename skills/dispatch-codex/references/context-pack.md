@@ -27,8 +27,9 @@ Codex 上下文短、易目标漂移。指挥侧不得把愿望聊天或整份 S
 1. **Build 派 Codex 必须带 Pack**（由 `build_context_pack.py` 生成或等价字段齐全）。  
 2. Pack **禁止**内嵌：`tests.md` 全文、design-standards 长文、无关模块源码。  
 3. 一次 Pack = **一个** `SLICE_ID`；多片 → 多次派发或（用户明示）`--unit goal`。  
-4. 指挥侧验收：对照仓库 + ≥1 条证伪（钉 3）；日志须含 **`VERDICT: PASS`**；  
-   `wish-orchestrate` 在下一片前机检（`require-conductor-falsify`）；FAIL/缺省阻断。  
+4. 指挥侧验收：对照仓库 + ≥1 条**结构化证伪**（钉 3）；日志须含
+   `COMMAND` / `EXIT_CODE: 0` / `VERDICT: … PASS`（见 [`falsify-attestation.md`](./falsify-attestation.md)）；  
+   `wish-orchestrate` 在下一片前机检（`require-conductor-falsify`）；FAIL/缺省/无结构字段阻断。  
 5. Plan：`--spec` + 落盘后 `assert_plan_artifacts.py`（禁聊天「待批准」假成功）。
 
 ## 4. `plan.md` 切片表约定

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # Initialize a host repository with AGENTS.md + SDD delivery memory under a docs root.
-# Does not copy harness dirs, rules, hooks, or check-docs.
+# Does not copy harness rules by default. Optional: --hooks for Cursor/Claude runtime gates.
 #
 # Usage:
 #   bash scripts/scaffold.sh [TARGET] [options]
-# Env (optional): PROFILE=… DRY_RUN=1 ALLOW_PARTIAL=1 SDD_ROOT=docs
+# Env (optional): PROFILE=… DRY_RUN=1 ALLOW_PARTIAL=1 SDD_ROOT=docs WITH_HOOKS=1
 #
 # Profiles:
 #   detect   — empty SDD root → full; else minimal; hard reserved-path conflict → exit 2
@@ -22,6 +22,7 @@ PROFILE="${PROFILE:-detect}"
 DRY_RUN="${DRY_RUN:-0}"
 ALLOW_PARTIAL="${ALLOW_PARTIAL:-0}"
 SDD_ROOT="${SDD_ROOT:-docs}"
+WITH_HOOKS="${WITH_HOOKS:-0}"
 TARGET_INPUT="."
 
 usage() {
@@ -31,6 +32,7 @@ Usage: bash scripts/scaffold.sh [TARGET] [options]
 Options:
   --profile detect|minimal|full   Default: detect (or $PROFILE)
   --root PATH                     SDD docs root, relative (default: docs; or $SDD_ROOT)
+  --hooks                         Install Cursor/Claude runtime gate hooks (or WITH_HOOKS=1)
   --dry-run                       Probe only; do not write (or DRY_RUN=1)
   --allow-partial                 Write non-blocked paths even if BLOCK exists (or ALLOW_PARTIAL=1)
   -h, --help                      Show this help
@@ -87,6 +89,10 @@ while [[ $# -gt 0 ]]; do
       ;;
     --allow-partial)
       ALLOW_PARTIAL=1
+      shift
+      ;;
+    --hooks)
+      WITH_HOOKS=1
       shift
       ;;
     -h|--help)
@@ -368,4 +374,55 @@ if [[ "$EFFECTIVE_PROFILE" == "full" && -d "$TEMPLATES/architecture" ]]; then
   done < <(find "$TEMPLATES/architecture" -type f -print0 | sort -z)
 fi
 
-echo "scaffold: done (profile=$EFFECTIVE_PROFILE sdd_root=$SDD_ROOT)"
+# Optional runtime hooks (Cursor + Claude wrappers). Never overwrite.
+if [[ "$WITH_HOOKS" == "1" ]]; then
+  copy_hook() {
+    local src="$1" dest="$2"
+    if [[ -e "$dest" ]]; then
+      echo "  SKIP $dest (exists)"
+      return
+    fi
+    mkdir -p "$(dirname "$dest")"
+    cp "$src" "$dest"
+    chmod +x "$dest" 2>/dev/null || true
+    echo "  + ${dest#"$TARGET"/}"
+  }
+  if [[ -f "$TEMPLATES/.cursor/hooks.json" ]]; then
+    copy_hook "$TEMPLATES/.cursor/hooks.json" "$TARGET/.cursor/hooks.json"
+  fi
+  if [[ -d "$TEMPLATES/.cursor/hooks" ]]; then
+    while IFS= read -r -d '' file; do
+      rel="${file#"$TEMPLATES/.cursor/hooks/"}"
+      copy_hook "$file" "$TARGET/.cursor/hooks/$rel"
+    done < <(find "$TEMPLATES/.cursor/hooks" -type f -print0 | sort -z)
+  fi
+  if [[ -f "$TEMPLATES/.claude/settings.sdd-hooks.json" ]]; then
+    copy_hook "$TEMPLATES/.claude/settings.sdd-hooks.json" "$TARGET/.claude/settings.sdd-hooks.json"
+    echo "  NOTE merge .claude/settings.sdd-hooks.json into .claude/settings.json hooks (see plugin runtime-hooks.md)"
+  fi
+  if [[ -d "$TEMPLATES/.claude/hooks" ]]; then
+    while IFS= read -r -d '' file; do
+      rel="${file#"$TEMPLATES/.claude/hooks/"}"
+      copy_hook "$file" "$TARGET/.claude/hooks/$rel"
+    done < <(find "$TEMPLATES/.claude/hooks" -type f -print0 | sort -z)
+  fi
+  mkdir -p "$TARGET/.sdd"
+  if [[ ! -f "$TARGET/.sdd/README.md" ]]; then
+    cat >"$TARGET/.sdd/README.md" <<'EOF'
+# SDD runtime control plane (local)
+
+- `authorize.build` / `authorize.deploy-p4` — hook markers (do **not** commit secrets; gitignore recommended)
+- `journey/<spec>.env` — wish journey phase
+
+Create markers: `make sdd-authorize HOST=. KIND=build|deploy-p4`
+Advance journey: `make wish-journey HOST=. SPEC=<id> SET=planning`
+EOF
+    echo "  + .sdd/README.md"
+  fi
+  if [[ -f "$TARGET/.gitignore" ]] && ! grep -q '\.sdd/authorize' "$TARGET/.gitignore" 2>/dev/null; then
+    printf '\n# SDD runtime auth markers\n.sdd/authorize.*\n' >>"$TARGET/.gitignore"
+    echo "  ~ .gitignore += .sdd/authorize.*"
+  fi
+fi
+
+echo "scaffold: done (profile=$EFFECTIVE_PROFILE sdd_root=$SDD_ROOT hooks=$WITH_HOOKS)"

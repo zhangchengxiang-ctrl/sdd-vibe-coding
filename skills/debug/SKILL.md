@@ -47,6 +47,7 @@ Diagnose 默认只读。写代码、改配置、改数据或部署须另有明�
 | 后端 / Agent | 终端日志（IDE `terminals/`）、容器/进程日志、Traceback、SQL 报错 |
 | 定位 | 用堆栈或关键错误串 Grep / 搜索到具体行，再向上追调用链与入参 |
 | 证伪 | 临时日志或调试只为验证假设；确认根因后再最小修复 |
+| **AgentDeck 飞书 bot 卡住** | 宿主 skill **`feishu`**「Bot 卡住」节：先 `make debug-session-ccc ID=<session> FOCUS=feishu`（PG 话题链 + `VERDICT`），**禁止**先全量扫 `server-feishu.log` |
 
 修复获授权后：最小改动；检查同模式是否在别处复现；边界条件补自动化测试（命令读 `AGENTS.md`）。  
 非 trivial / 非 Polish 行为变更走 Plan / Repair 合同，不靠口头「修一下」。UI 抛光明示话术见 workflow-contract (c)。
