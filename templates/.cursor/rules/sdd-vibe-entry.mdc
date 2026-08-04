@@ -27,7 +27,7 @@ alwaysApply: true
 
 命中任一意图时，**第一个工具调用**必须是 Read 已安装插件 skill `vibe-coding` 的 `SKILL.md`（常见路径：`~/.cursor/skills/vibe-coding/SKILL.md`），然后再读宿主 `AGENTS.md`：
 
-初始化项目 / 接入存量 / 讨论产品 / 聊聊方向 / 拆解 / 切 Spec / Plan / 开始做 / 实现 / Build / polish / 抛光 / 前端小改 / 验收 / UX走查 / 发布 / 上线 / 部署 / 排障 / 派 Codex / vibe
+初始化项目 / 接入存量 / 讨论产品 / 聊聊方向 / 拆解 / 我希望 / 我想要 / 确认方案 / 就按这个做 / 切 Spec / Plan / 开始做 / 实现 / Build / polish / 抛光 / 前端小改 / 验收 / UX走查 / 关版 / 发布 / 上线 / 部署 / 排障 / 派 Codex / vibe
 
 未完成上述 Read → **禁止**改业务代码、禁止宣称可交付、禁止生产部署。
 

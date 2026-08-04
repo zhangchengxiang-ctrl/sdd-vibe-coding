@@ -26,6 +26,10 @@ verify-deliver: ok · <ISO8601>
 
 缺字段 → `check_spec` fail。脚本负责写入该戳；禁止手写假戳绕过（戳仅证明本机跑过闸）。
 
+**许愿路径加闸：** Agent 工程证伪通过后先置 `awaiting-human-acceptance` 并交出
+[人类验收包](../../testing/references/human-acceptance-pack.md)；**须人明示通过/关版**后才可宣称
+`acceptance-passed` / 可交付（仍须本钉 verify-deliver）。
+
 ### 2. Build 禁改 Oracle（TDD 绿）
 
 | 轨 | 禁止 | 允许 |

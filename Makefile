@@ -2,8 +2,8 @@
 # Run `make` or `make help` for the command list.
 
 .PHONY: help install install-dev install-cursor install-claude install-codex \
-	scaffold codex-dispatch verify check-docs check-spec verify-deliver \
-	preflight-rail require-falsify phase3-negative eval-live eval-skill-load
+	scaffold codex-dispatch wish-orchestrate context-pack verify check-docs check-spec verify-deliver \
+	preflight-rail require-falsify dispatch-gates-selftest phase3-negative eval-live eval-skill-load
 
 HOST ?= .
 PROFILE ?= detect
@@ -37,7 +37,10 @@ help:
 		'  make preflight-rail HOST=路径 [AUTHORIZED=1]  Shape 写码闸（业务 dirty 则失败）' \
 		'  make codex-dispatch HOST=路径 UNIT=plan|build|goal PROMPT_FILE=文件' \
 		'                            派 Codex（唯一通道；never + 墙钟；Build/Goal 需 SPEC=；Build 需 SLICE=）' \
-		'  make require-falsify LOG_DIR=路径 [RUN_ID=]  指挥侧证伪落盘门' \
+		'  make context-pack HOST=路径 SPEC=id SLICE=S1   生成 Codex Context Pack（stdout）' \
+		'  make wish-orchestrate HOST=路径 SPEC=id [SLICE=S1]  许愿：逐片 Pack→Codex Build' \
+		'  make require-falsify LOG_DIR=路径 [RUN_ID=]  指挥侧证伪落盘门（须 VERDICT: PASS）' \
+		'  make dispatch-gates-selftest  离线硬门自检（Plan 落盘 / falsify VERDICT）' \
 		'  make phase3-negative      Phase0–2 负向验收（规则投影/写码闸/dispatch/宿主入口）' \
 		'  make eval-skill-load      cursor-agent 探测：UX/Shape 是否 Read product-judgment/LOAD-MAP' \
 		'' \
@@ -89,6 +92,28 @@ codex-dispatch:
 	bash skills/dispatch-codex/scripts/codex-dispatch.sh \
 		--cwd "$(HOST)" --unit "$(UNIT)" $$extra -- "$$(cat "$(PROMPT_FILE)")"
 
+# Context Pack for one slice (Codex Build prompt).
+# Example: make context-pack HOST=/path SPEC=my-spec SLICE=S1
+context-pack:
+	@if [ -z "$(SPEC)" ] || [ -z "$(SLICE)" ]; then \
+		echo 'Usage: make context-pack HOST=<repo> SPEC=<id> SLICE=<S1>'; \
+		exit 2; \
+	fi
+	python3 skills/dispatch-codex/scripts/build_context_pack.py "$(HOST)" "$(SPEC)" "$(SLICE)"
+
+# Wish autopilot: Context Pack → Codex Build per slice.
+# Example: make wish-orchestrate HOST=/path SPEC=my-spec
+# Optional: SLICE=S1 EFFORT=medium|high
+wish-orchestrate:
+	@if [ -z "$(SPEC)" ]; then \
+		echo 'Usage: make wish-orchestrate HOST=<repo> SPEC=<id> [SLICE=S1] [EFFORT=medium]'; \
+		exit 2; \
+	fi
+	@extra=""; \
+	if [ -n "$(SLICE)" ]; then extra="$$extra --slice $(SLICE)"; fi; \
+	if [ -n "$(EFFORT)" ]; then extra="$$extra --effort $(EFFORT)"; fi; \
+	bash skills/dispatch-codex/scripts/wish-orchestrate.sh --cwd "$(HOST)" --spec "$(SPEC)" $$extra
+
 check-spec:
 	@if [ -n "$(SPEC)" ]; then \
 		bash skills/spec/scripts/check_spec.sh "$(HOST)" "$(SPEC)"; \
@@ -116,6 +141,10 @@ require-falsify:
 	@extra=""; \
 	if [ -n "$(RUN_ID)" ]; then extra="--run-id $(RUN_ID)"; fi; \
 	bash skills/dispatch-codex/scripts/require-conductor-falsify.sh --log-dir "$(LOG_DIR)" $$extra
+
+# Offline hard-gate selftest (no Codex): Plan artifacts + falsify VERDICT.
+dispatch-gates-selftest:
+	bash skills/dispatch-codex/scripts/selftest-gates.sh
 
 phase3-negative:
 	bash scripts/phase3-negative-verify.sh

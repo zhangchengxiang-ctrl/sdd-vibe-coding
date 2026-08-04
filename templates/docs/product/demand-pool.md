@@ -9,7 +9,7 @@
 |---|---|
 | `draft` | 信息可能不完整 |
 | `shaping` | 正在澄清产品切片 |
-| `design-ready` | 产品切片已确认，可进入 Plan |
+| `design-ready` | **产品方案已确认**（方案闸通过），可进入研发自动编排 / Plan |
 | `planned` | 已有 Spec |
 | `delivered` | 已交付 |
 | `parked` | 暂不处理，附理由 |

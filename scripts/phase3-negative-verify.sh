@@ -131,9 +131,17 @@ expect_exit 1 "falsify:missing-log" \
   bash "$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh" \
   --log-dir "$flog" --run-id r1
 echo 'offset0!=offset1' >"$flog/r1_falsify.log"
-expect_exit 0 "falsify:present-log" \
+expect_exit 1 "falsify:no-verdict-pass" \
   bash "$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh" \
   --log-dir "$flog" --run-id r1
+printf '%s\n' 'offset0!=offset1' 'VERDICT: S1 FAIL' >"$flog/r2_falsify.log"
+expect_exit 1 "falsify:verdict-fail" \
+  bash "$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh" \
+  --log-dir "$flog" --run-id r2
+printf '%s\n' 'offset0!=offset1' 'VERDICT: S1 PASS' >"$flog/r3_falsify.log"
+expect_exit 0 "falsify:verdict-pass" \
+  bash "$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh" \
+  --log-dir "$flog" --run-id r3
 rm -rf "$flog"
 
 # --- check_run_honesty ---

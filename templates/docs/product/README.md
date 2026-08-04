@@ -28,7 +28,7 @@ demand 条目态见 `demand-pool.md`，与本表分表维护（不同行 / 不�
 ## 三池流转
 
 ```text
-demand-pool（愿望）──Shape 确认切片──► design-ready
+demand-pool（愿望）──Shape 确认方案──► design-ready
         │                                    │
         │                            用户批准进入 Plan
         │                                    ▼

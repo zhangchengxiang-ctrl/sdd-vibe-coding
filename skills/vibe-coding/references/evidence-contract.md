@@ -45,7 +45,7 @@
 ### Build Validation
 
 Build 先证明整个 Spec 的实现状态；完成实现后运行完整单元测试批次，测试期间冻结改码。
-**Build 轨不得宣称「可交付」/ `acceptance-passed`**（只可报实现完成 + 单测批次）；关版结论属 Version Acceptance。
+**Build 轨不得宣称「可交付」/ `acceptance-passed`**（只可报实现完成 + 单测批次）；关版结论属 Version Acceptance，且许愿路径须经**人类验收包 + 人确认**（见 [`human-acceptance-pack.md`](../../testing/references/human-acceptance-pack.md)）。
 Repair 只在 Verify 汇总全部 Fail 并形成统一方案后开始：
 
 - 直接相关检查；

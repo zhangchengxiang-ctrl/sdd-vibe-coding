@@ -27,9 +27,8 @@ description: >-
 3. 仅 `Verified` 进 P0 / Lock / 实施阻断；
 4. `tests.md` 每个 P0 至少 1 success + 1 failure/permission，完整 Given/When/Then；
 5. 本阶段只落盘 Spec（不改业务代码）；
-6. 用户已说切 Spec/Plan → **直接写入** `docs/specs/<id>/`；
-7. 齐套后只出一张卡：能否批准进入 Build + Unverified 清单 + **必给「新对话 Build 提示词」**
-   （见 workflow-contract「Plan → Build 默认开新对话」；禁止只劝同聊回复）；
+6. 用户已说切 Spec/Plan，**或**许愿路径下方案已确认 → **直接写入** `docs/specs/<id>/`；
+7. 齐套后：许愿路径 → 直接进入 Build 编排；经典路径 → 批准卡（可附 Build 提示词）；
 8. **骨架**：落盘 `VERSION` / `contract` / `tests` / `plan` / `run`；
 9. **架构与设计边界轻门**：触及新入口 / 跨层 / 新存储 / 新权限模型 / 新部署单元时，
    `plan.md` 按 `system-architecture.md` §7 写明沿用或新开边界、C4 层级、ADR、Unverified；
@@ -87,7 +86,7 @@ Verify 执行证伪见 testing [`falsify-checklist.md`](../testing/references/fa
 
 ## 纵向切片
 
-默认拆分单位是**纵向切片**：
+默认拆分单位是**纵向切片**（完成单元；服务质量，非 IDE hack）：
 
 ```text
 真实入口 → 按关系解析实体与 owner → 可信路径 → 执行操作 → 验证成功与越权失败
@@ -97,11 +96,17 @@ Verify 执行证伪见 testing [`falsify-checklist.md`](../testing/references/fa
 |---|---|
 | 按真实用户入口 | Web 文件、Detached Job、Feishu、worktree、扩展包 |
 | 先落地入口，重复后再抽 helper | 多切片重复同一逻辑后，再抽取共享 helper |
-| 完成定义链到可运行 Oracle | 每个切片链到 `T-xxx` |
+| 完成定义链到可运行 Oracle | 每个切片链到一小撮可一次跑完的 `T-xxx` |
+
+**尺寸软约束：**
+
+- 一切片 = 一条主用户旅程 + 其失败/越权路径；禁止把无关入口捆成一片。  
+- 单 Spec 切片过多（经验：难以在一次研发编排中稳定收口）→ **拆成多 Spec**，产品包 `05`/`06` 串联关版。  
+- 墙钟内无行为证据 → 回 Plan 再切，禁止硬撑。
 
 数据库迁移仅在某个切片 **Verified** 证明现有关联无法唯一解析时才出现。
 
-Codex 上每个纵向切片同时是普通回合的默认完成单元（见 workflow-contract Harness）。
+每个纵向切片同时是普通回合的默认完成单元（见 workflow-contract Harness；全宿主默认一片）。
 
 ## Plan 流程
 
@@ -141,6 +146,7 @@ python3 skills/spec/scripts/check_spec.py <host> <spec-id>
 Oracle 强度说明：[oracle-strength.md](./references/oracle-strength.md)。
 
 阶段边界语义以 [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md) 为唯一真源。
-Plan 阶段全部工件**已落盘**后，按该合同向用户用一张卡汇总技术方案、纵向切片、测试合同、执行边界、
-风险和未决项（区分 Verified / Unverified）。卡尾**必须**附可复制的「新对话 Build 提示词」
-（填好 Spec 路径与切片顺序），并默认引导用户**开新对话粘贴**开工；同聊「批准 Build / 开始做」仅作备选。
+Plan 阶段全部工件**已落盘**后：
+
+- **许愿路径**（方案已确认 / 自动编排）：`check_spec` 通过后**直接**进入 Build 完成单元，前台短报进展；不必等人粘贴提示词。  
+- **经典路径**：用一张卡汇总技术方案、纵向切片、测试合同、执行边界、风险和未决项；卡尾**可**附「新对话 Build 提示词」，同聊「批准 Build / 开始做」仍有效。

@@ -2,8 +2,10 @@
 
 面向略懂技术产品经理的 **Spec-Driven Delivery** 插件（Cursor · Claude Code · Codex）。
 
-用户表达诉求、判断关键取舍、授权实施并验收真实成果。跨仓工作流在 **skills**；本仓命令与红线在宿主 **AGENTS.md** / `docs/`。  
-Cursor 另经 `make install-cursor` 投影 **`~/.cursor/rules/sdd-*.mdc`**（入口 / 写码闸 / Deploy P4 / Codex CLI）作会话硬闸；不依赖宿主仓自建 hooks。
+**许愿式高质量交付：** 人提愿望并确认产品方案 → AI 按质量条自动研发 → 人按验收包自验关版 → 上线。  
+跨仓工作流在 **skills**；本仓命令与红线在宿主 **AGENTS.md** / `docs/`。  
+北极星合同：[`skills/vibe-coding/references/wish-delivery.md`](./skills/vibe-coding/references/wish-delivery.md)。  
+Cursor 另经 `make install-cursor` 投影 **`~/.cursor/rules/sdd-*.mdc`** 作会话硬闸。
 
 > 用户前台保持简单；`docs/`、Spec、handoff 是 Agent 的内部交付记忆。
 
@@ -17,28 +19,31 @@ Cursor 另经 `make install-cursor` 投影 **`~/.cursor/rules/sdd-*.mdc`**（入
 
 | 你这样说 | 体系做什么 | 不会做什么 |
 |----------|------------|------------|
-| 「我希望…」「优化这个体验」 | **Shape**：澄清并沉淀产品决策 | 不改业务代码 |
-| 「按这个方向拆解」「准备实施」 | **Plan**：整份 Spec 执行合同与测试矩阵 | 不在规划对话编码 |
-| 「开始做」「实施并验收这个 Spec」 | **Build**：连续实现与直接证据 | 不静默扩大 Scope |
-| 「polish」「按 refinement 修」「修本批走查 P0–P1」 | **Polish**：非 material 前端小改，不新开 Spec | 不改导航/权限/主路径（material → Shape） |
-| 「派 Codex 做」「用 Codex 施工」 | **指挥施工**（Cursor/Claude）：派单 + 验收 | 不把整包一次塞给 Codex |
-| 「完整验收」 | **Verify**：按矩阵验证并分类问题 | 不边验边修 |
-| 「修复这些验收问题」 | **Repair**：同根因集中修 | 不顺手扩需求 |
+| 「我希望…」「我想要…」 | **产品方案**：澄清并请你确认 | 不改业务代码 |
+| 「就按这个做」「确认方案」 | **自动研发**：拆 Spec、实现、单测、走查，交出验收包 | 不替你关版、不上生产 |
+| 「按这个方向拆解」「准备实施」 | **Plan**（经典）：整份 Spec 执行合同 | 不在规划对话编码 |
+| 「开始做」「实施这个 Spec」 | **Build**：按完成单元实现 | 不静默扩大 Scope、不宣称可交付 |
+| 「polish」「按 refinement 修」 | **Polish**：非 material 前端小改 | 不改导航/权限/主路径 |
+| 「派 Codex 做」 | **指挥施工**：派单 + 验收 | 不把整包一次塞给 Codex |
+| 「验收一下」 | **Verify** + **人类验收包** | 不替你点验关版 |
+| 「通过了」「可以关版」 | 人验收通过 → 可关版 | 不自动上生产 |
+| 「发布 / 上线」 | **Deploy** P0–P6 | 无 P4 不上生产 |
+| 「修复这些验收问题」 | **Repair** | 不顺手扩需求 |
 | 「排查线上问题」 | **Diagnose** | 不自动修复/部署 |
 | 「立即恢复生产」 | **Incident** | 不做大规模重构 |
 
 ## 主流程
 
 ```text
-Shape → Plan → Build(Spec) → Verify
-                      ↑         │
-                      └ Repair ─┘
+许愿 → 确认产品方案 → AI 研发编排（Plan→Build→测→走查→Repair）
+                         → 人类验收包 → 人自验通过 → 关版 → Deploy（另批）
 
-UI 小改（非 material）→ Polish（旁路，不新开 Spec）
+经典逐步：Shape → Plan → Build → Verify →（人关版）→ Deploy
+UI 小改（非 material）→ Polish
 Production issue → Diagnose → Incident / Repair / Plan / Blocked
 ```
 
-写代码前硬闸见 `skills/vibe-coding/references/workflow-contract.md`（已确认 Spec，或明示「开始做」，或明示 Polish 档且非 material）。
+写代码前硬闸见 `skills/vibe-coding/references/workflow-contract.md`（已确认 Spec，或明示「开始做 / 确认方案」，或明示 Polish 且非 material）。
 
 ## 安装与常用命令（Make）
 

@@ -37,10 +37,12 @@ Options:
 
 Prompt: remaining args after --, or stdin if no args.
 Always sets approval_policy=never (cannot be overridden).
+Plan: injects wish-path hard gates (no mid-flow 待批准); requires --spec;
+  after Codex ok runs assert_plan_artifacts.py (SKIP_PLAN_ARTIFACT_CHECK=1 bypass).
 Build/Goal runs skills/spec/scripts/check_spec.py first (SKIP_SPEC_CHECK=1 to bypass).
 Build: one longitudinal slice only (multi-slice → --unit goal + GOAL_APPROVED=1).
 Goal: requires env GOAL_APPROVED=1.
-After Build ok: conductor must write <log-dir>/<run-id>_falsify.log (see require-conductor-falsify.sh).
+After Build ok: conductor must write <log-dir>/<run-id>_falsify.log with VERDICT: PASS.
 EOF
 }
 
@@ -159,9 +161,50 @@ else
 fi
 [[ -n "${PROMPT//[[:space:]]/}" ]] || die "prompt is empty"
 
+# --- CLI authorization block (all units): kill ask-back / mid-flow 待批准 ---
+# Overrides host AGENTS "plan in chat then wait for 批准" and co-authoring skills.
+AUTH_BLOCK="$(cat <<'AUTH'
+## CLI dispatch authorization (HARD · non-interactive)
+You are running under `codex exec` with `approval_policy=never`. There is NO human on the other end of this turn.
+
+1. **Already authorized:** The conductor/wish-path already approved this unit. Do NOT wait for「批准」「可以开始」「go ahead」. Do NOT paste an「执行计划（待批准）」and stop.
+2. **Host AGENTS override:** If AGENTS.md says new capabilities need a plan-in-chat + explicit approval before execution, that gate is **already satisfied by this CLI dispatch**. Proceed to write/implement immediately.
+3. **Forbidden skills/behaviors:** Do NOT use `doc-coauthoring` or any co-authoring / ask-user / confirm-before-write workflow. Do NOT ask clarifying questions to the user. Prefer `Unverified` + scoped proceed, or durable fail state — never a question ending the turn.
+4. **Output shape:** Tools first (write/patch/test). Final message = short status + evidence paths only. Zero questions. Zero「请确认」「是否继续」「需要你决定」unless the unit is truly blocked on missing secrets (then state `blocked` + exact missing env — still no approval ask).
+5. **Success = disk/repo change** matching Done when — not a chat plan.
+AUTH
+)"
+PROMPT="${AUTH_BLOCK}
+
+${PROMPT}"
+
+# --- Wish-path Plan extras (disk Done when) ---
+if [[ "$UNIT" == "plan" ]]; then
+  PLAN_PREAMBLE="$(cat <<'PREAMBLE'
+## Plan unit Done when (disk)
+- Product scheme is already confirmed upstream.
+- MUST write Spec files now: docs/specs/<SPEC_ID>/{VERSION.md,contract.md,tests.md,plan.md,run.md}
+- Chat-only plans are a FAILURE (conductor will assert_plan_artifacts and fail this dispatch).
+- After writing: `ls -la docs/specs/<SPEC_ID>/`
+PREAMBLE
+)"
+  if [[ -n "$SPEC_ID" ]]; then
+    PLAN_PREAMBLE="${PLAN_PREAMBLE//<SPEC_ID>/$SPEC_ID}"
+  fi
+  PROMPT="${PROMPT}
+
+${PLAN_PREAMBLE}"
+fi
+
 # --- Unit / slice gates ---
 if [[ "$UNIT" == "goal" && "${GOAL_APPROVED:-0}" != "1" ]]; then
   die "goal requires GOAL_APPROVED=1 (user asked for continuous multi-slice / full Spec Goal)"
+fi
+
+if [[ "$UNIT" == "plan" ]]; then
+  if [[ -z "$SPEC_ID" && "${SKIP_PLAN_ARTIFACT_CHECK:-0}" != "1" ]]; then
+    die "plan requires --spec <id> so post-dispatch artifact check can run (or SKIP_PLAN_ARTIFACT_CHECK=1)"
+  fi
 fi
 
 if [[ "$UNIT" == "build" ]]; then
@@ -279,9 +322,26 @@ if [[ $STATUS -ne 0 ]]; then
   exit "$STATUS"
 fi
 
+# Plan: Codex exit 0 is not enough — Spec must be on disk (wish-path).
+if [[ "$UNIT" == "plan" ]]; then
+  ASSERT_PLAN="$PLUGIN_ROOT/skills/dispatch-codex/scripts/assert_plan_artifacts.py"
+  if [[ "${SKIP_PLAN_ARTIFACT_CHECK:-0}" == "1" ]]; then
+    echo "codex-dispatch: WARN SKIP_PLAN_ARTIFACT_CHECK=1 — maintainer-only bypass" >&2
+  else
+    [[ -f "$ASSERT_PLAN" ]] || die "assert_plan_artifacts.py not found at $ASSERT_PLAN"
+    echo "codex-dispatch: postflight assert_plan_artifacts ($SPEC_ID)" >&2
+    if ! python3 "$ASSERT_PLAN" "$CWD" "$SPEC_ID"; then
+      echo "codex-dispatch: Plan produced no Spec on disk (chat-only / 待批准) — treating as failure" >&2
+      echo "exit_status=2" >>"$META_FILE"
+      exit 2
+    fi
+  fi
+fi
+
 echo "codex-dispatch: ok; meta=$META_FILE" >&2
 if [[ "$UNIT" == "build" || "$UNIT" == "goal" ]]; then
   echo "codex-dispatch: NEXT — conductor falsify → tee to $LOG_DIR/${RUN_ID}_falsify.log" >&2
+  echo "codex-dispatch: log must contain a line: VERDICT: ${SLICE_ID:-slice} PASS" >&2
   echo "codex-dispatch: then: bash skills/dispatch-codex/scripts/require-conductor-falsify.sh --log-dir $LOG_DIR --run-id $RUN_ID" >&2
 fi
 exit 0

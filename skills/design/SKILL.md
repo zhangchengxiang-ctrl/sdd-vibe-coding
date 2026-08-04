@@ -1,10 +1,11 @@
 ---
 name: design
 description: >-
-  面向略懂技术产品经理的 Shape 专项 Skill：项目冷启动（Init/Onboard）、澄清问题与
-  首个价值切片；支持探索对话、代码库 grounding 与产品包分层。触发亦含：初始化项目、
-  接入存量、讨论产品、辩论、帮我想想、聊聊方向、拆解、deconstruct。仅在 vibe-coding
-  已路由到 Shape/冷启动，或用户显式调用时使用；不隐式接管普通产品诉求，不写业务代码。
+  面向略懂技术产品经理的 Shape 专项 Skill：项目冷启动（Init/Onboard）、澄清愿望与
+  可确认产品方案；支持探索对话、代码库 grounding 与产品包分层。触发亦含：初始化项目、
+  接入存量、讨论产品、辩论、帮我想想、聊聊方向、拆解、deconstruct。方案确认后交回
+  vibe-coding 许愿研发编排。仅在 vibe-coding 已路由到 Shape/冷启动，或用户显式调用时
+  使用；不隐式接管普通产品诉求，不写业务代码。
 ---
 
 # Design：Shape 产品诉求
@@ -34,7 +35,7 @@ description: >-
 
 ## 目标
 
-把模糊愿望塑造成可以交给 Plan 的产品切片：
+把模糊愿望塑造成**可确认的产品方案**（再交给研发自动编排或经典 Plan）：
 
 - 谁在什么情境下遇到什么问题；
 - 用户要完成的 Job 和可观察结果；
@@ -44,11 +45,12 @@ description: >-
 - 首个可交付价值切片；
 - 只需要用户决定的互斥或不可逆事项。
 
-Shape 产出：`docs/product/` 切片与理解卡。  
+Shape 产出：`docs/product/` 产品方案 / 切片与理解卡。  
 **硬门：** 本轨不创建实施 Spec、不改业务代码、不部署；技术偏好不替代产品决定。  
-**交叉硬门：** 「设计方案 / 构建产品文档 / 走查 / 应该支持… / 优化体验」**不是**写码授权；用户未明示「开始做 / 批准 Build」或 Polish 档话术（见 workflow-contract (c)）前禁止 Write/StrReplace 业务源码。  
+**交叉硬门：** 「设计方案 / 构建产品文档 / 走查 / 应该支持… / 优化体验」**不是**写码授权。  
+写码授权见 [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)：(a) 已有 Spec；(b)「开始做」**或「确认方案 / 就按这个做」**；(c) Polish。  
+许愿路径：人确认产品方案 → 交回 vibe-coding **自动研发编排**（Plan→Build→…→人类验收包），见 [`wish-delivery.md`](../vibe-coding/references/wish-delivery.md)。  
 若用户本轮明示 polish / 按 refinement 修 / 修走查 P0–P1：本 Skill **结束 Shape**，交回 vibe-coding **Polish** 档（[`change-control.md`](../vibe-coding/references/design-standards/change-control.md) §3）；material 仍留 Shape。  
-写代码前硬闸 → [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)。  
 权限 / 数据边界类诉求：进入 Plan 前先有可读的代码与 Schema 事实（见 Plan「事实映射门」）。
 
 ## 工作方式
@@ -68,8 +70,8 @@ Shape 产出：`docs/product/` 切片与理解卡。
 2. 用一张理解卡复述问题、目标、非目标和未知；
 3. 只追问会改变产品结果的 1–3 个问题；
 4. 提出有明确代价的推荐，不把可逆技术细节抛给 PM；
-5. 保存经确认的产品切片；
-6. 内部记录 `design-ready`，前台说明“产品方向已清楚，可以进入实施拆解”及启动方式。
+5. 保存经确认的产品方案/切片；
+6. 内部记录 `design-ready`，前台说明「产品方案已清楚」并**明确请求确认方案**（可回复：就按这个做 / 确认方案）。
 
 外部事实、竞品、法规或平台能力会影响设计时才联网，并记录来源与日期。
 
@@ -89,12 +91,12 @@ Shape 产出：`docs/product/` 切片与理解卡。
 只有产品结果会因选择而改变时，才追加“需要你决定”。每个问题必须给出推荐、理由、选项
 代价和可直接回复的方式，每轮最多 1–3 个。没有需要拍板的事项时，不输出空决策卡。
 
-产品切片确认后，追加“当前进展”，用普通中文说明：
+产品方案就绪后，追加“当前进展”，用普通中文说明：
 
-- 产品方向已经确认；
+- 这是建议的**产品方案**（不是实施细节）；
 - 首个可交付价值是什么；
-- 下一步是拆解实施顺序和风险；
-- 请求用户评审本阶段结论，并批准进入实施拆解。
+- 确认后 AI 将按质量条自动拆解、实现、自测与走查，最后给你一份验收用例；
+- **请确认方案**（例如回复「就按这个做」）。
 
 默认不展示 `design-ready`、Rail、In / Out、Oracle、产品真源路径或内部编号。用户要求查看
 时，将其放在卡片之后的“技术详情（可选）”中。
@@ -132,18 +134,18 @@ docs/product/modules/<slug>/
 配置/授权/分发面强制 `rule/separate-access-vs-delivery` 与 `rule/no-impl-jargon`。
 系统架构分层归 Plan。`ux.md` / `visual.md` 仅为原则索引，不作施工入口。
 
-## 交付给 Plan
+## 交付给 Plan / 研发编排
 
 Shape 结束时在内部工件保存：
 
 - 一句话问题与目标用户；
-- 已确认的首个价值切片；
+- 已确认的首个价值切片 / 产品方案；
 - In / Out；
 - 成功、关键失败与权限场景；
 - 不可破坏的产品不变量；
 - 未决项及负责人；
 - 产品真源路径；
-- 下一 Rail：`plan`。
+- 下一动作：许愿路径 = 方案确认后自动 `plan`→编排；经典路径 = 等人说切 Spec。
 
-用户前台只给理解卡、必要的决策卡、确认后的进度卡和一句明确下一步；阶段结束时请求
-用户批准进入 Plan（阶段闸门见 `workflow-contract.md`）。下一阶段再做技术拆解或编码。
+用户前台只给理解卡、必要的决策卡、**产品方案确认请求**；阶段闸门见 `workflow-contract.md`「许愿式交付」。  
+人确认方案后，由 vibe-coding 进入研发自动编排（不必再等人说 Plan）。

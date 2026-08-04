@@ -5,11 +5,11 @@
 
 ## 执行态
 
-- 状态：`ready | building | unit-testing | verifying | repairing | blocked | acceptance-passed`
+- 状态：`ready | building | unit-testing | verifying | repairing | blocked | awaiting-human-acceptance | acceptance-passed`
 - 当前模式：`build | verify | repair`
 - Owner / Workspace：
 - 最后更新：
-- 允许结束条件：`acceptance-passed | blocked | needs-authorization`
+- 允许结束条件：`awaiting-human-acceptance | acceptance-passed | blocked | needs-authorization`
 
 ### Build
 
@@ -98,15 +98,15 @@
 ## 终态
 
 - Matrix：`matrix-accounted | incomplete`
-- Acceptance：`acceptance-passed | not-passed | n/a`
-- 结论：`acceptance-passed | blocked | needs-authorization`
+- Acceptance：`awaiting-human-acceptance | acceptance-passed | not-passed | n/a`
+- 结论：`awaiting-human-acceptance | acceptance-passed | blocked | needs-authorization`
 - Workspace / Branch / PR：
 - 未完成项 / 外部阻塞：
 - 直接证据：
 - 下一步：
 
-所有适用 Test 有终态只能声明 `matrix-accounted`；只有关版条件满足才是
-`acceptance-passed`。二者都不是 Delivery Target（见 workflow-contract「状态词汇」）。
+所有适用 Test 有终态只能声明 `matrix-accounted`；工程证伪+人类验收包就绪 → `awaiting-human-acceptance`；
+人确认通过且关版条件满足 → `acceptance-passed`。均不是 Delivery Target（见 workflow-contract「状态词汇」）。
 
 ## Production Verification（适用时）
 

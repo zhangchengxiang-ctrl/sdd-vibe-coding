@@ -2,8 +2,8 @@
 name: testing
 description: >-
   面向略懂技术产品经理的 Verify 专项 Skill：按真实用户旅程执行 Spec / Version
-  或 Production 验证；亦覆盖 UX 走查 / 体验审计。先用交付卡给出可否交付的中文结论、
-  证据和限制，再维护工程证据链。仅在 vibe-coding 已路由到 Verify，或用户显式调用
+  或 Production 验证；亦覆盖 UX 走查 / 体验审计。先证伪并产出人类验收包，待人自验
+  关版；Agent Pass ≠ 关版。仅在 vibe-coding 已路由到 Verify，或用户显式调用
   本 Skill 时使用；不修改实现。
 ---
 
@@ -63,7 +63,9 @@ UI 回归定位可指向 [debug-playbook](../vibe-coding/references/design-stand
    [version-acceptance-matrix](./references/version-acceptance-matrix.md) 执行矩阵 P0；
 7. 记录命令、时间、环境、版本、观察值；Evidence 写 `kind=… · 路径`（见 evidence-contract §1.1）；
 8. 对全部 Fail 统一归因、聚类并形成一份 Repair 方案；Verify 只读实现；
-9. 给出实际 Delivery Target、下一 Rail 建议和阶段总结，并等待用户批准后才转换。
+9. **产出人类验收包**（[`human-acceptance-pack.md`](./references/human-acceptance-pack.md)）：怎么验、验什么、AI 旁证、限制；
+10. `run.md` 置 `awaiting-human-acceptance`；前台请人按包自验——**禁止**此时说可交付/可关版；
+11. 人明示「通过 / 没问题 / 关版」后：跑 `make verify-deliver`，写 `acceptance-passed`，再问是否 Deploy。
 
 UI/人工 Test 至少需要一次真实通道 V2（见 [browser-verify](./references/browser-verify.md)）。  
 **硬门：** Oracle 保持在 `tests.md`（或系列矩阵真源）；观察结果只写 `run.md`。  
@@ -72,27 +74,28 @@ UI/人工 Test 至少需要一次真实通道 V2（见 [browser-verify](./refere
 **硬门：** 暖缓存/HIT 结果不得冒充用户冷路径 Pass。  
 **硬门：** 授权/配置类须消费侧 Before→After；管理面「已生效」单独不够。  
 **硬门（钉 3）：** Verify / 系列验收默认在本轨（Cursor/指挥侧）执行；**禁止**派 Codex 做主验收或「验到可交付」。Codex 最多生成矩阵草稿，或 ≤20min、完成条件=指定命令 stdout 的窄派单。  
-**硬门（钉 1）：** 宣称 `可交付` / `acceptance-passed` 前必须 `make verify-deliver HOST=<repo> SPEC=<id>` exit 0，且 `run.md` 有 `verify-deliver: ok · <时间>`。
+**硬门（验收闸）：** 无人类验收包 → 禁止请人关版；无人确认通过 → 禁止 `acceptance-passed`。  
+**硬门（钉 1）：** 人确认后宣称 `可交付` / `acceptance-passed` 前必须 `make verify-deliver HOST=<repo> SPEC=<id>` exit 0，且 `run.md` 有 `verify-deliver: ok · <时间>`。
 
 ## 用户前台输出
 
 验收结果先输出“交付结果”，再按需展开工程矩阵。交付卡包含：
 
-- **结论**：可交付、不可交付或受阻，并用一句话说明原因；
-- **如何体验**：环境、入口、适用角色和代表性数据（**说明用**，不是派用户去发现故障）；
-- **已验证的用户结果**：每项写**操作 → 两态观察差 → 证据**；无两态差不得写「已通过」；
+- **结论**：待你验收 / 不可交付或受阻（人通过前**不要**写可关版）；并用一句话说明原因；
+- **人类验收包**：怎么验、验什么（必选，见 human-acceptance-pack）；
+- **AI 已验证（旁证）**：每项写**操作 → 两态观察差 → 证据**；无两态差不得写「已通过」；
 - **未通过或无法验证**：写用户影响、严重度和原因，不能只写内部分类；
 - **已知限制**：包括未覆盖内容；
 - **上线状态**：未上线、已上线、未知或不适用；
 - **探活执行者**：`agent`（默认）或 `blocked-needs-auth`；
-- **需要用户做什么**：默认 **`无需动作`**；仅允许：批准下一轨 / Repair、真人 SSO/个人 OAuth、生产密钥；
+- **需要用户做什么**：默认 **按验收包自验**；人通过后可批 Deploy；另允许真人 SSO/个人 OAuth、生产密钥；
 
 聊天前台默认不显示 Requirement、Test、Oracle、V0–V3、Rail、Delivery Target、
 Matrix、commit、Workspace 等工程术语。正式报告仍保存完整工程证据；用户明确要求或走查变体
 需要分级发现时，在交付卡之后展开“技术详情（可选）”或 P0/P1/P2 列表。  
 若确有待决，交付卡后可单列一句「下一步」——**禁止**把可自跑的打开/硬刷/确认是否正常写成下一步。
 
-**话术硬门：** Build 结束只说「实现完成」；「可交付」仅在本轨证伪通过后使用。  
+**话术硬门：** Build 结束只说「实现完成」；「可交付 / 可关版」仅在**人按包确认通过**且钉 1 通过后使用。  
 **话术硬门：** 禁止「有条件可交付」掩盖未证 P0；未证 = Fail 或 Blocked。  
 **关版硬门：** 对用户说可交付前跑通：`make verify-deliver HOST=<repo> SPEC=<id>`（写入 `verify-deliver: ok · <时间>`；缺戳则 `check_spec` fail）。
 
@@ -105,11 +108,12 @@ Matrix、commit、Workspace 等工程术语。正式报告仍保存完整工程�
 
 ## 声明
 
-所有适用 Test 有终态 → `matrix-accounted`；关版条件全部满足 → `acceptance-passed`
-（二者都不是 Delivery Target，见 workflow-contract「状态词汇」）。
+所有适用 Test 有终态 → `matrix-accounted`；人类验收包已交 → `awaiting-human-acceptance`；
+人确认通过且关版条件满足 → `acceptance-passed`
+（均不是 Delivery Target，见 workflow-contract「状态词汇」）。
 正式结果写入当前 Spec 的 `run.md`（结构见 scaffold 模板；说明见
 [Validation Report](./references/validation-report.md)），同时写通过证据、失败、
-Blocked、未覆盖项和限制。报告先写 PM 验收摘要（关版结论），再写工程矩阵。
+Blocked、未覆盖项和限制。报告先写 **人类验收包 + PM 摘要**，再写工程矩阵。
 
 长期产品回归（可选）合同见
 [product-regression](./references/product-regression.md)；启用后维护

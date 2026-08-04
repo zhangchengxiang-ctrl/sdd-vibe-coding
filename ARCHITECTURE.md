@@ -23,11 +23,13 @@
 
 合同层（跨仓唯一真源）
   skills/vibe-coding/references/workflow-contract.md
+  skills/vibe-coding/references/wish-delivery.md   # 许愿式高质量交付（对人北极星）
   skills/vibe-coding/references/evidence-contract.md
   skills/vibe-coding/references/workspace-contract.md
   skills/vibe-coding/references/design-standards/   # LOAD-MAP·tokens·pages·overlays·copy·anchor…
   skills/design/references/product-package.md
   skills/testing/references/product-regression.md
+  skills/testing/references/human-acceptance-pack.md  # 人类验收包
 
 执行层（按 Rail）
   skills/design
@@ -35,7 +37,7 @@
   skills/testing
   skills/deploy          # 发布 P0–P6（证据→方案→批准→执行→冒烟关版）
   skills/debug
-  skills/dispatch-codex   # 可选：Cursor/Claude 指挥 → Codex 施工
+  skills/dispatch-codex   # Context Pack + Codex 派单 / wish-orchestrate
 
 宿主脚手架层（可被 scaffold 复制）
   templates/AGENTS.md          # 唯一宿主项目事实面
@@ -51,11 +53,13 @@
 
 ## 真源边界
 
-- 流程、状态词、完成声明、Harness 适配（含可选指挥施工）、证据分级：只改 `workflow-contract.md`
+- 流程、状态词、完成声明、Harness 适配（含可选指挥施工）、**许愿式闸门**：只改 `workflow-contract.md`
+  （对人北极星叙事：`wish-delivery.md`；勿与闸门双写冲突时以 workflow-contract 为准）
 - 验证层次、**Evidence Kind**、行为优先、Deliver Gate、Fail 分类：只改 `evidence-contract.md`
   （证伪执行：`skills/testing/references/falsify-checklist.md`；弱 Oracle：`skills/spec/references/oracle-strength.md`；
   **关版三钉**（verify-deliver 戳 / Oracle 冻结 / maker≠grader）：`verification-loop.md`；
-  系列全角色矩阵：`skills/testing/references/version-acceptance-matrix.md`）
+  系列全角色矩阵：`skills/testing/references/version-acceptance-matrix.md`；
+  **人类验收包**：`skills/testing/references/human-acceptance-pack.md`）
 - 发布阶段 P0–P6、定级裁剪、方案模板：只改 `skills/deploy/`（关版硬门仍在 evidence-contract + verification-loop 钉 1）
 - Workspace / Worktree / Claim：只改 `workspace-contract.md`
 - 产品包章节与剪枝：只改 `skills/design/references/product-package.md`
@@ -64,7 +68,10 @@
 - 产品回归启用条件与分层：只改 `skills/testing/references/product-regression.md`
 - Build 期自动化测试通则（含红绿证据）：只改 `skills/vibe-coding/references/automated-tests.md`
 - 事实映射门、纵向切片、测试合同门、Plan 流程、**check_spec 机检**（含 verify-deliver 戳 / oracle-freeze）：只改 `skills/spec/`（含 `scripts/check_spec.py`）
-- Cursor/Claude → Codex 派单与指挥侧验收（禁 Codex 主验收）：只改 `skills/dispatch-codex/SKILL.md`（CLI 预检同目录 `scripts/`）
+- Cursor/Claude → Codex 派单与指挥侧验收（禁 Codex 主验收）：只改 `skills/dispatch-codex/`
+  （`SKILL.md`；Context Pack：`references/context-pack.md` + `scripts/build_context_pack.py`；
+  许愿逐片：`scripts/wish-orchestrate.sh`；`codex-dispatch.sh`；
+  **禁反问授权块：** `references/cli-authorization.md`）
 - 单个 Rail 的前台话术与执行约束：改对应 `skills/<rail>/SKILL.md`
 - 宿主填写槽位与文档模板：改 `templates/docs/**` 与 `templates/AGENTS.md`
 - 结构校验规则：改本机 `evals/tools/check_docs.py`（公开仓无此目录）
@@ -87,7 +94,7 @@
 | 调整 Spec 机检 | `skills/spec/scripts/check_spec.py` | `verify-deliver.sh`、`dispatch-codex` 预检、Makefile |
 | 调整关版三钉 | `verification-loop.md` | `check_spec`、`verify-deliver.sh`、testing/deploy/vibe/dispatch |
 | 调整测试合同结构 | `tests.md` 模板 + `spec/SKILL.md` | `check_docs.py`, `testing/SKILL.md` |
-| 调整指挥施工派单/验收 | `dispatch-codex/SKILL.md` + workflow「指挥施工」 | `vibe-coding/SKILL.md`, `verify.sh` |
+| 调整指挥施工 / Context Pack / 许愿逐片 | `dispatch-codex/` + workflow 许愿节 | `vibe-coding/SKILL.md`, Makefile |
 | 调整发布生命周期 | `skills/deploy/` | `evidence-contract` Deliver Gate、`run.md` 模板、`vibe-coding` 路由 |
 
 ## Spec 文件名迁移（历史对照）
