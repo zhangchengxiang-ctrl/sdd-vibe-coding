@@ -67,7 +67,8 @@ Shape → Plan → Build(Spec) → Verify
 ## Spec 布局与读序
 
 ```text
-docs/specs/<id>/
+docs/specs/<id>/              # 施工中
+docs/specs/archive/<id>/      # 人验关版后搬入；勿重开
 ├── VERSION.md
 ├── contract.md   # WHAT
 ├── tests.md      # TEST

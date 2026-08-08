@@ -12,7 +12,8 @@
 | **目标环境** | |
 
 状态只使用：
-`draft | ready | in-progress | verifying | blocked | done | archived | cancelled`。
+`draft | ready | in-progress | verifying | blocked | done | archived | cancelled`。  
+关版后：`archived` **并**将目录搬到 `docs/specs/archive/<id>/`（勿只改状态位留在施工队列）。
 
 Delivery Target 只使用：
 `code-ready | dev-effective | production-delivered`（见插件 workflow-contract「状态词汇」）。

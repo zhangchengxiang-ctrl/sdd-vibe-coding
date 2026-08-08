@@ -992,32 +992,44 @@ def check_agents_readiness(host: Path, report: Report) -> None:
             report.warn("AGENTS.md: 常用命令 block has no real commands (empty slots)")
 
 
+SKIP_SPEC_DIR_NAMES = {"_template", "archive"}
+
+
+def resolve_spec_dir(specs_root: Path, spec_arg: str) -> Path:
+    """Resolve id or path; prefer active specs/<id>, then specs/archive/<id>."""
+    p = Path(spec_arg)
+    if p.is_absolute():
+        return p.resolve()
+    cand = specs_root / spec_arg
+    if cand.is_dir() and spec_arg not in SKIP_SPEC_DIR_NAMES:
+        return cand.resolve()
+    archived = specs_root / "archive" / Path(spec_arg).name
+    if archived.is_dir():
+        return archived.resolve()
+    cwd_cand = Path.cwd() / spec_arg
+    if cwd_cand.is_dir():
+        return cwd_cand.resolve()
+    return p.resolve()
+
+
 def find_spec_dirs(docs: Path, spec_arg: str | None, all_specs: bool) -> list[Path]:
     specs_root = docs / "specs"
     if spec_arg:
-        p = Path(spec_arg)
-        if not p.is_absolute():
-            cand = specs_root / spec_arg
-            if cand.is_dir():
-                return [cand.resolve()]
-            cand2 = Path.cwd() / spec_arg
-            if cand2.is_dir():
-                return [cand2.resolve()]
-            return [p.resolve()]
-        return [p.resolve()]
+        return [resolve_spec_dir(specs_root, spec_arg)]
     if not specs_root.is_dir():
         return []
     dirs = sorted(
         d
         for d in specs_root.iterdir()
-        if d.is_dir() and not d.name.startswith(".")
+        if d.is_dir()
+        and not d.name.startswith(".")
+        and d.name not in SKIP_SPEC_DIR_NAMES
     )
     if all_specs:
-        return [d for d in dirs if d.name != "_template"]
-    # default: all non-template; if none, check template structure-only
-    real = [d for d in dirs if d.name != "_template"]
-    if real:
-        return real
+        return dirs
+    # default: active (non-template, non-archive); if none, check template structure-only
+    if dirs:
+        return dirs
     tmpl = specs_root / "_template"
     return [tmpl] if tmpl.is_dir() else []
 
@@ -1086,7 +1098,7 @@ def main() -> int:
     parser.add_argument(
         "spec",
         nargs="?",
-        help="Spec id under <SDD root>/specs/ or path to Spec dir",
+        help="Spec id under <SDD root>/specs/ or specs/archive/, or path to Spec dir",
     )
     parser.add_argument("--all", action="store_true", help="Check all non-template Specs")
     parser.add_argument(

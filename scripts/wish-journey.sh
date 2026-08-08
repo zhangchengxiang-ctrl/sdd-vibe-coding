@@ -171,8 +171,12 @@ case "$ACTION" in
           fi
         fi
         # Also allow if verify-deliver stamp exists in run.md — light check
-        if [[ -f "$ROOT/docs/specs/$SPEC/run.md" ]] \
-          && grep -q 'verify-deliver: ok' "$ROOT/docs/specs/$SPEC/run.md" 2>/dev/null \
+        RUN_MD=""
+        for cand in "$ROOT/docs/specs/$SPEC/run.md" "$ROOT/docs/specs/archive/$SPEC/run.md"; do
+          if [[ -f "$cand" ]]; then RUN_MD="$cand"; break; fi
+        done
+        if [[ -n "$RUN_MD" ]] \
+          && grep -q 'verify-deliver: ok' "$RUN_MD" 2>/dev/null \
           && [[ "${PHASE:-}" == "awaiting-human-acceptance" || "${PHASE:-}" == "acceptance-passed" || "${PHASE:-}" == "verifying" ]]; then
           echo "wish-journey: assert claim-deliver soft-ok (verify-deliver present; still need human for acceptance-passed)"
           exit 0

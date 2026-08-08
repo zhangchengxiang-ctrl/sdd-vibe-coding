@@ -12,7 +12,8 @@
 
 ```text
 <SDD docs root>/product/
-<SDD docs root>/specs/<id>/
+<SDD docs root>/specs/<id>/           # 施工中
+<SDD docs root>/specs/archive/<id>/   # 人验关版后搬入
 …
 ```
 

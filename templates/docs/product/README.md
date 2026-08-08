@@ -14,7 +14,8 @@
 | `gap-register.md` | 蓝图与现状之间的差距 |
 | `regression-register.md` | 维护态关键用户旅程（可选；合同见 skill `testing` → `product-regression`） |
 | `../planning/roadmap.md` | 排期 |
-| `../specs/<id>/` | 当前版本实施合同 |
+| `../specs/<id>/` | 施工中实施合同 |
+| `../specs/archive/<id>/` | 关版后归档（勿重开） |
 
 ## 能力地图
 
@@ -32,7 +33,9 @@ demand-pool（愿望）──Shape 确认方案──► design-ready
         │                                    │
         │                            用户批准进入 Plan
         │                                    ▼
-        │                         docs/specs/<id>/（实施合同）
+        │                         docs/specs/<id>/（实施中）
+        │                                    │
+        │                         人验关版 → docs/specs/archive/<id>/
         │                                    │
 gap-register（蓝图 vs 现状差距）──关闭──► gap-closed（审计）
 ```
@@ -43,5 +46,6 @@ gap-register（蓝图 vs 现状差距）──关闭──► gap-closed（审�
 | `gap-register.md` | 蓝图与代码/运行现状不一致 | 差距消除或明确不做 → `gap-closed.md` |
 | `gap-closed.md` | 从 gap-register 关闭的条目 | 归档审计 |
 
-新愿望进 demand-pool；实施与验收以 `docs/specs/<id>/` 为真源。产品决定变化时更新蓝图，
+新愿望进 demand-pool；实施与验收以 `docs/specs/<id>/`（施工中）或
+`docs/specs/archive/<id>/`（已关版）为真源。产品决定变化时更新蓝图，
 技术实现变化时更新 Spec 或代码。

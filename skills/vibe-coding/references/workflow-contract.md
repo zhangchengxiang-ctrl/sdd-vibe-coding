@@ -194,7 +194,7 @@ trivial 豁免（笔误 / 单点 CSS / 已知单控件 bug）见 [`vibe-coding/S
 | 「派 Codex / 用 Codex 做」 | Cursor/Claude：指挥施工（Skill `dispatch-codex`）；一次一单元；sol×medium/high |
 | 「完整实施 / 不要中途停 / 把整份 Spec 做完」 | 按切片顺序连续推进；Codex：立即创建持久 Goal |
 | 「验收一下」 | Agent Verify + **人类验收包**；先证伪；禁纯 smoke；**不**替人关版 |
-| 「通过了 / 没问题 / 可以关版」 | 人验收闸通过 → `acceptance-passed`；询问是否 Deploy |
+| 「通过了 / 没问题 / 可以关版」 | 人验收闸通过 → `acceptance-passed`；`VERSION=archived`；**搬到** `docs/specs/archive/<id>/`；更新索引 / gap-closed 指针；询问是否 Deploy |
 | 「发布 / 上线 / 部署」 | Deploy：P2+P3 先于执行；须人验已过（或明文豁免）；P6 目标环境冒烟；health ≠ 交付 |
 
 插件已默认覆盖：产品方案、事实映射、纵向切片、Verified 才进 Lock、Given/When/Then、证伪与走查、
@@ -322,6 +322,22 @@ Plan 阶段内：调查 → **直接落盘** `VERSION`/`contract`/`tests`/`plan`
 ### 1. Version 状态（`VERSION.md`）
 
 `draft | ready | in-progress | verifying | blocked | done | archived | cancelled`
+
+| 状态 | 目录 | 含义 |
+|---|---|---|
+| 施工态（`draft`…`done`） | `docs/specs/<id>/` | 施工队列；`check_spec --all` 只扫这里 |
+| `archived` | `docs/specs/archive/<id>/` | 人验关版后**必须搬入**；勿只改状态位留在原地；勿重开 |
+| `cancelled` | `docs/specs/archive/<id>/` 或删除（宿主自定） | 明确不做 |
+
+**关版归档（人明示通过/关版后，同回合必做）：**
+
+1. `make verify-deliver` + `run.md` → `acceptance-passed`
+2. `VERSION.md` → `archived`（变更记录写搬迁）
+3. `git mv docs/specs/<id> docs/specs/archive/<id>`（无 git 时普通 `mv`）
+4. 更新 `specs/README`（若有）、gap-closed / demand-pool 指针
+5. 询问是否 Deploy（**不**自动上生产）
+
+`done` 仅作同回合瞬态（人验过、尚未搬出）；不得隔会话留在 `docs/specs/<id>/`。
 
 ### 2. Delivery Target（`VERSION.md` / `run.md` 声明目标）
 

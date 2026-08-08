@@ -7,11 +7,12 @@
 ## SDD
 
 - SDD docs root: docs
-- **入口：** 产品 / 编码 / 验收 / 发布意图 → 先加载插件 skill **`vibe-coding`**，再读本文件。
+- **入口：** 仅显式 SDD 意图（`/vibe-coding`、许愿、确认方案、切 Spec、关版、polish、冷启动、人类验收、生产发布、派 Codex 等）→ 先加载插件 skill **`vibe-coding`**，再读本文件。普通调研 / 排障 / 实现问答 **不要**因此加载。
 - 未明示「开始做 / 实现 / 按这个来 / 构建 / 就按这个做 / 确认方案」或「polish / 抛光 / 前端小改 / 按 refinement 修 / 修本批走查」、且无已确认 `<SDD docs root>/specs/<id>/` → 只写 `<SDD docs root>/product/`，**不改业务代码**。Polish 仅覆盖非 material UI；material 仍须 Shape/Spec。
 - **许愿路径：** 确认方案后 Agent 编排至人类验收包（片级 Pack+Codex+结构化证伪）；**关版主权在人**。**Build ≠ Deploy**——仅「批准 Build / 确认方案 / 关版」**不得**上生产；生产须 Deploy（P2+P3 → 本轮 P4 → P5 → P6）。
 - 无 `AGENTS.md` / SDD 文档树时先跑插件 `scripts/scaffold.sh`；scaffold **不算**编码许可。
 - 技能里写的 `docs/product`、`docs/specs` 均相对 **SDD docs root**（默认 `docs`）。
+- **关版归档：** 人验通过后 `VERSION=archived`，目录搬到 `<SDD docs root>/specs/archive/<id>/`；`specs/<id>/` 只放施工中。
 - 关键技术判断未经证据 → `Unverified`；仅 `Verified` 进 P0 / Lock / 可实施宣称。
 - **Codex：** Cursor/Claude 说「派 Codex」→ Skill `dispatch-codex`（`codex-dispatch.sh` / `wish-orchestrate.sh`）。**硬门：** 不经 MCP；一次一完成单元；证伪见 `falsify-attestation.md`。CLI 派发已授权执行，施工侧不得再等人批计划。
 - 本仓命令、环境、单向门以下文为准。

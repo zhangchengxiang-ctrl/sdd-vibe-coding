@@ -38,5 +38,5 @@
 | 人说 | Agent |
 |------|--------|
 | 某条不过 / 这里别扭 | 记入 Fail；非 material → Polish；material → 补方案或 Spec 再修；再给更新包 |
-| 通过 / 没问题 / 可以关版 | 写 `acceptance-passed`；询问是否进入发布（Deploy） |
+| 通过 / 没问题 / 可以关版 | 写 `acceptance-passed`；`VERSION=archived`；搬到 `docs/specs/archive/<id>/`；询问是否进入发布（Deploy） |
 | 先上线 / 发布 | 仅在人验通过（或人明文豁免并担责）后进 Deploy |
