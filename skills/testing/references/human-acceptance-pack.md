@@ -29,7 +29,7 @@
 **禁止：** 请人再执行一遍 Agent 刚 exit 0 的同一条 falsify / 单测命令。  
 **禁止：** 无 URL 时写「逐步操作、亲自点验」。
 
-机器关版同回合：`run.md` → `acceptance-passed`；`VERSION=archived`；搬入 `docs/specs/archive/<id>/`；询问是否 Deploy（**不**自动上生产）。
+机器关版同回合：`run.md` → `acceptance-passed`；`make close-spec` 收口（状态+搬迁一条命令）；询问是否 Deploy（**不**自动上生产）。
 
 ## 人类验收包（有 UI / 人判断）
 
@@ -63,6 +63,6 @@
 | 人说 | Agent |
 |------|--------|
 | 某条不过 / 这里别扭 | 记入 Fail；非 material → Polish；material → 补方案或 Spec 再修；再给更新包 |
-| 通过 / 没问题 / 可以关版（有 UI / 人判断） | 写 `acceptance-passed`；归档；询问是否 Deploy |
+| 通过 / 没问题 / 关版 / 归档（有 UI / 人判断） | 写 `acceptance-passed`；`make close-spec`（禁反问）；询问是否 Deploy |
 | 无 UI 机器关版后未反对 | 已是 `acceptance-passed`；只问是否 Deploy |
 | 先上线 / 发布 | 仅在关版后（或人明文豁免并担责）进 Deploy |

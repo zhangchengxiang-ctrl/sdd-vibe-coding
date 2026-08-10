@@ -2,16 +2,17 @@
 name: dispatch-codex
 description: >-
   Cursor/Claude 指挥侧把完成单元派给 Codex CLI（gpt-5.6-sol × medium/high）。
-  仅在用户明示「派 Codex / 用 Codex 做」，或 vibe-coding 许愿编排已进入
-  Build 派单时使用。须 Context Pack；一次一个 D（272K 打包，可含多个 A）。
-  禁止因普通实现/构建/改文档自动加载。通道：codex-dispatch.sh / wish-orchestrate.sh。
+  vibe-coding Build/Repair 轨一律经本 Skill 派发——许愿「确认方案」与经典
+  「开始做 / 实现 / Build S1」同样命中；用户明示「派 Codex」亦触发。
+  须 Context Pack；一次一个 D（272K 打包，可含多个 A）。
+  禁止因改文档 / check_spec / 非 SDD 日常请求加载。通道：codex-dispatch.sh / wish-orchestrate.sh。
 disable-model-invocation: true
 ---
 
 # Dispatch Codex：指挥施工
 
 本 Skill 只跑在 **Cursor / Claude Code** 指挥侧。先读宿主 `AGENTS.md` 与
-[`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)「指挥施工 Harness」、
+[`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)「施工通道」、
 [`dispatch-units.md`](./references/dispatch-units.md)、
 [`context-pack.md`](./references/context-pack.md)。
 
@@ -28,13 +29,12 @@ disable-model-invocation: true
 
 | 用 | 指挥侧自做 |
 |---|---|
-| 用户明示派 Codex / 用 Codex 施工 | 纯小改 / Polish（非 material）且用户未要求 Codex |
-| **许愿路径方案确认后的 Build D**（硬门：须打包 + Codex + Context Pack） | Shape / 产品拍板 / 改文档 / `check_spec` / 锁决策 / **验收对话** |
+| **vibe-coding Build/Repair 轨的每个 D**（许愿或经典「开始做」；硬门：打包 + Codex + Context Pack） | Polish / trivial（非 material）；Repair 小缺口（≤2 文件）；用户明文「你自己写」 |
+| 用户明示派 Codex / 用 Codex 施工 | Shape / 产品拍板 / 改文档 / `check_spec` / 锁决策 / **验收对话** |
 | 已批准有界单元，用 Sol 离场施工 | 已在 Codex 会话里（走纯 Codex Harness） |
-| 指挥侧 PATH 上有 `codex` CLI | 无 Oracle 的 Build（先 Plan） |
-| 矩阵/剧本**草稿**（非关版） | **Verify / 系列验收 / 「验到可交付」**（钉 3：禁 Codex 主验收） |
+| 矩阵/剧本**草稿**（非关版） | 无 Oracle 的 Build（先 Plan）；**Verify / 系列验收**（钉 3：禁 Codex 主验收） |
 
-**许愿研发编排硬门（Cursor/Claude）：** Spec 已落盘后，每个 **D** 的 Build **必须**经  
+**施工通道硬门（Cursor/Claude，真源 workflow-contract「施工通道」）：** Spec 已落盘后，每个 **D** 的 Build **必须**经  
 `wish-orchestrate.sh` 或「`pack_dispatch_units.py` → `build_context_pack.py` → `codex-dispatch.sh --unit build`」。  
 禁止指挥侧在同一长会话里自己连做多 D 实现来「代替」Codex。一聊一个 edit-wave。  
 无 `codex` CLI → `blocked`，对人说明，勿假装已编排。

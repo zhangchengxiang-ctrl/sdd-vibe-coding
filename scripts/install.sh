@@ -240,26 +240,11 @@ link_cursor_user_rules() {
   done
   shopt -u nullglob
 
-  # Migrate pre-plugin user rule: keep name, point readers at shipped sdd-codex-cli.
+  # Remove pre-plugin user rule superseded by shipped sdd-codex-cli.mdc.
   local legacy="${user_rules}/codex-mcp.mdc"
   if [[ -e "$legacy" || -L "$legacy" ]]; then
-    if [[ -L "$legacy" ]]; then
-      # If someone already symlinked elsewhere, leave it.
-      :
-    else
-      cat >"$legacy" <<'EOF'
----
-description: Deprecated stub — Codex CLI hard gate is sdd-codex-cli.mdc (plugin install)
-alwaysApply: true
----
-
-# Deprecated: codex-mcp.mdc
-
-Codex 派发硬门已迁到插件投影 **`sdd-codex-cli.mdc`**（`make install-cursor`）。  
-本文件仅作兼容占位；以 `sdd-codex-cli.mdc` 为准。禁止 Codex MCP。
-EOF
-      echo "  migrated ~/.cursor/rules/codex-mcp.mdc → stub (see sdd-codex-cli.mdc)"
-    fi
+    rm -f "$legacy"
+    echo "  removed deprecated ~/.cursor/rules/codex-mcp.mdc (superseded by sdd-codex-cli.mdc)"
   fi
 }
 

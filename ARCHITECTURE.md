@@ -53,7 +53,7 @@
 
 ## 真源边界
 
-- 流程、状态词、完成声明、Harness 适配（含可选指挥施工）、**许愿式闸门**：只改 `workflow-contract.md`
+- 流程、状态词、完成声明、**施工通道**（指挥侧 Build = 派发）、**许愿式闸门**：只改 `workflow-contract.md`
   （对人北极星叙事：`wish-delivery.md`；勿与闸门双写冲突时以 workflow-contract 为准）
 - 验证层次、**Evidence Kind**、行为优先、Deliver Gate、Fail 分类：只改 `evidence-contract.md`
   （证伪执行：`skills/testing/references/falsify-checklist.md`；弱 Oracle：`skills/spec/references/oracle-strength.md`；
@@ -81,7 +81,8 @@
 - 单个 Rail 的前台话术与执行约束：改对应 `skills/<rail>/SKILL.md`
 - 宿主填写槽位与文档模板：改 `templates/docs/**` 与 `templates/AGENTS.md`
 - 结构校验规则：改本机 `evals/tools/check_docs.py`（公开仓无此目录）
-- 关版脚本：`scripts/verify-deliver.sh`（`make verify-deliver`）
+- 关版脚本：`scripts/verify-deliver.sh`（`make verify-deliver`）；
+  **关版收口一条命令：** `scripts/close-spec.sh`（`make close-spec`：戳 → `archived` → 搬迁 → journey）
 
 `templates/docs` 只保留最小落盘结构并链接合同真源；合同正文在 skills。
 

@@ -32,22 +32,15 @@
 
 取得方案确认后，Agent **不必再等人**说 Plan / Build / 验收，连续执行质量条至关版分叉——**不含 Deploy**：
 
-1. Plan 落盘（事实映射、纵向切片 A、强 Oracle、`check_spec`）— 可指挥侧自做或派 Codex Plan；  
-   **许愿路径禁止中途「待批准」**；`codex-dispatch --unit plan --spec` 成功后须磁盘五件套（`assert_plan_artifacts`）  
-2. **Build（Cursor/Claude 硬门）：** 先 `pack_dispatch_units.py` 把 A 打成 D（272K），再  
-   `build_context_pack.py` → `codex-dispatch.sh --unit build`  
-   （或 `wish-orchestrate.sh --spec …`）。**一次 exec = 一个 D**（D 可含多个 A）。  
-   禁止指挥侧同会话自己连做多 D 实现。Pack / 窗口 / 并行：[`dispatch-units.md`](../../dispatch-codex/references/dispatch-units.md)。  
-3. **edit-wave** 后指挥侧跑 **verify-wave** 结构化证伪（钉 3），见
-   [`falsify-attestation.md`](../../dispatch-codex/references/falsify-attestation.md)。  
-   falsify **不得**挡住下一个编辑锁不冲突、DAG 无边的 edit-wave。  
-4. 全部 D 工程侧收口后：Agent Verify → 按 surface / oracle_kind 出**证据卡或人类验收包**  
-5. Fail → 统一 Repair（**fresh exec**，禁止 compact 线程续跑）→ 回验  
+1. Plan 落盘（事实映射、纵向切片 A、强 Oracle、`check_spec`）— 指挥侧自做或派 Codex Plan；  
+   **禁止中途「待批准」**；Codex Plan 成功后须磁盘五件套（`assert_plan_artifacts`）  
+2. Build / Repair：按上方「施工通道」派发；edit-wave 后指挥侧跑 **verify-wave** 结构化证伪
+   （[`falsify-attestation.md`](../../dispatch-codex/references/falsify-attestation.md)）；
+   falsify 不得挡住编辑锁不冲突、DAG 无边的下一 edit-wave  
+3. 全部 D 工程侧收口后：Agent Verify → 按 surface / oracle_kind 出**证据卡或人类验收包**  
+4. Fail → 统一 Repair（**fresh exec**）→ 回验  
 
-> **机检范围：** 打包→edit-wave Build→verify-wave 证伪→下一波。Plan / Verify / 关版分叉由指挥侧调度；**不含 Deploy**。  
-> **断路器：** 多 Spec 或预估多个 D → 先出 DAG+波次；禁止单聊默默 for-loop。改文档 / `check_spec` / 锁决策 → 指挥侧自做，禁止因此派 Codex。
-
-无 `codex` CLI → 标 `blocked`（许愿 Build 编排不可用），不得假装已隔离上下文。
+> **断路器：** 多 Spec 或预估多个 D → 先出 DAG+波次；禁止单聊默默 for-loop。
 
 暂停仅限：产品互斥、不可逆、真实外部阻塞、Verified 事实与已确认方案冲突。  
 **研发自动段不得**再插入「请批准 Plan/Build」类人闸（与方案闸、验收闸区分）。
@@ -55,7 +48,7 @@
 ## 交付语义
 
 1. 先确认产品方案（许愿路径）或 Spec 范围（经典路径），以及验收条件、风险边界与代码事实（含入口事实映射）。
-2. `Build` 按宿主能力完成实现：见下方「Harness 适配」。结束条件是当前完成单元的行为验收。
+2. `Build` 按下方「施工通道」完成实现（指挥侧 = 派发）。结束条件是当前完成单元的行为验收。
 3. 实现完成后才运行一次完整的**单元测试批次**。该批次开始到结果收齐期间，冻结改码。
 4. `Verify` 再统一运行适用的集成、场景、端到端及真实环境探针，收齐所有失败，并产出**人类验收包**。
 5. 有实现失败时先写一份按根因分组的统一 Repair 方案；随后 `Repair` 集中修改，完成后从完整
@@ -63,53 +56,29 @@
 6. 只有达到当前完成单元的验收、所有剩余工作被真实外部条件阻塞、或下一步需要不可逆授权
   （含**请人按包验收**）时才结束。
 
-## Harness 适配（完成单元）
+## 施工通道（Build / Repair 谁动手 · 唯一真源）
 
-> 产品语义不变：Spec 仍是合同边界。变的是「一次 agent 回合允许承诺并交付到哪」。  
-> **默认（全宿主）：** 一次 Codex 只承诺 **一个 D（派发单元）**；对人仍按 A（`T-xxx`）记账。  
-> D 由窗口打包：同 write-set 且估峰 ≤180K 的多个 A **合成一次 exec**。超窗拆 D，禁止 Goal 硬撑。
+> 产品语义不变：Spec 仍是合同边界。本节只定义「谁动手」。
 
-| 宿主 | Build 完成单元（默认） | 多 A / 整份 Spec |
-|---|---|---|
-| Cursor / Claude Code | 调度 D：打包 + edit-wave + verify-wave | 一聊最多一个 edit-wave；下一波新开 |
-| **Codex** | **一个 D / 一次 exec** | 仅当该 D 已估过能装进 180K；禁止无预算长 Goal |
+| 宿主 | 施工方式 |
+|---|---|
+| Cursor / Claude Code（指挥侧） | **派发**：打包 D → `codex-dispatch.sh` / `wish-orchestrate.sh`；一聊一个 edit-wave |
+| Codex 会话 | 自己实现当前 D；**一次 exec = 一个 D**（估峰 >180K → 拆 D / 回 Plan，禁止 compact 续跑） |
 
-### Codex 强制规则
+**本节不分许愿 / 经典路径。** 用户说「开始做 / 实现 / Build S1」与「确认方案」一样，
+指挥侧 Build 都走派发；「派 Codex」话术只是显式提醒，**不是**派发的前置条件。
 
-1. **窗口优先**：一次 exec 只做一个已打包的 D；估峰 >180K → 拆 D / 回 Plan，禁止 compact 续跑。
-2. **「把这一份做完」**：打包成能装进 272K 的一个或多个 D，按 edit-wave 推进；**不是**无预算 Goal。
-3. **收口条件**：结束回复须对应该 D 内 A 的行为证据；未达则 fresh exec Repair。
-4. **阻塞判定**：仅真实外部条件可标 Blocked；见下方「证据分级」。
+**指挥侧例外（仅以下三类可自己写业务码）：**
 
-### 指挥施工 Harness（可选 · Cursor / Claude → Codex）
+1. Polish / trivial（硬闸 (c)，非 material）；
+2. Verify 后 Repair 的小缺口（改动面 ≤2 文件且不新增行为面）；
+3. 用户本轮明文「你自己写 / 不用 Codex」。
 
-> **定位：** 指挥侧（Cursor / Claude Code）做人机交互、产品拍板与验收；
-> 施工侧 Codex 用 **`gpt-5.6-sol` × medium/high** 跑有界完成单元。
-> 执行细则见 Skill `dispatch-codex`。产品语义（Spec / 纵向切片 / Oracle）不变。
-
-**触发（指挥侧用户明示其一即可）：**
-
-- 派 Codex / 用 Codex 做 / 让 Codex 施工 / 省成本用 Codex 跑
-
-**未触发时：** 当前宿主按上表自行完成。复杂 Plan 默认指挥侧自做。
-
-**规则：**
-
-1. **一次一个 D**：Plan（整份 Spec 落盘）或 Build **一个派发单元**（可含多个 A 切片）。
-2. **薄派单**：只含 cwd、DISPATCH_ID / SLICE_IDS、allowlist、完成定义指针（`T-xxx`）、**model/effort**、**approval-policy**、**sandbox**。质量条由施工侧已装插件默认执行。
-3. **模型**：Plan / Build / Goal 用 `gpt-5.6-sol`，effort 为 `medium`（默认）或 `high`（加码）。
-4. **审批**：CLI 派单用 `approval_policy=never`（`codex-dispatch.sh` 写死）。
-5. **沙箱**：Plan 用 `workspace-write`；Build/Goal 默认 `danger-full-access`。
-6. **Oracle 齐才派 Build**：该片须有可观察的 success + failure/permission（`tests.md`）；否则先补 Plan。
-7. **maker ≠ grader**：指挥侧对照仓库产物验收，并**亲自跑 ≥1 条证伪命令**（或复核其输出），不只读施工侧 `run.md`。Plan 通过条件见 `dispatch-codex` 验收清单（须有 `contract.md` 五件套）。超时后按仓库结案。  
-   **禁止**派 Codex 做 Verify 主验收 / 「验到可交付」（见 [verification-loop](./verification-loop.md) 钉 3）。
-8. **墙钟上限**：Plan ~15min / Build 单 D ~20min（脚本默认）；超时 exit 124 → 验收仓库。墙钟 ≠ token 轴。
-9. **失败打回**：经 CLI **fresh exec** 再派（可升 high）或指挥侧自做；compact → 失败。
-10. **多 A**：先打包再波次；Goal 仅当该 D 已估过 ≤180K。禁止无窗口预算的 60min Goal。
-11. **工具路径**：`skills/dispatch-codex/scripts/codex-dispatch.sh`（或 `make codex-dispatch`）。包装缺失时裸 `codex exec`（自带 timeout + never）。皆失败 → 对人说明 Blocked。  
-    **硬门：** 派发只经该 CLI；不经 `user-codex` / `CallMcpTool`。模型仅 `gpt-5.6-sol` × medium|high。
-
-**对人前台：** 只说目标、进展、证据、要你决定；可简说「复杂活用 Codex Sol」。不暴露 dispatch 内部词，除非用户追问。
+改文档 / `check_spec` / 锁决策 / 验收对话 → 指挥侧自做，禁止因此派 Codex。  
+Verify 主验收禁派（maker ≠ grader，见 [verification-loop](./verification-loop.md) 钉 3）。  
+无 `codex` CLI → 如实标 `blocked`，不得假装已派发。  
+打包、并行锁、模型/参数/超时、falsify、验收清单：真源 Skill `dispatch-codex` +
+[`dispatch-units.md`](../../dispatch-codex/references/dispatch-units.md)，本文不重复。
 
 ## 证据分级
 
@@ -129,11 +98,14 @@
 | # | 条件 |
 |---|---|
 | **(a)** | 已存在**已确认**的实施 Spec：`docs/specs/<id>/`（含 Verify 后转入的 Repair） |
-| **(b)** | 用户本轮**明示**「开始做 / 实现 / 按这个来 / 构建」**或**「就按这个做 / 确认方案 / 按这个方案做 / 按这个产品方案做」，且产品方案/切片已确认 |
+| **(b)** | 用户本轮**明确指令做某件具体的事**（开始做 / 实现 / 修复 / 构建 / 确认方案 / 就按这个做…自然语言即可，含承接本轮 Agent 刚给出的问题清单说「修复吧」），且要做什么在本轮或既有材料中可辨 |
 | **(c)** | 用户本轮**明示**轻量 UI 授权（见下「Polish 档」），且变更判定为 **非 material** |
 
-demand pool 条目、`modules/` 设计稿、聊天清单或截图不算 (a)/(b)/(c)。  
-**(b) 中「确认方案」** = 方案闸通过，授权进入上方「方案确认后的自动编排」（含 Plan 落盘与后续 Build）；**不等于** Deploy / 上线。
+demand pool 条目、`modules/` 设计稿、聊天清单或截图不算 (a)/(b)/(c)；
+愿望/探讨话术（「我希望…」「聊聊」「设计方案」）仍走 Shape。  
+命中 (b) 后**不要再用选择题反问范围**——按已给清单或最合理解释开工，理解偏差写进交付卡。  
+**(b) 中「确认方案」** = 方案闸通过，授权进入上方「方案确认后的自动编排」（含 Plan 落盘与后续 Build）；**不等于** Deploy / 上线。  
+(b) 授权的是施工发生；**谁动手**仍按「施工通道」（指挥侧 = 派发）。
 
 **(a)/(b)/(c) 皆无时，本轮只做：**
 
@@ -191,12 +163,12 @@ trivial 豁免（笔误 / 单点 CSS / 已知单控件 bug）见 [`vibe-coding/S
 | 「我希望…」「我想要…」（愿望） | Shape：出**产品方案**卡；不改业务代码；请人确认方案 |
 | 「就按这个做 / 确认方案 / 按这个方案做」 | **方案闸通过** → Plan→**打包 D→edit-wave Codex→verify-wave 证伪**→Verify→证据卡或验收包 |
 | 「按这个产品包切 Spec / Plan / 拆到能编码」 | Plan：事实映射 → 纵向切片 → 完整 `tests.md`；落盘；齐套后进入 Build（许愿下自动；经典路径给批准卡） |
-| 「批准了，开始做 / 实现」（或粘贴 Build 提示词） | Build：默认第一个未完成 **D**；一聊一个 edit-wave |
+| 「批准了，开始做 / 实现」（或粘贴 Build 提示词） | Build：默认第一个未完成 **D**，按「施工通道」派发；一聊一个 edit-wave |
 | 「polish / 按 refinement 修 / 修本批走查 P0–P1」 | **Polish 档**：非 material 直接改；不新开 Spec；material 升格 Shape |
-| 「派 Codex / 用 Codex 做」 | Cursor/Claude：指挥施工（Skill `dispatch-codex`）；一次一单元；sol×medium/high |
+| 「派 Codex / 用 Codex 做」 | 同 Build（派发本来就是默认通道；见 Skill `dispatch-codex`） |
 | 「完整实施 / 不要中途停 / 把整份 Spec 做完」 | 打包全部 A→D，按 edit-wave 推进；每 D 须能装进 272K |
 | 「验收一下」 | Agent Verify；无 UI → 证据卡+机器关版；有 UI → 验收包等人点验；禁纯 smoke |
-| 「通过了 / 没问题 / 可以关版」 | 人验收闸通过 → `acceptance-passed`；`VERSION=archived`；**搬到** `docs/specs/archive/<id>/`；更新索引 / gap-closed 指针；询问是否 Deploy |
+| 「通过了 / 没问题 / 关版 / 归档 / 可以归档了」 | **关版授权**（禁反问确认）→ `make close-spec`（戳+状态+搬迁一条命令）→ 更新索引；询问是否 Deploy |
 | 「发布 / 上线 / 部署」 | Deploy：P2+P3 先于执行；须人验已过（或明文豁免）；P6 目标环境冒烟；health ≠ 交付 |
 
 插件已默认覆盖：产品方案、事实映射、纵向切片、Verified 才进 Lock、Given/When/Then、证伪与走查、
@@ -220,7 +192,8 @@ Plan 阶段内：调查 → **直接落盘** `VERSION`/`contract`/`tests`/`plan`
 
 ```text
 批准 Build。Spec：<SDD docs root>/specs/<id>/
-按 plan.md 切片 <S1→S2→… 或 整份> 实现；本对话只做 Build（完成后只报实现完成）。
+按 plan.md 打包 D 并经 codex-dispatch 派发（指挥侧不自写；见施工通道）；
+本对话只做一个 edit-wave（完成后只报实现完成）。
 ```
 
 **跨阶段仍须人批准的：** 方案闸（Shape→研发）、有 UI / 人判断时的验收闸、
@@ -264,14 +237,11 @@ Plan 阶段内：调查 → **直接落盘** `VERSION`/`contract`/`tests`/`plan`
 
 ### 建议开新对话 / 干净工人的信号
 
-> 目的是稳住**质量**（避免上下文腐烂）。许愿 Build 的 Codex 派发是**硬门**，不是建议。
+> 目的是稳住**质量**（避免上下文腐烂）。Build 派发是「施工通道」硬门，不是建议。
 
-0. **许愿 Build**：必须打包 D + Context Pack + `codex-dispatch` / `wish-orchestrate`（见上）。  
 1. **一聊一个 edit-wave**（或一个已估窗口的 D）；下一波 / 下一 Spec **新开**。  
 2. **同区二次修复仍失败**：停补丁，fresh exec 或开新对话 Diagnose。  
-3. **会话混入第二个不相关产品目标**：先收束或 Blocked；新目标新开 Shape。  
-4. **Verify / 走查**：指挥侧执行，勿派 Codex 主验收。  
-5. **关版**：无 UI 证据卡+机器关版；有 UI 把验收包交给人。
+3. **会话混入第二个不相关产品目标**：先收束或 Blocked；新目标新开 Shape。
 
 ## 实施与验收清单
 
@@ -324,23 +294,29 @@ Plan 阶段内：调查 → **直接落盘** `VERSION`/`contract`/`tests`/`plan`
 
 ### 1. Version 状态（`VERSION.md`）
 
-`draft | ready | in-progress | verifying | blocked | done | archived | cancelled`
+`draft | ready | in-progress | verifying | blocked | archived | cancelled`
 
 | 状态 | 目录 | 含义 |
 |---|---|---|
-| 施工态（`draft`…`done`） | `docs/specs/<id>/` | 施工队列；`check_spec --all` 只扫这里 |
-| `archived` | `docs/specs/archive/<id>/` | 人验关版后**必须搬入**；勿只改状态位留在原地；勿重开 |
+| 施工态（`draft`…`blocked`） | `docs/specs/<id>/` | 施工队列；`check_spec --all` 只扫这里 |
+| `archived` | `docs/specs/archive/<id>/` | 关版即搬入（无中间站）；勿只改状态位留在原地；勿重开 |
 | `cancelled` | `docs/specs/archive/<id>/` 或删除（宿主自定） | 明确不做 |
 
-**关版归档（机器关版或人明示通过后，同回合必做）：**
+**关版归档（一条命令，同回合必做）：**
 
-1. `make verify-deliver` + `run.md` → `acceptance-passed`
-2. `VERSION.md` → `archived`（变更记录写搬迁）
-3. `git mv docs/specs/<id> docs/specs/archive/<id>`（无 git 时普通 `mv`）
-4. 更新 `specs/README`（若有）、gap-closed / demand-pool 指针
-5. 询问是否 Deploy（**不**自动上生产）
+关版授权 = 无 UI 机器关版条件达成，**或**人本轮明示「通过了 / 没问题 / 关版 / 归档 /
+可以归档了」。命中即执行，**禁止再反问确认**（UI 验收未过项如实说明后仍由人拍板）：
 
-`done` 仅作同回合瞬态（人验过、尚未搬出）；不得隔会话留在 `docs/specs/<id>/`。
+```bash
+make close-spec HOST=<repo> SPEC=<id>
+# = verify-deliver（钉 1）→ VERSION=archived → git mv 到 specs/archive/<id>/ → journey 收口
+```
+
+脚本之外 Agent 只做两件事：更新宿主索引（specs README / handoff / gap-closed /
+demand-pool 指针）；询问是否 Deploy（**不**自动上生产）。
+
+宿主残留的旧工厂词（`review` / `done` / `_archive/`）**不是**本合同状态；
+遇到时按人指令收口到本表，宿主词表迁移另行处理。
 
 ### 2. Delivery Target（`VERSION.md` / `run.md` 声明目标）
 

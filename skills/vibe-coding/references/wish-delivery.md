@@ -17,7 +17,7 @@
 | ① | 说愿望 | 仅追问会改变产品结果的互斥点 |
 | ② | **拍板产品方案** | 给出可确认方案（Job / 范围 / 非目标 / 主路径 / 风险） |
 | ③ | 看进展摘要（可选） | Plan → **打包 D→edit-wave Codex** → verify-wave 证伪 → 走查 → Repair |
-| ④ | 有 UI：按包点验；无 UI：看证据卡（默认可不动作） | 无 UI 可机跑 → **机器关版**；有 UI → 交验收包等人。通过后搬入 `docs/specs/archive/<id>/` |
+| ④ | 有 UI：按包点验；无 UI：看证据卡（默认可不动作） | 无 UI 可机跑 → **机器关版**；有 UI → 交验收包等人。通过后 `make close-spec` 一条命令归档 |
 | ⑤ | **另批**「发布 / 上线 / 部署」→ Deploy P4 | 关版后**只问**是否上线；**禁止**自动上生产 |
 
 人对质量的贡献：**定做对的事**（方案闸）；有 UI / 人判断时 **验做成的事**；无 UI 可机跑 Oracle 不把人当 CI。  
@@ -37,31 +37,14 @@
 
 ## 3. 研发半自动编排（方案确认之后）
 
-> **诚实边界：** 机检编排 = 打包 D→edit-wave Codex→**verify-wave 结构化证伪**→下一波。  
-> Plan / Agent Verify / 关版分叉仍由指挥侧 Agent 调度；**不含 Deploy**。
+执行序与硬门真源：[`workflow-contract.md`](./workflow-contract.md)
+「方案确认后的自动编排」+「施工通道」。本页不复述步骤，只钉对人语义：
 
-用户确认产品方案后，Agent **默认可连续**（不必再等人说 Plan / Build / 验收）：
+- 方案确认后**默认连续**（Plan → 派发 Build → 证伪 → Verify → 关版分叉），中间禁止「待批准 Plan/Build」停点；**不含 Deploy**。  
+- 关版分叉：无 UI 可机跑 → 证据卡 + `make close-spec` 机器关版；有 UI → 验收包等人点验后 close-spec。  
+- 关版后只问「要不要上线」；生产须本轮 Deploy P4 批准。
 
-1. Plan：落盘 Spec（质量条 + `check_spec`）；**Codex Plan 须 `--spec` + 落盘硬验**（禁聊天「待批准」假成功）  
-2. **Build（Cursor/Claude 硬门）：**  
-   [`dispatch-units.md`](../../dispatch-codex/references/dispatch-units.md) 打包 A→D  
-   → [`context-pack.md`](../../dispatch-codex/references/context-pack.md)  
-   → `wish-orchestrate.sh`（波次 + flock） / `codex-dispatch.sh`  
-   → verify-wave [`record-conductor-falsify`](../../dispatch-codex/references/falsify-attestation.md)  
-   → `require-conductor-falsify` 通过 → 下一 edit-wave  
-   （未结构化 PASS 不得开下一**验证锁冲突或有 DAG 边**的波；已 PASSED 的 A/D 默认跳过）  
-3. 单测 / 红绿证据写入 `run.md`  
-4. Agent Verify：证伪 + 有 UI 则浏览器走查（**禁** Codex 主验收）  
-5. Fail → Repair（**fresh exec**）→ 回验  
-6. 产出 [`human-acceptance-pack`](../../testing/references/human-acceptance-pack.md)：无 UI → 证据卡并**机器关版**；有 UI → 验收包等人  
-7. 关版后：`acceptance-passed` + 搬入 `docs/specs/archive/<id>/`；询问是否上线；得本轮「发布/上线」+ P4 再走 Skill `deploy`。不得自动上生产。
-
-**研发段人闸：** 确认产品方案；有 UI / 人判断时点验关版。中间禁止「待批准 Plan/Build」停点。无 UI 可机跑不等人盖章。  
-**生产另钉：** Deploy P4（及 P2+P3 方案先过）——不在自动编排内。
-
-无 `codex` CLI → `blocked`。禁止指挥侧同会话连做多 D 实现代替 Codex。改文档 / `check_spec` / 锁决策不派 Codex。
-
-**前台：** 说「方案 / 研发进展 / 证据卡或请你点验 / 关版」；关版后再问「要不要上线」；默认不说 Rail / Spec / Oracle / dispatch。
+**前台：** 说「方案 / 研发进展 / 证据卡或请你点验 / 关版」；默认不说 Rail / Spec / Oracle / dispatch。
 
 ## 4. 完成单元与 Context Pack
 

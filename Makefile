@@ -2,7 +2,7 @@
 # Run `make` or `make help` for the command list.
 
 .PHONY: help install install-dev install-cursor install-claude install-codex \
-	scaffold codex-dispatch wish-orchestrate context-pack verify check-docs check-spec verify-deliver \
+	scaffold codex-dispatch wish-orchestrate context-pack verify check-docs check-spec verify-deliver close-spec \
 	preflight-rail require-falsify record-falsify dispatch-gates-selftest public-gates contract-sync \
 	phase3-negative eval-live eval-skill-load hooks-selftest sdd-authorize wish-journey
 
@@ -44,6 +44,7 @@ help:
 		'  make wish-journey HOST=路径 SPEC=id [STATUS=1|SET=phase|TRANSITION=phase]' \
 		'  make check-spec HOST=路径 SPEC=id   Spec 静态门（事实映射/tests/架构节/run 诚实性）' \
 		'  make verify-deliver HOST=路径 SPEC=id  Verify 关版门（戳 verify-deliver: ok · <时间>）' \
+		'  make close-spec HOST=路径 SPEC=id   关版收口：verify-deliver→archived→搬入 archive/→journey' \
 		'  make preflight-rail HOST=路径 [AUTHORIZED=1]  Shape 写码闸（业务 dirty 则失败）' \
 		'  make codex-dispatch HOST=路径 UNIT=plan|build|goal PROMPT_FILE=文件' \
 		'                            派 Codex（唯一通道；never + 墙钟；Build/Goal 需 SPEC=；Build 需 SLICE=）' \
@@ -142,6 +143,15 @@ verify-deliver:
 		exit 2; \
 	fi
 	bash scripts/verify-deliver.sh "$(HOST)" "$(SPEC)"
+
+close-spec:
+	@if [ -z "$(SPEC)" ]; then \
+		echo 'Usage: make close-spec HOST=<repo> SPEC=<id> [SKIP_VD=1]'; \
+		exit 2; \
+	fi
+	@extra=""; \
+	if [ "$(SKIP_VD)" = "1" ]; then extra="--skip-verify-deliver"; fi; \
+	bash scripts/close-spec.sh "$(HOST)" "$(SPEC)" $$extra
 
 preflight-rail:
 	@extra=""; \

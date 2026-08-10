@@ -16,8 +16,8 @@ description: >-
 **北极星：** [许愿式高质量交付](./references/wish-delivery.md) — 人定方案；无 UI 机器关版 / 有 UI 人点验；AI 跑质量内核。  
 用户表达**意图**与关键选择即可；拆分、实现、单测、走查由插件默认编排。  
 薄提示词与闸门见 [`workflow-contract.md`](./references/workflow-contract.md)。  
-可选指挥施工见同文件「指挥施工 Harness」与 Skill [`dispatch-codex`](../dispatch-codex/SKILL.md)
-（`gpt-5.6-sol` × medium/high）。  
+指挥侧 Build 一律走「施工通道」派发（Skill [`dispatch-codex`](../dispatch-codex/SKILL.md)），
+与是否说「派 Codex」无关。  
 Cursor 会话硬闸另见 install 投影的 `~/.cursor/rules/sdd-*.mdc`。
 
 ## FIRST ACTION（硬门）
@@ -49,12 +49,12 @@ Cursor 会话硬闸另见 install 投影的 `~/.cursor/rules/sdd-*.mdc`。
 2. **判轨**：基线未齐 → 冷启动；愿望/讨论 → Shape 出产品方案；**确认方案** → 许愿自动编排；经典 Rail 名 → 逐步闸门；Deploy / Diagnose / 派 Codex 各走专轨。
 3. **Shape**：只写 `product/`；LOAD-MAP → product-judgment；产出**产品方案**并请人确认（见 wish-delivery）。
 4. **方案确认后（许愿半自动）**：Plan + `check_spec` → **打包 D → edit-wave Codex**（`wish-orchestrate` 波次+锁）→ **verify-wave 证伪** → Verify → **证据卡或验收包**（不含 Deploy）。
-5. **Build**：一次一个 D（272K）；测前冻结；禁「可交付」；禁生产 Deploy；钉 2 Oracle 冻结 + 红绿证据。
+5. **Build**：指挥侧＝派发（施工通道；一次一个 D / 272K）；测前冻结；禁「可交付」；禁生产 Deploy；钉 2 Oracle 冻结 + 红绿证据。
 6. **Polish**：明示 polish/走查抛光 → 非 material 直改；material → Shape。
 7. **Verify**：证伪；无 UI → 证据卡+机器关版；有 UI → 验收包 + `awaiting-human-acceptance`；钉 1/3。
-8. **关版**：`acceptance-passed` + verify-deliver + 搬入 `docs/specs/archive/<id>/`；再问是否 Deploy。
+8. **关版**：人说「关版/归档/通过了」或机器关版达成 → `make close-spec`（禁反问）；再问是否 Deploy。
 9. **Deploy**：P1→P2+P3→P4→P5→P6；禁仅 health；须人验已过（或明文豁免）。
-10. **派 Codex**：CLI `codex-dispatch.sh`；一次一个 D；禁 Codex 主验收；改文档不派。
+10. **派发细则**：Skill `dispatch-codex`；禁 Codex 主验收；改文档 / `check_spec` / 锁决策不派。
 
 ## 必读
 
@@ -82,12 +82,12 @@ Cursor 会话硬闸另见 install 投影的 `~/.cursor/rules/sdd-*.mdc`。
 | 初始化项目 / 新开 / 立项 / 接入存量 / 基线空或刚 scaffold | **冷启动** → Skill `design` → `project-init`（Init 或 Onboard） |
 | 我希望 / 我想要 / 澄清愿望与产品方向（基线已齐） | Shape → Skill `design`（出**产品方案**） |
 | **就按这个做 / 确认方案 / 按这个方案做** | **许愿研发编排**：Plan→**打包 D→edit-wave Codex**→Verify→证据卡或验收包 |
-| **派 Codex / 用 Codex 做 / 让 Codex 施工**（且当前在 Cursor/Claude） | **指挥施工** → Skill `dispatch-codex`（一次一个 D；sol×medium/high） |
+| **派 Codex / 用 Codex 做 / 让 Codex 施工** | 同 Build（派发本来就是默认通道；细则 Skill `dispatch-codex`） |
 | 切 Spec / Plan / 按产品包拆到能编码 | Plan → Skill `spec`（**直接落盘**） |
-| Spec 批准了 / 开始做 / 实现 | Build（默认首个未完成 D） |
+| Spec 批准了 / 开始做 / 实现 | Build：打包 D → **派发**（施工通道；默认首个未完成 D） |
 | polish / 抛光 / 前端小改 / 交互微调 / 按 refinement 修 / 修本批走查 | **Polish**（写码硬闸 (c)；非 material；见下） |
 | 验收 / UX 走查 | Verify → Skill `testing`（证据卡或验收包 + 证伪；禁派 Codex 主验收） |
-| 通过了 / 没问题 / 可以关版 | 有 UI 验收闸 → `acceptance-passed` + 归档（须 verify-deliver） |
+| 通过了 / 没问题 / 关版 / 归档 / 可以归档了 | **关版授权**（禁反问）→ `make close-spec` 收口 |
 | 发布 / 上线 / 部署 / 发版 / 生产部署 | Deploy → Skill `deploy`（P0–P6；先方案后执行） |
 | 只定位复杂或线上问题 | Diagnose |
 | 紧急恢复生产 | Incident |

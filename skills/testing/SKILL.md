@@ -65,7 +65,7 @@ UI 回归定位可指向 [debug-playbook](../vibe-coding/references/design-stand
 7. 记录命令、时间、环境、版本、观察值；Evidence 写 `kind=… · 路径`（见 evidence-contract §1.1）；
 8. 对全部 Fail 统一归因、聚类并形成一份 Repair 方案；Verify 只读实现；
 9. **产出验收侧交付**（[`human-acceptance-pack.md`](./references/human-acceptance-pack.md)）：无 UI → 证据卡；有 UI → 验收包；
-10. 无 UI 可机跑：跑 `make verify-deliver`，写 `acceptance-passed` 并归档，前台交证据卡（**禁止**请人再跑同一脚本）；
+10. 无 UI 可机跑：写 `acceptance-passed` 后 `make close-spec` 收口归档，前台交证据卡（**禁止**请人再跑同一脚本）；
     有 UI：`run.md` 置 `awaiting-human-acceptance`；前台请人按包点验——**禁止**此时说可交付/可关版；
 11. 有 UI 人明示「通过 / 没问题 / 关版」后：跑 `make verify-deliver`，写 `acceptance-passed`，`VERSION.md` → `archived`，将目录搬到 `docs/specs/archive/<id>/`，更新索引 / gap-closed 指针，再问是否 Deploy。
 

@@ -10,7 +10,7 @@ disable-model-invocation: true
 # Spec：Plan 技术方案
 
 只在 Plan 模式使用。先读宿主 `AGENTS.md`、已确认产品真源、`workflow-contract.md`（含
-**薄提示词原则**、**证据分级**、**Harness 适配**、**Plan 落盘授权**）、`workspace-contract.md`
+**薄提示词原则**、**证据分级**、**施工通道**、**Plan 落盘授权**）、`workspace-contract.md`
 与 `evidence-contract.md`，以及
 [`design-standards/system-architecture.md`](../vibe-coding/references/design-standards/system-architecture.md)
 （有 UI 时先读 [`LOAD-MAP.md`](../vibe-coding/references/design-standards/LOAD-MAP.md)；
