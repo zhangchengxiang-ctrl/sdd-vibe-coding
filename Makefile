@@ -48,7 +48,7 @@ help:
 		'  make codex-dispatch HOST=路径 UNIT=plan|build|goal PROMPT_FILE=文件' \
 		'                            派 Codex（唯一通道；never + 墙钟；Build/Goal 需 SPEC=；Build 需 SLICE=）' \
 		'  make context-pack HOST=路径 SPEC=id SLICE=S1   生成 Codex Context Pack（stdout）' \
-		'  make wish-orchestrate HOST=路径 SPEC=id [SLICE=S1]  许愿：逐片 Pack→Codex Build（幂等+锁）' \
+		'  make wish-orchestrate HOST=路径 SPEC=id [SLICE=S1]  许愿：打包 D→edit-wave Codex（可并行；幂等+锁）' \
 		'  make record-falsify LOG_DIR=路径 RUN_ID=id SLICE=S1 CMD="…"  结构化证伪取证' \
 		'  make require-falsify LOG_DIR=路径 [RUN_ID=]  指挥侧证伪门（须 COMMAND+EXIT_CODE+VERDICT）' \
 		'  make dispatch-gates-selftest  离线硬门自检（Plan / structured falsify / wish）' \
@@ -115,17 +115,18 @@ context-pack:
 	fi
 	python3 skills/dispatch-codex/scripts/build_context_pack.py "$(HOST)" "$(SPEC)" "$(SLICE)"
 
-# Wish autopilot: Context Pack → Codex Build per slice.
+# Wish autopilot: pack A→D → edit-wave Codex Build (parallel 1–4).
 # Example: make wish-orchestrate HOST=/path SPEC=my-spec
-# Optional: SLICE=S1 EFFORT=medium|high
+# Optional: SLICE=S1 EFFORT=medium|high PARALLEL=2
 wish-orchestrate:
 	@if [ -z "$(SPEC)" ]; then \
-		echo 'Usage: make wish-orchestrate HOST=<repo> SPEC=<id> [SLICE=S1] [EFFORT=medium]'; \
+		echo 'Usage: make wish-orchestrate HOST=<repo> SPEC=<id> [SLICE=S1] [EFFORT=medium] [PARALLEL=2]'; \
 		exit 2; \
 	fi
 	@extra=""; \
 	if [ -n "$(SLICE)" ]; then extra="$$extra --slice $(SLICE)"; fi; \
 	if [ -n "$(EFFORT)" ]; then extra="$$extra --effort $(EFFORT)"; fi; \
+	if [ -n "$(PARALLEL)" ]; then extra="$$extra --parallel $(PARALLEL)"; fi; \
 	bash skills/dispatch-codex/scripts/wish-orchestrate.sh --cwd "$(HOST)" --spec "$(SPEC)" $$extra
 
 check-spec:

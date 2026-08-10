@@ -70,7 +70,7 @@
 - 事实映射门、纵向切片、测试合同门、Plan 流程、**check_spec 机检**（含 verify-deliver 戳 / oracle-freeze）：只改 `skills/spec/`（含 `scripts/check_spec.py`）
 - Cursor/Claude → Codex 派单与指挥侧验收（禁 Codex 主验收）：只改 `skills/dispatch-codex/`
   （`SKILL.md`；Context Pack：`references/context-pack.md` + `scripts/build_context_pack.py`；
-  许愿逐片：`scripts/wish-orchestrate.sh`（幂等 PASSED_SLICES + flock）；
+  许愿波次：`scripts/wish-orchestrate.sh` + `pack_dispatch_units.py` / `schedule_waves.py`（272K D + edit/verify-wave）；
   结构化证伪：`references/falsify-attestation.md` + `record-conductor-falsify.sh` /
   `require-conductor-falsify.sh`；`codex-dispatch.sh`；
   **禁反问授权块：** `references/cli-authorization.md`）
@@ -100,7 +100,7 @@
 | 调整 Spec 机检 | `skills/spec/scripts/check_spec.py` | `verify-deliver.sh`、`dispatch-codex` 预检、Makefile |
 | 调整关版三钉 | `verification-loop.md` | `check_spec`、`verify-deliver.sh`、testing/deploy/vibe/dispatch |
 | 调整测试合同结构 | `tests.md` 模板 + `spec/SKILL.md` | `check_docs.py`, `testing/SKILL.md` |
-| 调整指挥施工 / Context Pack / 许愿逐片 | `dispatch-codex/` + workflow 许愿节 | `vibe-coding/SKILL.md`, Makefile, `public-gates` |
+| 调整指挥施工 / Context Pack / 许愿 edit-wave | `dispatch-codex/` + workflow 许愿节 | `vibe-coding/SKILL.md`, Makefile, `public-gates` |
 | 调整证伪取证字段 | `falsify-attestation.md` + require/record 脚本 | selftest、phase3、verification-loop 钉 3 |
 | 调整发布生命周期 | `skills/deploy/` | `evidence-contract` Deliver Gate、`run.md` 模板、`vibe-coding` 路由 |
 

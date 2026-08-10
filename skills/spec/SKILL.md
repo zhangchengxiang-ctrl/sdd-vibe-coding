@@ -1,10 +1,10 @@
 ---
 name: spec
 description: >-
-  Plan 专项 Skill：将已确认产品切片转成一份完整 Spec 执行合同、测试用例与实施方案。
-  用户说「切 Spec / Plan / 拆到能编码」即授权落盘；先做入口事实映射，纵向切片，写完
-  tests.md（Given/When/Then）才可请求 Build。仅 Verified 进 Lock/P0。质量条默认执行。
-  仅在 vibe-coding 已路由到 Plan，或用户显式调用本 Skill 时使用。
+  SDD Plan 专项：已确认产品切片 → Spec 执行合同、tests.md、实施方案。
+  仅在 vibe-coding 已路由到 Plan，或用户显式 @spec /「切 Spec」时使用；
+  写完 Given/When/Then 才可请求 Build。禁止把普通「做个计划」当触发。
+disable-model-invocation: true
 ---
 
 # Spec：Plan 技术方案
@@ -106,7 +106,7 @@ Verify 执行证伪见 testing [`falsify-checklist.md`](../testing/references/fa
 
 数据库迁移仅在某个切片 **Verified** 证明现有关联无法唯一解析时才出现。
 
-每个纵向切片同时是普通回合的默认完成单元（见 workflow-contract Harness；全宿主默认一片）。
+纵向切片是 **A 验收单元**（对人 / Oracle）。Codex 回合默认完成单元是 **D 派发单元**（272K 打包，可含多个 A；见 dispatch-units）。作者按入口切 A，**禁止**按 Codex 回合手切。
 
 ## Plan 流程
 

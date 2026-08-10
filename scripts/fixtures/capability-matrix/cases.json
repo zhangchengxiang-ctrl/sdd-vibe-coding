@@ -61,6 +61,32 @@
       "last_eval": "2026-08-01 cursor-agent --matrix PASS"
     },
     {
+      "id": "K-SOFT-NO-ENTRY",
+      "dim": "kind+entry",
+      "tier": [
+        "static",
+        "route",
+        "load"
+      ],
+      "prompt": "登录 ssh 看下生产 S3 权限为什么 AccessDenied，顺便读下飞书文档调研",
+      "fixture": "AGENTS.md: project.kind=software；无 /vibe-coding、确认方案、切 Spec 等高信号",
+      "must_not_read_substrings": [
+        "vibe-coding/SKILL.md"
+      ],
+      "expected": {
+        "rail": "hands-off-sdd-entry",
+        "may_write_code": false,
+        "may_deploy": false,
+        "load_vibe_coding": false
+      },
+      "oracle": "禁止因调研/SSH/排障 Read vibe-coding；用域内工具即可",
+      "status": "designed",
+      "maps_to": [
+        "phase3 M2",
+        "sdd-vibe-entry negative"
+      ]
+    },
+    {
       "id": "K-PLUGIN-MAINTAIN",
       "dim": "kind",
       "tier": [

@@ -23,14 +23,16 @@
 
 ## 纵向切片（默认执行轴）
 
-> 按入口拆，不按 root/resolver/ACL 等横向层拆。Codex 普通回合默认一次只交付一个切片。
+> 按入口拆 A（验收），不按 root/resolver/ACL 等横向层拆。Codex 一次 exec 交付一个 **D**（机器按 272K 打包，可合并多个 A）。
 
 | 切片 ID | 入口 | 完成定义（链 T-xxx） | 触及路径 | 依赖 | 备注 |
 |---|---|---|---|---|---|
 | S1 | | T-001, T-002 | | | |
 
-> **触及路径**：本片建议 Codex 先读的 3–8 个路径（逗号分隔）。用于 Context Pack；可空（则仅 Spec 指针）。  
-> 旧五列表（无触及路径列）仍可被 `build_context_pack.py` 解析。
+> **触及路径**：本片 **allowlist / write-set**（逗号分隔，必填才能派 Codex）。  
+> **依赖**：机读 `S2` 或 `other-spec:S1`；自由文本（D4 / 模块名）不当硬边。  
+> **备注**：可写 `oracle:unit|machine|lab|human` 与 `claims:kind-datagate,port:9030`。  
+> 旧五列表（无触及路径列）仍可被 `build_context_pack.py` 解析，但空路径不得派 Build。
 
 共享 helper / 迁移：仅当 ≥2 切片 Verified 重复同一逻辑，或某切片证明现有关系无法解析时才新增。
 

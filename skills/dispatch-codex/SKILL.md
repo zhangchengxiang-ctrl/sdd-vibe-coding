@@ -1,16 +1,18 @@
 ---
 name: dispatch-codex
 description: >-
-  可选指挥施工 + 许愿编排：将完成单元派给 Codex（gpt-5.6-sol × medium/high）。
-  触发：派 Codex / 用 Codex 做 / 许愿研发编排 Build。Build 须 Context Pack
-  （build_context_pack.py）；一次只派一个纵向切片。通道：codex-dispatch.sh /
-  wish-orchestrate.sh。仅在 Cursor/Claude 指挥侧使用。
+  Cursor/Claude 指挥侧把完成单元派给 Codex CLI（gpt-5.6-sol × medium/high）。
+  仅在用户明示「派 Codex / 用 Codex 做」，或 vibe-coding 许愿编排已进入
+  Build 派单时使用。须 Context Pack；一次一个 D（272K 打包，可含多个 A）。
+  禁止因普通实现/构建/改文档自动加载。通道：codex-dispatch.sh / wish-orchestrate.sh。
+disable-model-invocation: true
 ---
 
 # Dispatch Codex：指挥施工
 
 本 Skill 只跑在 **Cursor / Claude Code** 指挥侧。先读宿主 `AGENTS.md` 与
 [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)「指挥施工 Harness」、
+[`dispatch-units.md`](./references/dispatch-units.md)、
 [`context-pack.md`](./references/context-pack.md)。
 
 施工侧 Codex 须已安装同版本 `sdd-vibe-coding`（建议 `make install-dev` 软链），质量条由其
@@ -27,14 +29,14 @@ description: >-
 | 用 | 指挥侧自做 |
 |---|---|
 | 用户明示派 Codex / 用 Codex 施工 | 纯小改 / Polish（非 material）且用户未要求 Codex |
-| **许愿路径方案确认后的 Build 切片**（硬门：须 Codex + Context Pack） | Shape / 产品拍板 / **验收对话** |
+| **许愿路径方案确认后的 Build D**（硬门：须打包 + Codex + Context Pack） | Shape / 产品拍板 / 改文档 / `check_spec` / 锁决策 / **验收对话** |
 | 已批准有界单元，用 Sol 离场施工 | 已在 Codex 会话里（走纯 Codex Harness） |
 | 指挥侧 PATH 上有 `codex` CLI | 无 Oracle 的 Build（先 Plan） |
 | 矩阵/剧本**草稿**（非关版） | **Verify / 系列验收 / 「验到可交付」**（钉 3：禁 Codex 主验收） |
 
-**许愿研发编排硬门（Cursor/Claude）：** Spec 已落盘后，每个纵向切片的 Build **必须**经  
-`wish-orchestrate.sh` 或「`build_context_pack.py` → `codex-dispatch.sh --unit build`」。  
-禁止指挥侧在同一长会话里自己连做多片实现来「代替」Codex（上下文腐烂 + 与短窗口 Codex 目标冲突）。  
+**许愿研发编排硬门（Cursor/Claude）：** Spec 已落盘后，每个 **D** 的 Build **必须**经  
+`wish-orchestrate.sh` 或「`pack_dispatch_units.py` → `build_context_pack.py` → `codex-dispatch.sh --unit build`」。  
+禁止指挥侧在同一长会话里自己连做多 D 实现来「代替」Codex。一聊一个 edit-wave。  
 无 `codex` CLI → `blocked`，对人说明，勿假装已编排。
 
 **硬门（钉 3）：** 禁止派 Codex 做主验收或「验到可交付」；超时窄派单 = 失败，不得扩成关版。
@@ -45,34 +47,34 @@ description: >-
 |---|---|---|
 | Plan | `gpt-5.6-sol` | **medium**（默认） |
 | Plan（加码） | `gpt-5.6-sol` | **high**（首派失败、假 Lock 风险高、或用户要求更稳） |
-| Build 单片 | `gpt-5.6-sol` | **medium**（默认）/ high（加码） |
-| Goal 多片 | `gpt-5.6-sol` | **high**（仅用户明示长程；完成条件=验证命令） |
+| Build 单 D | `gpt-5.6-sol` | **medium**（默认）/ high（加码） |
+| Goal | `gpt-5.6-sol` | **high**（仅该 D 已估峰 ≤180K；禁止无预算长跑） |
 
 速度口诀：默认 **sol×medium**；翻车或真难再升 **high**。
 
-## 流程（一次一个完成单元）
+## 流程（一次一个 D）
 
 1. **选定单元**
    - Plan：产品包 / 已确认方案 → 整份 Spec 落盘；
-   - Build：已批准 Spec + `plan.md` 中**一个**切片（默认第一个未完成切片）；
-   - Goal（可选）：仅当用户要连续多片且完成条件可写成验证命令时。
-2. **Build 必做 Context Pack**（见 [`context-pack.md`](./references/context-pack.md)）
+   - Build：已批准 Spec → `pack_dispatch_units.py` 得到 D（默认第一个未完成 D）；
+   - 多 Spec / 多 D：先出 DAG+波次；一聊一个 edit-wave。
+2. **Build 必做打包 + Context Pack**（见 [`dispatch-units.md`](./references/dispatch-units.md)、[`context-pack.md`](./references/context-pack.md)）
    ```bash
-   python3 skills/dispatch-codex/scripts/build_context_pack.py <HOST> <SPEC_ID> <SLICE_ID> \
+   python3 skills/dispatch-codex/scripts/pack_dispatch_units.py <HOST> <SPEC_ID> --list
+   python3 skills/dispatch-codex/scripts/build_context_pack.py <HOST> <SPEC_ID> S1,S2 \
      > /tmp/pack.txt
-   # 或一次编排多片：
    bash skills/dispatch-codex/scripts/wish-orchestrate.sh --cwd <HOST> --spec <SPEC_ID>
    bash skills/dispatch-codex/scripts/wish-orchestrate.sh --cwd <HOST> --spec <SPEC_ID> --slice S1
    ```
-   Pack 含 Goal / Spec 指针 / 触及路径 / T-xxx / Constraints / Done when。  
-   **禁止**手写超长 prompt 替代 Pack（缺字段 = 不合格派单）。
+   Pack 含 DISPATCH_ID / SLICE_IDS / allowlist / T-xxx / Done when。  
+   **禁止**手写超长 prompt 替代 Pack；**禁止**空 allowlist。
 3. **预检**
    - Build / Goal：先跑 `check_spec`（CLI 包装默认强制）；
    - Build：确认该片 T-xxx 含 success + failure/permission；
    - 缺 Oracle 或 check_spec 未过 → 先走 Plan。
 4. **选定 sol × medium|high** → **经 CLI 包装调用**（参数齐全后再跑）。
-5. **验收**（maker ≠ grader）→ 对照仓库 + 证伪；未过则升 effort 再派或指挥侧自做**当前一片**。
-6. **对人交付卡**：目标、结果、证据路径、要你决定（下一切片 / 进 Verify / 授权）。
+5. **验收**（maker ≠ grader）→ 对照仓库 + 证伪；未过则升 effort 再派或指挥侧自做**当前 D**。
+6. **对人交付卡**：目标、结果、证据路径、要你决定（下一 edit-wave / 进 Verify / 授权）。
 
 ## 工具（正路径）
 
@@ -105,7 +107,7 @@ description: >-
 - [ ] Build/Goal 已过 `check_spec`（或脚本 `--spec`）
 - [ ] Plan：`--spec` + 落盘后 `assert_plan_artifacts`（脚本默认执行）
 - [ ] 片间：`require-conductor-falsify` 且日志为**结构化取证**（`COMMAND`+`EXIT_CODE: 0`+`VERDICT: … PASS`；见 `falsify-attestation.md`）
-- [ ] 一次只一个完成单元
+- [ ] 一次只一个 D（可含多个 A；估峰 ≤180K）
 - [ ] prompt **无**合同大段 / tests 全文
 - [ ] 调用勿用会吞失败码的管道（若 `| tee`，须 `set -o pipefail`）
 
@@ -127,21 +129,22 @@ bash skills/dispatch-codex/scripts/codex-dispatch.sh \
 <薄派单正文>
 EOF
 
-# Build 单片（默认 20min / danger-full-access / medium；通常需 --spec）
+# Build 单 D（默认 20min / danger-full-access / medium；可含多个 A）
 bash skills/dispatch-codex/scripts/codex-dispatch.sh \
-  --cwd <HOST_ROOT> --unit build --effort medium --spec <SPEC_ID> --slice S1 -- <<'EOF'
-<薄派单正文>
+  --cwd <HOST_ROOT> --unit build --effort medium --spec <SPEC_ID> \
+  --slice S1,S2 --dispatch-id D1 -- <<'EOF'
+<薄派单正文 / Context Pack>
 EOF
 
-# Wish 逐片：每片后 exit 3 直至 structured falsify PASS，再派下一片（幂等跳过已 PASSED）
+# Wish edit-wave：一波 D（可并行 1–4）后 exit 3，structured falsify PASS 再派下一波
 bash skills/dispatch-codex/scripts/wish-orchestrate.sh \
-  --cwd <HOST_ROOT> --spec <SPEC_ID> --slice S1
+  --cwd <HOST_ROOT> --spec <SPEC_ID> --parallel 2
 make record-falsify LOG_DIR=<HOST>/.codex-dispatch-logs RUN_ID=<from meta> SLICE=S1 \
   CMD='<falsify command>'
 make require-falsify LOG_DIR=<HOST>/.codex-dispatch-logs RUN_ID=<from meta>
 bash skills/dispatch-codex/scripts/wish-orchestrate.sh \
-  --cwd <HOST_ROOT> --spec <SPEC_ID> --slice S2
-# 状态：wish-orchestrate … --status
+  --cwd <HOST_ROOT> --spec <SPEC_ID>
+# 状态：wish-orchestrate … --status / --units
 
 # Goal（默认 60min / danger-full-access / high）
 bash skills/dispatch-codex/scripts/codex-dispatch.sh \
@@ -157,7 +160,7 @@ EOF
 - **许愿 Plan：禁止中途「待批准」**；Codex exit 0 但未落盘五件套 → 派发失败（exit 2）
 - **falsify 须结构化取证**（`COMMAND`+`EXIT_CODE: 0`+`VERDICT: PASS`）；仅有日志或裸 `VERDICT` → 失败
   （见 [`falsify-attestation.md`](./references/falsify-attestation.md)）
-- **wish-orchestrate：** flock 防并发；`PASSED_SLICES` 幂等跳过；`--force-slice` 才重派
+- **wish-orchestrate：** per-spec flock + per-D 锁；edit-wave 内可并行；`PASSED_SLICES`/`PASSED_UNITS` 幂等跳过；`--force-slice` 才重派
 - 墙钟到点会 `SIGTERM`/`SIGKILL` 并 exit `124`——之后对照仓库验收
 - 默认 `--json`：事件写入 `<cwd>/.codex-dispatch-logs/<unit>_<ts>_<pid>.jsonl`（可 `--log-dir` / `--no-json`）
 - Make：`make codex-dispatch HOST=… UNIT=plan|build|goal PROMPT_FILE=…`（Plan/Build/Goal 传 `SPEC=`；Build 传 `SLICE=`）
@@ -192,32 +195,33 @@ sandbox: workspace-write
 齐套后指挥侧跑 check_spec；许愿路径直接进 Build 编排（经典路径才出批准卡）。
 ```
 
-### Build（单切片 · **必须用 Context Pack**）
+### Build（单 D · 可含多个 A · **必须用 Context Pack**）
 
 ```bash
-python3 skills/dispatch-codex/scripts/build_context_pack.py <HOST> <SPEC_ID> <SLICE_ID> \
+python3 skills/dispatch-codex/scripts/build_context_pack.py <HOST> <SPEC_ID> S1,S2 \
   | bash skills/dispatch-codex/scripts/codex-dispatch.sh \
-      --cwd <HOST> --unit build --spec <SPEC_ID> --slice <SLICE_ID> --effort medium
+      --cwd <HOST> --unit build --spec <SPEC_ID> --slice S1,S2 --dispatch-id D1 --effort medium
 ```
 
-Pack 已含 Goal / Context / Constraints / Done when。勿再粘贴 tests 全文。  
-手写兜底（仅 Pack 脚本不可用时）须仍含 `SLICE_ID=`、Spec 路径指针、T-xxx、Done when：
+Pack 已含 DISPATCH_ID / SLICE_IDS / Goal / Context / Constraints / Done when。勿再粘贴 tests 全文。  
+手写兜底（仅 Pack 脚本不可用时）须仍含 `DISPATCH_ID=`、`SLICE_IDS=`、Spec 路径指针、T-xxx、Done when：
 
 ```text
-SLICE_ID=<SLICE_ID>
+DISPATCH_ID=<D1>
+SLICE_IDS=S1,S2
 SPEC_ID=<SPEC_ID>
 ## Goal
-完成切片 <SLICE_ID>：<入口一句话>（Oracle：<T-ids>）
+完成派发单元 <D1>（切片 S1,S2）：<入口一句话>（Oracle：<T-ids>）
 ## Context
 - docs/specs/<SPEC_ID>/{contract,tests,plan,run}.md
 - paths: <3-8 paths>
 ## Constraints
-只做本片；禁改 tests.md；服从 AGENTS + vibe-coding。
+只做本 D allowlist；禁改 tests.md；服从 AGENTS + vibe-coding。
 ## Done when
-T-xxx 行为证据写入 run.md；oracle-freeze: intact；短报告下一片。
+各片 T-xxx 行为证据写入 run.md；oracle-freeze: intact；短报告下一 edit-wave。
 ```
 
-### Goal（多片 · 可选）
+### Goal（仅已估峰 ≤180K 的同一 D · 可选）
 
 ```text
 cwd: <HOST_ROOT>
@@ -225,7 +229,8 @@ model: gpt-5.6-sol
 effort: high
 approval-policy: never
 sandbox: danger-full-access
-对 docs/specs/<SPEC_ID>/ 创建持久 Goal：按 plan.md 顺序做完剩余切片 <S_a…S_z>。
+DISPATCH_ID=<D1> SLICE_IDS=S1,S2
+对已打包的 D 做完（估峰 ≤180K）。禁止无预算「剩余切片全做」。
 每片完成条件=对应 T-xxx 行为证据写入 run.md；遵守 Out of Scope；真阻塞或生产授权则 pause。
 ```
 
@@ -245,7 +250,7 @@ sandbox: danger-full-access
 
 ### Build 通过
 
-- [ ] diff 落在该切片相关路径
+- [ ] diff 落在该 D allowlist
 - [ ] **diff 不含** Spec `tests.md`、产品包 `06-acceptance-matrix` 等验收矩阵（钉 2；改 Oracle 须回 Plan）
 - [ ] `run.md` 有 `oracle-freeze: intact` + 红绿证据（或 `N/A · polish|trivial|无自动化`）
 - [ ] `run.md` 记录该片批次；T-xxx 有结果（Evidence 含 `kind=`；禁仅 smoke）
@@ -256,7 +261,7 @@ sandbox: danger-full-access
       `make require-falsify LOG_DIR=<cwd>/.codex-dispatch-logs RUN_ID=<run-id>` 通过
 - [ ] 未向用户宣称「可交付」（除非已走 Verify + `make verify-deliver` 且戳在）
 
-**Build 派单：** `--slice <id>` 或 prompt 含 `SLICE_ID=` / `S#`；禁止一次多片（多片 → `--unit goal` + `GOAL_APPROVED=1`）。
+**Build 派单：** `--slice S1` 或 `S1,S2` / `DISPATCH_ID` / `SLICE_IDS=`。无打包的「整份 Spec」→ 拒绝，禁止 Goal 硬撑。
 
 未过 → 经 CLI 打回派单（具体缺陷一句）或指挥侧自做；对人只报真实验收结论。
 

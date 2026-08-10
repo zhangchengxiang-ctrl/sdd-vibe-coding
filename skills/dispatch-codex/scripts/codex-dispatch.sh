@@ -29,7 +29,9 @@ Options:
   --sandbox MODE         read-only|workspace-write|danger-full-access
   --timeout SEC          Wall clock limit (kills process on expiry)
   --spec ID              Spec id under SDD docs/specs (required for build/goal unless SKIP)
-  --slice ID             Build: required slice id (also accept SLICE_ID= in prompt)
+  --slice ID             Build: slice or comma list S1,S2 (one dispatch unit)
+  --dispatch-id ID       Optional D id (also accept DISPATCH_ID= in prompt)
+  --run-id-file PATH     Write RUN_ID here as soon as it is assigned (no log scan)
   --json                 Stream JSONL events to stdout + log file
   --no-json              Final message only (default: --json on)
   --log-dir DIR          Event/log directory
@@ -40,7 +42,8 @@ Always sets approval_policy=never (cannot be overridden).
 Plan: injects wish-path hard gates (no mid-flow 待批准); requires --spec;
   after Codex ok runs assert_plan_artifacts.py (SKIP_PLAN_ARTIFACT_CHECK=1 bypass).
 Build/Goal runs skills/spec/scripts/check_spec.py first (SKIP_SPEC_CHECK=1 to bypass).
-Build: one longitudinal slice only (multi-slice → --unit goal + GOAL_APPROVED=1).
+Build: one dispatch unit (may contain multiple A slices packed under 272K).
+Unbounded "整份 Spec" without DISPATCH_ID/SLICE_IDS → fail (do not Goal-hard-撑).
 Goal: requires env GOAL_APPROVED=1.
 After Build ok: conductor must write <log-dir>/<run-id>_falsify.log with VERDICT: PASS.
 EOF
@@ -56,6 +59,8 @@ SANDBOX=""
 TIMEOUT_SEC=""
 SPEC_ID="${CODEX_DISPATCH_SPEC:-}"
 SLICE_ID="${CODEX_DISPATCH_SLICE:-}"
+DISPATCH_ID="${CODEX_DISPATCH_DISPATCH_ID:-}"
+RUN_ID_FILE="${CODEX_DISPATCH_RUN_ID_FILE:-}"
 JSON=1
 LOG_DIR="${CODEX_DISPATCH_LOG_DIR:-}"
 PROMPT_ARGS=()
@@ -70,6 +75,8 @@ while [[ $# -gt 0 ]]; do
     --timeout) TIMEOUT_SEC="${2:-}"; shift 2 ;;
     --spec) SPEC_ID="${2:-}"; shift 2 ;;
     --slice) SLICE_ID="${2:-}"; shift 2 ;;
+    --dispatch-id) DISPATCH_ID="${2:-}"; shift 2 ;;
+    --run-id-file) RUN_ID_FILE="${2:-}"; shift 2 ;;
     --json) JSON=1; shift ;;
     --no-json) JSON=0; shift ;;
     --log-dir) LOG_DIR="${2:-}"; shift 2 ;;
@@ -208,9 +215,20 @@ if [[ "$UNIT" == "plan" ]]; then
 fi
 
 if [[ "$UNIT" == "build" ]]; then
-  if echo "$PROMPT" | grep -Eiq \
+  if [[ -z "$DISPATCH_ID" ]] && echo "$PROMPT" | grep -Eqi 'DISPATCH_ID[[:space:]]*=[[:space:]]*[[:alnum:]_.-]+'; then
+    DISPATCH_ID="$(echo "$PROMPT" | grep -Eio 'DISPATCH_ID[[:space:]]*=[[:space:]]*[[:alnum:]_.-]+' | head -1 | sed -E 's/.*=[[:space:]]*//')"
+  fi
+  if [[ -z "$SLICE_ID" ]] && echo "$PROMPT" | grep -Eqi 'SLICE_IDS[[:space:]]*=[[:space:]]*[[:alnum:]_.,-]+'; then
+    SLICE_ID="$(echo "$PROMPT" | grep -Eio 'SLICE_IDS[[:space:]]*=[[:space:]]*[[:alnum:]_.,-]+' | head -1 | sed -E 's/.*=[[:space:]]*//')"
+  fi
+  packed=0
+  if [[ -n "$DISPATCH_ID" ]] || echo "$SLICE_ID" | grep -q ',' \
+    || echo "$PROMPT" | grep -Eqi 'DISPATCH_ID[[:space:]]*=|SLICE_IDS[[:space:]]*='; then
+    packed=1
+  fi
+  if [[ "$packed" != "1" ]] && echo "$PROMPT" | grep -Eiq \
     '剩余切片|all[[:space:]]+slices|全部切片|整份[[:space:]]*Spec[[:space:]]*(做完|完成)|multiple[[:space:]]+slices|多片连做|S1[[:space:]]*[|｜,/][[:space:]]*S2|S2[[:space:]]*[~～-][[:space:]]*S[0-9]'; then
-    die "build unit = one slice only; for multi-slice use --unit goal + GOAL_APPROVED=1"
+    die "unbounded multi-slice without DISPATCH_ID/SLICE_IDS — pack into a 272K dispatch unit first (do not Goal-hard-撑)"
   fi
   if [[ -z "$SLICE_ID" ]]; then
     if echo "$PROMPT" | grep -Eqi 'SLICE_ID[[:space:]]*=[[:space:]]*[[:alnum:]_.-]+'; then
@@ -219,12 +237,13 @@ if [[ "$UNIT" == "build" ]]; then
       SLICE_ID="$(echo "$PROMPT" | grep -Eio '(^|[[:space:]])S[0-9]+' | head -1 | tr -d '[:space:]')"
     fi
   fi
-  [[ -n "$SLICE_ID" ]] || die "build requires --slice <id> or SLICE_ID=/S# in prompt (one longitudinal slice)"
-  if ! echo "$PROMPT" | grep -Eqi "SLICE_ID[[:space:]]*=[[:space:]]*${SLICE_ID}|切片[^[:alnum:]]*${SLICE_ID}|${SLICE_ID}"; then
+  [[ -n "$SLICE_ID" || -n "$DISPATCH_ID" ]] \
+    || die "build requires --slice / SLICE_IDS / DISPATCH_ID (one dispatch unit)"
+  if [[ -n "$SLICE_ID" ]] && ! echo "$PROMPT" | grep -Eqi "SLICE_ID[[:space:]]*=|SLICE_IDS[[:space:]]*=|${SLICE_ID%%,*}"; then
     PROMPT="SLICE_ID=${SLICE_ID}
 ${PROMPT}"
   fi
-  echo "codex-dispatch: build slice=$SLICE_ID" >&2
+  echo "codex-dispatch: build slice=${SLICE_ID:-?} dispatch_id=${DISPATCH_ID:-}" >&2
 fi
 
 # --- Spec static gate (Build/Goal) ---
@@ -256,6 +275,12 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 RUN_ID="${UNIT}_${STAMP}_$$"
 LOG_FILE="$LOG_DIR/${RUN_ID}.jsonl"
 META_FILE="$LOG_DIR/${RUN_ID}.meta.txt"
+LAST_MSG_FILE="$LOG_DIR/${RUN_ID}.last.md"
+if [[ -n "$RUN_ID_FILE" ]]; then
+  mkdir -p "$(dirname "$RUN_ID_FILE")"
+  printf '%s\n' "$RUN_ID" >"$RUN_ID_FILE"
+fi
+echo "codex-dispatch: RUN_ID=$RUN_ID" >&2
 
 {
   echo "cwd=$CWD"
@@ -270,7 +295,10 @@ META_FILE="$LOG_DIR/${RUN_ID}.meta.txt"
   echo "log_file=$LOG_FILE"
   echo "run_id=$RUN_ID"
   [[ -n "$SPEC_ID" ]] && echo "spec=$SPEC_ID"
-  [[ -n "$SLICE_ID" ]] && echo "slice=$SLICE_ID"
+  [[ -n "$SLICE_ID" ]] && echo "slice=${SLICE_ID%%,*}"
+  [[ -n "$SLICE_ID" ]] && echo "slices=$SLICE_ID"
+  [[ -n "$DISPATCH_ID" ]] && echo "dispatch_id=$DISPATCH_ID"
+  echo "last_message=$LAST_MSG_FILE"
   echo "falsify_log=$LOG_DIR/${RUN_ID}_falsify.log"
 } >"$META_FILE"
 
@@ -293,6 +321,7 @@ CMD=(
 if [[ "$JSON" == "1" ]]; then
   CMD+=(--json)
 fi
+CMD+=(--output-last-message "$LAST_MSG_FILE")
 
 STDERR_FILE="$LOG_DIR/${RUN_ID}.stderr.log"
 set +e
@@ -338,10 +367,25 @@ if [[ "$UNIT" == "plan" ]]; then
   fi
 fi
 
+DETECT_COMPACT="$PLUGIN_ROOT/skills/dispatch-codex/scripts/detect_compact.py"
+if [[ "$UNIT" == "build" || "$UNIT" == "goal" ]] && [[ "$JSON" == "1" ]] \
+  && [[ -f "$DETECT_COMPACT" ]] && [[ -f "$LOG_FILE" ]]; then
+  set +e
+  python3 "$DETECT_COMPACT" --require-turn "$LOG_FILE"
+  inspect_rc=$?
+  set -e
+  if [[ "$inspect_rc" -ne 0 ]]; then
+    echo "codex-dispatch: Codex jsonl did not finish cleanly (need turn.completed, no compact event) log=$LOG_FILE" >&2
+    echo "exit_status=2" >>"$META_FILE"
+    echo "turn_incomplete_or_compact=1" >>"$META_FILE"
+    exit 2
+  fi
+fi
+
 echo "codex-dispatch: ok; meta=$META_FILE" >&2
 if [[ "$UNIT" == "build" || "$UNIT" == "goal" ]]; then
   echo "codex-dispatch: NEXT — conductor falsify → tee to $LOG_DIR/${RUN_ID}_falsify.log" >&2
-  echo "codex-dispatch: log must contain a line: VERDICT: ${SLICE_ID:-slice} PASS" >&2
+  echo "codex-dispatch: log must contain a line: VERDICT: ${SLICE_ID%%,*} PASS" >&2
   echo "codex-dispatch: then: bash skills/dispatch-codex/scripts/require-conductor-falsify.sh --log-dir $LOG_DIR --run-id $RUN_ID" >&2
 fi
 exit 0

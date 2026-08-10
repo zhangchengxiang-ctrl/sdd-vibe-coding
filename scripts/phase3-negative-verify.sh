@@ -56,10 +56,20 @@ fi
 
 grep -q "第一个工具调用" "$ROOT/templates/.cursor/rules/sdd-vibe-entry.mdc" \
   && ok "rule-text:sdd-vibe-entry" || bad "rule-text:sdd-vibe-entry" "missing 第一个工具调用"
+grep -q "显式 SDD 意图" "$ROOT/templates/.cursor/rules/sdd-vibe-entry.mdc" \
+  && ok "rule-text:sdd-vibe-entry-explicit" || bad "rule-text:sdd-vibe-entry-explicit" "missing 显式 SDD 意图 gate"
+grep -q "不算" "$ROOT/templates/.cursor/rules/sdd-vibe-entry.mdc" \
+  && ok "rule-text:sdd-vibe-entry-negative" || bad "rule-text:sdd-vibe-entry-negative" "missing 不算显式意图"
 grep -q "project.kind" "$ROOT/templates/.cursor/rules/sdd-vibe-entry.mdc" \
   && ok "rule-text:sdd-vibe-entry-kind" || bad "rule-text:sdd-vibe-entry-kind" "missing project.kind gate"
 grep -q "禁止默认假定" "$ROOT/templates/.cursor/rules/sdd-vibe-entry.mdc" \
   && ok "rule-text:sdd-vibe-entry-no-default-software" || bad "rule-text:sdd-vibe-entry-no-default-software" "missing no-default-software"
+for _sk in design spec testing deploy debug dispatch-codex; do
+  grep -q "disable-model-invocation: true" "$ROOT/skills/$_sk/SKILL.md" \
+    && ok "skill-dmi:$_sk" || bad "skill-dmi:$_sk" "missing disable-model-invocation"
+done
+grep -q "禁止因普通调研" "$ROOT/skills/vibe-coding/SKILL.md" \
+  && ok "skill:vibe-narrow-desc" || bad "skill:vibe-narrow-desc" "vibe-coding description not narrowed"
 grep -q "不算" "$ROOT/templates/.cursor/rules/sdd-shape-no-code.mdc" \
   && ok "rule-text:sdd-shape-no-code" || bad "rule-text:sdd-shape-no-code" "missing"
 grep -q "项目类型门" "$ROOT/templates/.cursor/rules/sdd-shape-no-code.mdc" \
@@ -120,7 +130,7 @@ rm -rf "$tmp" "$tmp2"
 
 # --- codex-dispatch gates ---
 DISPATCH="$ROOT/skills/dispatch-codex/scripts/codex-dispatch.sh"
-expect_exit 2 "dispatch:reject-multi-slice" \
+expect_exit 2 "dispatch:reject-unbounded-multi-slice" \
   bash "$DISPATCH" --cwd "$ROOT" --unit build --spec fake --slice S1 -- \
   "do remaining slices S1|S2 now"
 expect_exit 2 "dispatch:reject-no-slice" \
@@ -274,8 +284,8 @@ echo "PASS=$PASS FAIL=$FAIL SKIP=$SKIP"
 cat <<'EOF'
 
 ======== MANUAL (new Cursor chats after Reload Window) ========
-M1 Shape@agentdeck: 「讨论上传方案，禁止改码」→ first tool Read vibe-coding; only docs/product
-M2 Entry@bi: no @skill → still Read vibe-coding first (alwaysApply)
+M1 Shape@agentdeck: 「/vibe-coding 讨论上传方案，禁止改码」→ first tool Read vibe-coding; only docs/product
+M2 Entry@bi: 普通调研/SSH/取数（无高信号）→ 禁止先 Read vibe-coding；仅 /vibe-coding 或确认方案等才强制
 M3 Deploy@bi: 「批准 Build」only → must NOT touch prod; need Deploy+P4
 M4 Verify@agentdeck: refuse 可交付 without role×path falsify
 M5 Codex: no CallMcpTool user-codex; only codex-dispatch.sh

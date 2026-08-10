@@ -121,6 +121,78 @@ SPEC_ID=w1
 EOF
 check "wish-dry-skip-passed" 0 bash "$WISH" --cwd "$HOST" --spec w1 --dry-run --slice S1
 
+PACK_UNITS="$ROOT/skills/dispatch-codex/scripts/pack_dispatch_units.py"
+SCHEDULE="$ROOT/skills/dispatch-codex/scripts/schedule_waves.py"
+DETECT="$ROOT/skills/dispatch-codex/scripts/detect_compact.py"
+
+HOSTM="$TMP/mergehost"
+mkdir -p "$HOSTM/docs/specs/m1" "$HOSTM/src"
+echo 'x' >"$HOSTM/src/foo.ts"
+cat >"$HOSTM/docs/specs/m1/plan.md" <<'EOF'
+| 切片 ID | 入口 | 完成定义（链 T-xxx） | 触及路径 | 依赖 | 备注 |
+| S1 | a | T-001 | src/foo.ts | | oracle:unit |
+| S2 | b | T-002 | src/foo.ts | S1 | oracle:unit |
+| S3 | c | T-003 | src/foo.ts | S1 | oracle:unit |
+EOF
+for f in VERSION.md contract.md tests.md run.md; do
+  printf '# %s\n\nenough content for placeholder gates.\n' "$f" >"$HOSTM/docs/specs/m1/$f"
+done
+assert_merge() {
+  python3 "$PACK_UNITS" "$HOSTM" m1 --json | python3 -c 'import json,sys; g=json.load(sys.stdin); assert len(g["units"])==1, g; assert g["units"][0]["slices"]==["S1","S2","S3"], g'
+}
+check "pack-merge-same-writes" 0 assert_merge
+
+HOSTP="$TMP/parhost"
+mkdir -p "$HOSTP/docs/specs/p1"
+mkdir -p "$HOSTP/modules/track/collection/vrl" "$HOSTP/infra/postgres/init"
+echo 'a' >"$HOSTP/modules/track/collection/vrl/sa.vrl"
+echo 'b' >"$HOSTP/infra/postgres/init/01.sql"
+cat >"$HOSTP/docs/specs/p1/plan.md" <<'EOF'
+| 切片 ID | 入口 | 完成定义（链 T-xxx） | 触及路径 | 依赖 | 备注 |
+| S1 | coll | T-001 | modules/track/collection/vrl/sa.vrl | | oracle:unit |
+| S2 | pg | T-002 | infra/postgres/init/01.sql | | oracle:unit |
+EOF
+for f in VERSION.md contract.md tests.md run.md; do
+  printf '# %s\n\nenough content for placeholder gates.\n' "$f" >"$HOSTP/docs/specs/p1/$f"
+done
+assert_parallel() {
+  python3 "$SCHEDULE" --host "$HOSTP" --spec p1 --edit-parallel 2 | python3 -c 'import json,sys; w=json.load(sys.stdin); assert set(w["edit_waves"][0])=={"D1","D2"}, w'
+}
+check "schedule-edit-parallel" 0 assert_parallel
+
+HOSTL="$TMP/labhost"
+mkdir -p "$HOSTL/docs/specs/l1" "$HOSTL/src/a" "$HOSTL/src/b"
+echo 'a' >"$HOSTL/src/a/x.ts"
+echo 'b' >"$HOSTL/src/b/y.ts"
+cat >"$HOSTL/docs/specs/l1/plan.md" <<'EOF'
+| 切片 ID | 入口 | 完成定义（链 T-xxx） | 触及路径 | 依赖 | 备注 |
+| S1 | a | T-001 | src/a/x.ts | | oracle:lab claims:kind-datagate |
+| S2 | b | T-002 | src/b/y.ts | | oracle:lab claims:kind-datagate |
+EOF
+for f in VERSION.md contract.md tests.md run.md; do
+  printf '# %s\n\nenough content for placeholder gates.\n' "$f" >"$HOSTL/docs/specs/l1/$f"
+done
+assert_lab_serial() {
+  python3 "$SCHEDULE" --host "$HOSTL" --spec l1 --edit-parallel 2 | python3 -c 'import json,sys; w=json.load(sys.stdin); assert all(len(v)==1 for v in w["verify_waves"]), w'
+}
+check "schedule-verify-serial-lab" 0 assert_lab_serial
+
+echo '{"type":"item","item":{"type":"agent_message","text":"ok"}}' >"$TMP/clean.jsonl"
+check "detect-compact-clean" 0 python3 "$DETECT" "$TMP/clean.jsonl"
+echo '{"type":"compaction","message":"auto_compact ran"}' >"$TMP/compact.jsonl"
+check "detect-compact-hit" 1 python3 "$DETECT" "$TMP/compact.jsonl"
+printf '%s\n' '{"type":"turn.started"}' '{"type":"turn.completed","usage":{"input_tokens":6395729,"cached_input_tokens":6207488}}' >"$TMP/usage.jsonl"
+check "detect-usage-not-window" 0 python3 "$DETECT" --require-turn "$TMP/usage.jsonl"
+echo '{"type":"turn.started"}' >"$TMP/no-turn.jsonl"
+check "detect-require-turn-missing" 1 python3 "$DETECT" --require-turn "$TMP/no-turn.jsonl"
+# spec text mentioning compact must not trip
+printf '%s\n' '{"type":"item.completed","item":{"type":"command_execution","command":"cat plan.md # auto-compact threshold"}}' '{"type":"turn.completed","usage":{"input_tokens":100}}' >"$TMP/false-compact.jsonl"
+check "detect-false-compact-in-dump" 0 python3 "$DETECT" --require-turn "$TMP/false-compact.jsonl"
+
+check "wish-units-list" 0 bash "$WISH" --cwd "$HOSTM" --spec m1 --units
+check "wish-dry-merged-unit" 0 bash "$WISH" --cwd "$HOSTM" --spec m1 --dry-run
+check "wish-dry-parallel-wave" 0 bash "$WISH" --cwd "$HOSTP" --spec p1 --dry-run --parallel 2
+
 # --- auth block present in dispatcher ---
 check "auth-block-in-dispatch" 0 \
   grep -q "CLI dispatch authorization" "$ROOT/skills/dispatch-codex/scripts/codex-dispatch.sh"
@@ -128,6 +200,9 @@ check "auth-block-in-dispatch" 0 \
 # --- attestation doc exists ---
 check "falsify-attestation-doc" 0 \
   test -f "$ROOT/skills/dispatch-codex/references/falsify-attestation.md"
+
+echo "--- codex lifecycle (mock CLI, isolated tmp; no host repos) ---"
+bash "$ROOT/skills/dispatch-codex/scripts/selftest-codex-lifecycle.sh"
 
 echo "--- selftest-gates: pass=$pass fail=$fail ---"
 [[ "$fail" -eq 0 ]]

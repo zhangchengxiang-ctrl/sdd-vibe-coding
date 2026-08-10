@@ -32,6 +32,6 @@
 
 | kind | Agent 做什么 |
 |---|---|
-| `software` | vibe-coding 宿主轨（FIRST ACTION → 冷启动 / 判轨） |
+| `software` | **仅显式 SDD 意图**才进 vibe-coding 宿主轨（FIRST ACTION → 冷启动 / 判轨）；日常调研/排障不加载 |
 | `plugin` | 读 ARCHITECTURE（或包说明）；改 skills/templates/scripts；笔记 plans/ |
 | `other` | 停用编码硬闸后结束本插件流程；交给用户或其他 skill |

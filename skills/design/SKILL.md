@@ -1,11 +1,11 @@
 ---
 name: design
 description: >-
-  面向略懂技术产品经理的 Shape 专项 Skill：项目冷启动（Init/Onboard）、澄清愿望与
-  可确认产品方案；支持探索对话、代码库 grounding 与产品包分层。触发亦含：初始化项目、
-  接入存量、讨论产品、辩论、帮我想想、聊聊方向、拆解、deconstruct。方案确认后交回
-  vibe-coding 许愿研发编排。仅在 vibe-coding 已路由到 Shape/冷启动，或用户显式调用时
-  使用；不隐式接管普通产品诉求，不写业务代码。
+  SDD Shape / 冷启动专项：Init/Onboard 与可确认产品方案、产品包分层。
+  仅在 vibe-coding 已路由到 Shape/冷启动，或用户显式 @design /
+  「初始化项目接入 SDD」时使用。禁止因帮我想想、聊聊、拆解、辩论、
+  优化体验等日常话术自动加载；不写业务代码。
+disable-model-invocation: true
 ---
 
 # Design：Shape 产品诉求

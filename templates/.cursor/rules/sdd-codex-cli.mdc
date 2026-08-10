@@ -11,6 +11,7 @@ alwaysApply: true
 
 1. 派发只经 `codex-dispatch.sh` / `make codex-dispatch`（或包装缺失时的裸 `codex exec`+timeout）  
 2. **禁止** Codex MCP：`user-codex` / `CallMcpTool`（`codex` / `codex-reply`）及依赖其的 Subagent  
-3. 模型 `gpt-5.6-sol`；effort 仅 `medium`|`high`；`approval-policy=never`；一次一个完成单元  
+3. 模型 `gpt-5.6-sol`；effort 仅 `medium`|`high`；`approval-policy=never`；一次一个 **D（派发单元 / 272K）**  
+4. 改文档 / `check_spec` / 锁决策不派 Codex；一聊一个 edit-wave；jsonl compact → 该 D 失败，fresh exec  
 
 本规则由 `sdd-vibe-coding` install 投影。

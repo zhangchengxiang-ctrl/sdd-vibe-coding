@@ -1,10 +1,10 @@
 ---
 name: deploy
 description: >-
-  跨仓发布 / 上线专项 Skill。触发：deploy / 发布 / 上线 / 发版 / 生产部署 /
-  reload 上线 / 大版本发布。走 P0–P6（证据 → 并列设计怎么发与怎么证伪 → 批准 →
-  执行 → 生产验证关版）；定级 L0/L1/L2 由人/Agent 声明（脚本不定级）；
-  禁止仅用 health 或 Dev E2E 报部署成功。命令与环境只从宿主 AGENTS.md 读取。
+  SDD 生产发布专项（P0–P6）。仅在 vibe-coding 已路由到 Deploy，或用户显式
+  @deploy /「生产部署 / 上线 / 发版」时使用。禁止仅用 health 报成功；
+  命令只从宿主 AGENTS.md 读取。禁止因「发布说明 / 发个包」等非生产意图自动加载。
+disable-model-invocation: true
 ---
 
 # Deploy：发布生命周期
@@ -13,7 +13,7 @@ description: >-
 **不**替代 Shape/Plan/Build；**不**写业务功能代码（热修改码须另有 Build/Repair 授权）。
 
 **交叉硬门（Build 窜入）：** 若当前会话只批准了 Build /「开始做」/「确认方案」、且本轮未明示「部署 / 上线 / 发布」，**禁止 P5**。缺 P2/P3（L1/L2）或未获本轮 P4 → 停并摘要，不执行生产命令。  
-**交叉硬门（验收闸）：** 许愿路径下 Spec 仍为 `awaiting-human-acceptance`、或无人明示通过/关版时，**禁止**进入生产 P5（人明文豁免并担责除外）。
+**交叉硬门（验收闸）：** 许愿路径下 Spec 仍为 `awaiting-human-acceptance`（有 UI 待人点验）、或未达 `acceptance-passed` 时，**禁止**进入生产 P5（人明文豁免并担责除外）。无 UI 机器关版后已是 `acceptance-passed` 才可谈 P5。
 
 先读：
 

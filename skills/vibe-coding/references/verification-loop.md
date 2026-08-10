@@ -26,9 +26,9 @@ verify-deliver: ok · <ISO8601>
 
 缺字段 → `check_spec` fail。脚本负责写入该戳；禁止手写假戳绕过（戳仅证明本机跑过闸）。
 
-**许愿路径加闸：** Agent 工程证伪通过后先置 `awaiting-human-acceptance` 并交出
-[人类验收包](../../testing/references/human-acceptance-pack.md)；**须人明示通过/关版**后才可宣称
-`acceptance-passed` / 可交付（仍须本钉 verify-deliver）。
+**许愿路径关版分叉：** Agent 工程证伪 + `verify-deliver` 之后：  
+- 无 UI 且 P0 可机跑 → 交[证据卡](../../testing/references/human-acceptance-pack.md)并写 `acceptance-passed`（**禁止**请人再跑同一脚本）；  
+- 有 UI / 人判断 → `awaiting-human-acceptance` + 验收包；**须人明示通过/关版**后才可宣称 `acceptance-passed` / 可交付。
 
 ### 2. Build 禁改 Oracle（TDD 绿）
 
@@ -75,7 +75,7 @@ Polish / trivial：只跑改动面自探活；仍禁甩用户发现；**不**强
 探活执行者: agent | blocked-needs-auth
 产品证据: kind=<名> · <路径或命令摘要>
 触及面: …（勾选或 N/A+理由）
-需要用户做什么: 无需动作 | 批准… | 真人SSO/密钥…
+需要用户做什么: 无需动作 | 按验收包点验 | 批准… | 真人SSO/密钥…
 verify-deliver: ok · <时间>     # 可交付 / acceptance-passed / prod-smoke 通过时必有
 完成标签或结论: …
 ```

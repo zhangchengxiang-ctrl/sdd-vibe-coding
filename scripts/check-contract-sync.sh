@@ -33,6 +33,16 @@ done
 
 grep -q "第一个工具调用" "$ROOT/templates/.cursor/rules/sdd-vibe-entry.mdc" \
   && ok "entry:first-action" || bad "entry:first-action" "missing"
+grep -q "显式 SDD 意图" "$ROOT/templates/.cursor/rules/sdd-vibe-entry.mdc" \
+  && ok "entry:explicit-intent" || bad "entry:explicit-intent" "missing"
+grep -q "不算" "$ROOT/templates/.cursor/rules/sdd-vibe-entry.mdc" \
+  && ok "entry:negative-triggers" || bad "entry:negative-triggers" "missing"
+for _sk in design spec testing deploy debug dispatch-codex; do
+  grep -q "disable-model-invocation: true" "$ROOT/skills/$_sk/SKILL.md" \
+    && ok "dmi:$_sk" || bad "dmi:$_sk" "missing disable-model-invocation"
+done
+grep -q "禁止因普通调研" "$ROOT/skills/vibe-coding/SKILL.md" \
+  && ok "vibe:narrow-desc" || bad "vibe:narrow-desc" "description not narrowed"
 grep -q "Build ≠ Deploy" "$ROOT/templates/.cursor/rules/sdd-deploy-p4.mdc" \
   && ok "deploy:build-ne" || bad "deploy:build-ne" "missing"
 grep -q "禁止" "$ROOT/templates/.cursor/rules/sdd-codex-cli.mdc" \
@@ -43,6 +53,20 @@ grep -q "falsify-attestation\|structured\|COMMAND" \
 grep -q "PASSED_SLICES\|flock" \
   "$ROOT/skills/dispatch-codex/scripts/wish-orchestrate.sh" \
   && ok "wish:idempotent-lock" || bad "wish:idempotent-lock" "missing PASSED_SLICES/flock"
+test -f "$ROOT/skills/dispatch-codex/scripts/pack_dispatch_units.py" \
+  && ok "pack-dispatch-units" || bad "pack-dispatch-units" "missing"
+test -f "$ROOT/skills/dispatch-codex/scripts/schedule_waves.py" \
+  && ok "schedule-waves" || bad "schedule-waves" "missing"
+test -f "$ROOT/skills/dispatch-codex/scripts/detect_compact.py" \
+  && ok "detect-compact" || bad "detect-compact" "missing"
+test -f "$ROOT/skills/dispatch-codex/references/dispatch-units.md" \
+  && ok "dispatch-units-doc" || bad "dispatch-units-doc" "missing"
+grep -q "272K\|派发单元" "$ROOT/skills/dispatch-codex/references/dispatch-units.md" \
+  && ok "dispatch-units:272k" || bad "dispatch-units:272k" "missing window language"
+grep -q "证据卡\|机器关版" "$ROOT/skills/testing/references/human-acceptance-pack.md" \
+  && ok "hap:evidence-card" || bad "hap:evidence-card" "missing no-UI fork"
+grep -q "一次 exec = 一个 D\|一次一个 D" "$ROOT/skills/vibe-coding/references/workflow-contract.md" \
+  && ok "wf:dispatch-unit" || bad "wf:dispatch-unit" "missing D unit language"
 test -f "$ROOT/scripts/hooks/gate-shell.sh" && test -f "$ROOT/scripts/hooks/gate-write.sh" \
   && ok "hooks:gates" || bad "hooks:gates" "missing gate scripts"
 test -f "$ROOT/scripts/wish-journey.sh" \

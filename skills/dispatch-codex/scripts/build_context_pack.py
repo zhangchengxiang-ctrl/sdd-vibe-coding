@@ -190,63 +190,103 @@ def build_pack(
     spec_id: str,
     slice_id: str,
     row: dict[str, str],
+    *,
+    extra_rows: list[dict[str, str]] | None = None,
+    dispatch_id: str = "",
 ) -> dict:
     sdd = resolve_sdd_root(host)
-    t_ids = extract_t_ids(row.get("done_def", ""))
-    paths = extract_paths(row.get("paths_raw", ""), row.get("note", ""))
+    rows = [row] + (extra_rows or [])
+    t_ids: list[str] = []
+    paths: list[str] = []
+    deps: list[str] = []
+    entries: list[str] = []
+    slice_ids: list[str] = []
+    for r in rows:
+        sid = r.get("slice_id") or slice_id
+        if sid not in slice_ids:
+            slice_ids.append(sid)
+        entries.append(f"{sid}:{r.get('entry') or '(见 plan.md 本片入口)'}")
+        for t in extract_t_ids(r.get("done_def", "")):
+            if t not in t_ids:
+                t_ids.append(t)
+        for p in extract_paths(r.get("paths_raw", ""), r.get("note", "")):
+            if p not in paths:
+                paths.append(p)
+        d = (r.get("deps") or "").strip()
+        if d and d not in deps:
+            deps.append(d)
     pointers = rel_spec_files(sdd, host, spec_id)
-    entry = row.get("entry") or "(见 plan.md 本片入口)"
-    goal = f"完成切片 {slice_id}：{entry}"
+    if len(slice_ids) == 1:
+        goal = f"完成切片 {slice_ids[0]}：{rows[0].get('entry') or '(见 plan.md 本片入口)'}"
+    else:
+        goal = f"完成派发单元 {dispatch_id or slice_ids[0]}（切片 {', '.join(slice_ids)}）"
     if t_ids:
         goal += f"（Oracle：{', '.join(t_ids)}）"
 
     return {
-        "slice_id": slice_id,
+        "slice_id": slice_ids[0],
+        "slice_ids": slice_ids,
+        "dispatch_id": dispatch_id or slice_ids[0],
         "spec_id": spec_id,
         "goal": goal,
-        "entry": entry,
+        "entry": " | ".join(entries),
         "t_ids": t_ids,
         "paths": paths,
         "pointers": pointers,
-        "deps": row.get("deps", ""),
-        "done_def": row.get("done_def", ""),
+        "deps": "; ".join(deps),
+        "done_def": "; ".join(r.get("done_def", "") for r in rows if r.get("done_def")),
     }
 
 
 def render_prompt(pack: dict, docs_hint: str) -> str:
+    slice_ids = pack.get("slice_ids") or [pack["slice_id"]]
+    slice_csv = ",".join(slice_ids)
+    dispatch_id = pack.get("dispatch_id") or slice_ids[0]
     t_ids = ", ".join(pack["t_ids"]) if pack["t_ids"] else "(见 plan.md 本片完成定义)"
-    paths = "\n".join(f"  - {p}" for p in pack["paths"]) if pack["paths"] else "  - (未声明触及路径；按 contract 事实映射自行定位，勿扩大范围)"
+    if pack["paths"]:
+        paths = "\n".join(f"  - {p}" for p in pack["paths"])
+        allow_note = "ALLOWLIST is hard: do not read/write outside these paths (+ Spec pointers)."
+    else:
+        paths = "  - (MISSING allowlist — conductor must not dispatch)"
+        allow_note = "ALLOWLIST missing: refuse to wander the repo; fail if conductor still sent this."
     pointers = "\n".join(f"  - {p}" for p in pack["pointers"]) if pack["pointers"] else f"  - {docs_hint}/specs/{pack['spec_id']}/"
+    only = "只做本派发单元内的切片；禁止顺手做单元外切片或重构无关模块。"
+    if len(slice_ids) > 1:
+        only = f"本 exec 一次做完切片 {slice_csv}（同一派发单元）。禁止再开新会话/压缩后续做剩下的片。"
 
-    return f"""SLICE_ID={pack['slice_id']}
+    return f"""DISPATCH_ID={dispatch_id}
+SLICE_IDS={slice_csv}
+SLICE_ID={slice_ids[0]}
 SPEC_ID={pack['spec_id']}
 
 ## Goal
 {pack['goal']}
-只做这一片；禁止顺手做其他切片或重构无关模块。
+{only}
 
 ## Context
 Spec pointers (read from disk; do not expect full text in this prompt):
 {pointers}
-Suggested paths for this slice:
+Allowlist / write-set for this dispatch unit:
 {paths}
 Oracle ids: {t_ids}
 Deps: {pack['deps'] or 'n/a'}
 
 ## Constraints
 - Follow host AGENTS.md and vibe-coding quality bars **except** mid-flow human approval: this Pack is already authorized via CLI (`approval_policy=never`). Do NOT wait for 批准 / ask clarifying questions / use doc-coauthoring.
-- Diff must stay within this slice; respect Out of Scope in contract.md.
+- {allow_note}
+- Diff must stay within the allowlist; respect Out of Scope in contract.md.
 - Do NOT modify tests.md or product acceptance-matrix Oracle (钉 2).
 - UI changes: read plugin design-standards LOAD-MAP first; note refinement|redesign if touching existing UI.
 - Prefer reading files via tools over assuming prompt pasted the codebase.
+- Stay inside one Codex window: do not explore the whole monorepo. If context pressure rises, finish the allowlist diff and stop — do not auto-compact onward.
 - Final message: short status + evidence only — zero questions.
 
 ## Done when
 - Behavior for {t_ids} is implemented and observable.
-- Run the slice-relevant checks/tests; write results to run.md with oracle-freeze: intact and 红绿证据 (or N/A · reason).
-- Short report only: what shipped, evidence paths, next slice id — no "可交付".
+- Run the unit-relevant checks/tests; write results to run.md with oracle-freeze: intact and 红绿证据 (or N/A · reason).
+- Short report only: what shipped, evidence paths, next dispatch unit — no "可交付".
 
-按 vibe-coding Build 本切片；对照 contract 事实映射再改。
+按 vibe-coding Build 本派发单元；对照 contract 事实映射再改。
 """
 
 
@@ -280,14 +320,28 @@ def main() -> None:
     if not args.slice_id:
         die("slice_id required (or pass --list)", 2)
 
-    # normalize S1 vs s1
-    want = args.slice_id.strip()
-    row = next((r for r in rows if r["slice_id"].lower() == want.lower()), None)
-    if row is None:
-        known = ", ".join(r["slice_id"] for r in rows)
-        die(f"slice '{want}' not in plan.md (have: {known})")
+    wants = [w.strip() for w in re.split(r"[,+\s]+", args.slice_id.strip()) if w.strip()]
+    if not wants:
+        die("slice_id required (or pass --list)", 2)
+    selected: list[dict[str, str]] = []
+    for want in wants:
+        row = next((r for r in rows if r["slice_id"].lower() == want.lower()), None)
+        if row is None:
+            known = ", ".join(r["slice_id"] for r in rows)
+            die(f"slice '{want}' not in plan.md (have: {known})")
+        selected.append(row)
 
-    pack = build_pack(host, args.spec_id, row["slice_id"], row)
+    dispatch_id = ""
+    if len(selected) > 1:
+        dispatch_id = f"D-{'-'.join(r['slice_id'] for r in selected)}"
+    pack = build_pack(
+        host,
+        args.spec_id,
+        selected[0]["slice_id"],
+        selected[0],
+        extra_rows=selected[1:],
+        dispatch_id=dispatch_id,
+    )
     if not pack["t_ids"]:
         print(
             "build_context_pack: WARN no T-xxx in 完成定义 — pack still emitted",

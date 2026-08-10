@@ -4,7 +4,7 @@
 
 | 文件 | 作用 |
 |------|------|
-| `sdd-vibe-entry.mdc` | 先判 `project.kind`（`software`\|`plugin`\|`other`）；仅 `software` 强制 Read `vibe-coding` |
+| `sdd-vibe-entry.mdc` | 先判 `project.kind`；**仅显式 SDD 意图**才强制 Read `vibe-coding`（日常调研/排障不加载） |
 | `sdd-shape-no-code.mdc` | 仅 `software`：无 Build 授权不改业务码 |
 | `sdd-deploy-p4.mdc` | Build ≠ Deploy；P4 前禁生产 |
 | `sdd-codex-cli.mdc` | Codex 只走 CLI，禁 MCP |

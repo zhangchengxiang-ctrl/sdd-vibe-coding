@@ -60,7 +60,7 @@ can_transition() {
     planning__building|planning__design-ready) return 0 ;;
     building__awaiting-falsify|building__verifying|building__repairing|building__blocked) return 0 ;;
     awaiting-falsify__building|awaiting-falsify__verifying|awaiting-falsify__repairing|awaiting-falsify__blocked) return 0 ;;
-    verifying__awaiting-human-acceptance|verifying__repairing|verifying__blocked) return 0 ;;
+    verifying__awaiting-human-acceptance|verifying__acceptance-passed|verifying__repairing|verifying__blocked) return 0 ;;
     repairing__building|repairing__verifying|repairing__blocked) return 0 ;;
     awaiting-human-acceptance__acceptance-passed|awaiting-human-acceptance__repairing|awaiting-human-acceptance__blocked) return 0 ;;
     acceptance-passed__blocked) return 0 ;;

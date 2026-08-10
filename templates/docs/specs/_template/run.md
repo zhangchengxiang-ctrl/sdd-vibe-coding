@@ -105,8 +105,8 @@
 - 直接证据：
 - 下一步：
 
-所有适用 Test 有终态只能声明 `matrix-accounted`；工程证伪+人类验收包就绪 → `awaiting-human-acceptance`；
-人确认通过且关版条件满足 → `acceptance-passed`。均不是 Delivery Target（见 workflow-contract「状态词汇」）。
+所有适用 Test 有终态只能声明 `matrix-accounted`；有 UI 工程证伪+验收包就绪 → `awaiting-human-acceptance`；
+无 UI 机器关版或人确认通过且关版条件满足 → `acceptance-passed`。均不是 Delivery Target（见 workflow-contract「状态词汇」）。
 
 ## Production Verification（适用时）
 
