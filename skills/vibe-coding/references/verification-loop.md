@@ -43,7 +43,7 @@ verify-deliver: ok · <ISO8601>
 oracle-freeze: intact
 红绿证据: red `<cmd>` exit=<n> · green `<cmd>` exit=0
 dispatch-run-id: <id>   # 或路径 `.codex-dispatch-logs/<id>.jsonl`
-# 若明文自写 / Polish：override: 用户要求自写|polish|trivial
+# 自写/Polish：override: 用户要求自写 | polish · 用户本轮明示
 ```
 
 有自动化 → **先红后绿**，两态命令+退出码写入上式。  

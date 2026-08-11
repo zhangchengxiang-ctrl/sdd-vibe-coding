@@ -37,7 +37,7 @@
 指挥侧例外（仅）：① Polish/trivial (c)；② Repair 小缺口（≤2 文件、不新增行为面）；③ 用户明文「你自己写 / 不用 Codex」。  
 改文档 / `check_spec` / 锁决策 / 验收 → 指挥侧自做。Verify 主验收禁派（[`verification-loop`](./verification-loop.md) 钉 3）。  
 无 `codex` → `blocked`。  
-**声明派生（机检）：** `run.md` 写「实现完成」须引用 `.codex-dispatch-logs/<id>.jsonl`（或 `dispatch-run-id:`），否则写 `override: 用户要求自写|polish|trivial`（`check_spec` Fail）。
+**声明派生（机检）：** 「实现完成」→ `dispatch-run-id:` 已完成 jsonl，或 `override: 用户要求自写` / `polish · 用户本轮明示`（裸 polish 无效）
 
 ## 方案确认后的自动编排
 

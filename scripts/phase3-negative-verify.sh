@@ -260,7 +260,7 @@ run = """
 - 实现冻结时间：2026-08-11T00:00:00Z
 oracle-freeze: intact
 红绿证据: N/A · polish
-override: polish
+override: polish · 用户本轮明示
 ## 批次结果
 | 结果 |
 |------|
@@ -275,7 +275,158 @@ set -e
 if [[ $dp -eq 0 ]]; then
   ok "check_spec:dispatch-override-positive"
 else
-  bad "check_spec:dispatch-override-positive" "override: polish should pass"
+  bad "check_spec:dispatch-override-positive" "override: polish · 用户本轮明示 should pass"
+fi
+
+# --- synonym lazy Oracle must Fail (rot H1) ---
+set +e
+python3 - <<'PY'
+import importlib.util, sys, os, tempfile
+from pathlib import Path
+plugin = Path(os.environ["PHASE3_ROOT"])
+spec = importlib.util.spec_from_file_location(
+    "check_spec", plugin / "skills/spec/scripts/check_spec.py"
+)
+m = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(m)
+phrases = [
+    "新手任务单全部打钩，教学流程正式收官。",
+    "导览动画走到末页并自动退场。",
+    "侧滑面板弹出并停在展开态。",
+    "textarea 获得焦点且闪烁光标。",
+]
+for p in phrases:
+    if not m.then_is_lazy_path_oracle(p):
+        print("miss", p, file=sys.stderr)
+        sys.exit(1)
+r = m.Report()
+tests = """
+## 索引
+| ID | Type | R |
+|----|------|---|
+| T-001 | success | R-1 |
+## T-001
+### Given
+- x
+### When
+- y
+### Then（Oracle）
+- 用户可见：右侧浮层滑入视野并保持展开。
+"""
+tmp = Path(tempfile.mkdtemp()) / "syn"
+tmp.mkdir()
+m.check_tests(tmp, tests, [], r, structure_only=False)
+sys.exit(0 if r.errors >= 1 else 1)
+PY
+sy=$?
+set -e
+if [[ $sy -eq 0 ]]; then
+  ok "check_spec:t001-lazy-synonym-negative"
+else
+  bad "check_spec:t001-lazy-synonym-negative" "expected synonym lazy Oracle to Fail"
+fi
+
+# --- build euphemism without dispatch must Fail (rot H2) ---
+set +e
+python3 - <<'PY'
+import importlib.util, sys, os
+from pathlib import Path
+plugin = Path(os.environ["PHASE3_ROOT"])
+spec = importlib.util.spec_from_file_location(
+    "check_spec", plugin / "skills/spec/scripts/check_spec.py"
+)
+m = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(m)
+r = m.Report()
+run = """
+- 当前模式：`build`
+Build 已经交卷，功能代码全部落袋。
+oracle-freeze: intact
+红绿证据: red exit=1 · green exit=0
+## 批次结果
+| 结果 |
+|------|
+| Pass |
+"""
+m.check_run_honesty(Path("demo"), run, r, structure_only=False)
+sys.exit(0 if r.errors >= 1 else 1)
+PY
+eu=$?
+set -e
+if [[ $eu -eq 0 ]]; then
+  ok "check_spec:impl-euphemism-negative"
+else
+  bad "check_spec:impl-euphemism-negative" "expected euphemism without dispatch to Fail"
+fi
+
+# --- fake dispatch-run-id must Fail (rot H4) ---
+set +e
+python3 - <<'PY'
+import importlib.util, sys, os
+from pathlib import Path
+plugin = Path(os.environ["PHASE3_ROOT"])
+spec = importlib.util.spec_from_file_location(
+    "check_spec", plugin / "skills/spec/scripts/check_spec.py"
+)
+m = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(m)
+r = m.Report()
+run = """
+- 当前模式：`build`
+- 实现冻结时间：2026-08-11T00:00:00Z
+oracle-freeze: intact
+红绿证据: N/A · 无自动化
+dispatch-run-id: totally-fake-id-999
+## 批次结果
+| 结果 |
+|------|
+| Pass |
+"""
+m.check_run_honesty(Path("demo"), run, r, structure_only=False)
+sys.exit(0 if r.errors >= 1 else 1)
+PY
+fk=$?
+set -e
+if [[ $fk -eq 0 ]]; then
+  ok "check_spec:fake-dispatch-id-negative"
+else
+  bad "check_spec:fake-dispatch-id-negative" "expected missing jsonl to Fail"
+fi
+
+# --- future verify-deliver stamp must Fail (rot H5) ---
+set +e
+python3 - <<'PY'
+import importlib.util, sys, os
+from pathlib import Path
+plugin = Path(os.environ["PHASE3_ROOT"])
+spec = importlib.util.spec_from_file_location(
+    "check_spec", plugin / "skills/spec/scripts/check_spec.py"
+)
+m = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(m)
+r = m.Report()
+run = """
+- 状态：`acceptance-passed`
+- 当前模式：`verify`
+- 是否可以交付：`可交付`
+verify-deliver: ok · 2099-01-01T00:00:00Z
+证伪: falsify done
+## 已验证的用户结果
+用户能完成主路径
+## 批次结果
+| 结果 |
+|------|
+| Pass |
+"""
+m.check_run_honesty(Path("demo"), run, r, structure_only=False)
+sys.exit(0 if r.errors >= 1 else 1)
+PY
+fs=$?
+set -e
+if [[ $fs -eq 0 ]]; then
+  ok "check_spec:future-stamp-negative"
+else
+  bad "check_spec:future-stamp-negative" "expected future stamp to Fail"
 fi
 
 echo

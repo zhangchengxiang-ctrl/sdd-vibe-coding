@@ -10,7 +10,7 @@
 - 完成实现后冻结代码，跑完整单元测试批次；记录失败后统一 Repair
 - 有自动化 → 先红后绿；红/绿写入 `run.md`「红绿证据」；Polish/trivial/无自动化写 `N/A`
 - **硬门：** 只可报「实现完成」；禁止宣称「可交付」/ `acceptance-passed`  
-- **声明派生：** 「实现完成」须带 dispatch jsonl 指针或 `override:`（机检见 `check_spec`）；`acceptance-passed` 须带 `verify-deliver: ok · <时间>`
+- **声明派生：** 「实现完成」→ `dispatch-run-id:` 或 `override: 用户要求自写` / `polish · 用户本轮明示`；`acceptance-passed`→真实 `verify-deliver` 戳（见 `check_spec`）
 - **硬门：** 禁止 Deploy P5/P6 或读写生产；须路由 Skill `deploy` + 本轮 P4
 - **硬门（钉 2 · Oracle 冻结）：** 禁止改 `tests.md` 与产品包验收矩阵；`run.md` 须有 `oracle-freeze: intact`
 

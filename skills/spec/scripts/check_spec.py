@@ -16,6 +16,7 @@ import argparse
 import json
 import re
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 LEGACY_NAMES = {
@@ -254,18 +255,63 @@ WEAK_ORACLE_PHRASES = (
 )
 
 # Antipattern Oracles for T-001 / primary success path (scheme-antipatterns.md)
+# Class detectors (synonyms), not only surface literals — adversarial rot H1.
 LAZY_PATH_ORACLE_RE = re.compile(
+    # focus / input takeover
     r"focus\s*(textarea|input|输入框)"
+    r"|textarea\s*.{0,12}(焦点|闪烁|光标)"
+    r"|光标\s*(落|进|移)"
+    r"|插入符"
+    r"|输入态\s*高亮"
+    r"|获得焦点"
+    r"|接管键盘"
+    r"|文本编辑区"
+    # drawer / sheet / overlay
     r"|打开抽屉|open\s+drawer"
+    r"|侧滑|抽屉|drawer"
+    r"|right\s*sheet|右侧\s*(浮层|面板|抽屉)"
+    r"|浮层.{0,8}(展开|滑入|弹出)"
+    r"|面板.{0,8}(展开|弹出|滑入)"
+    # CTA click alone
     r"|点击\s*CTA|click\s+(the\s+)?cta"
-    r"|勾完|勾选完成|checklist\s*(完成|done|complete)"
+    # checklist / onboarding tick-complete
+    r"|勾完|勾选完成|打钩|划掉|打卡"
+    r"|checklist\s*(完成|done|complete)?"
+    r"|任务单|任务卡|待办项"
+    r"|onboarding.{0,16}(点完|完成|收尾|收官)"
+    r"|步骤.{0,8}(点完|打完|走完)"
+    r"|教学.{0,12}(收官|收尾|宣告)"
+    # lesson / completion rate / badge
     r"|lesson\s*(完成|完成率|complete)"
     r"|完成率\s*[≥>=]?"
-    r"|tour\s*(播完|完成|complete|finished)"
-    r"|引导\s*(走完|完成)"
+    r"|完成度.{0,8}(100|满|％|%)"
+    r"|进度条.{0,10}(满|冲到|点亮)"
+    r"|徽章\s*点亮"
+    # tour / coach / guide
+    r"|tour\s*(播完|完成|complete|finished)?"
+    r"|导览|coach\s*mark|聚光提示|气泡卡"
+    r"|引导\s*(走完|完成|退场|末页)"
+    r"|末页.{0,8}(退场|消失|自动)"
+    # state-machine / soft-fallback / residual
     r"|状态位|flag\s*(置位|=|true)"
     r"|软回退.*(学会|完成)"
     r"|residual|live[\s_-]?deferred",
+    re.IGNORECASE,
+)
+
+# Build-done euphemisms (adversarial rot H2) — trigger same honesty as 实现完成
+IMPL_DONE_EUPHEMISM_RE = re.compile(
+    r"实现完成"
+    r"|交卷|收官|封板|落袋"
+    r"|Implementation\s+is\s+done"
+    r"|coding\s+work\s+is\s+wrapped"
+    r"|开发(?:工作)?已全部结束"
+    r"|改动悉数落地"
+    r"|进入交接态"
+    r"|施工(?:可)?移交"
+    r"|handoff\s+to\s+(?:qa|verification)"
+    r"|ready\s+for\s+verification"
+    r"|本轮施工",
     re.IGNORECASE,
 )
 
@@ -733,16 +779,162 @@ RED_GREEN_PAIR_OK = re.compile(
     r"(?i)(?:red|红).{0,80}exit\s*=\s*\d+.{0,120}(?:green|绿).{0,80}exit\s*=\s*0",
 )
 # P3: Build 实现完成 must cite dispatch jsonl OR explicit self-write override
-DISPATCH_EVIDENCE_RE = re.compile(
-    r"\.codex-dispatch-logs/[^\s`]+(?:\.jsonl)?"
-    r"|dispatch[_-]?(?:run[_-]?)?id\s*[:=]\s*\S+"
-    r"|codex-dispatch[^\n]{0,80}turn\.completed",
+DISPATCH_PATH_RE = re.compile(
+    r"\.codex-dispatch-logs/([^\s`]+?\.jsonl)",
     re.I,
 )
+DISPATCH_RUN_ID_RE = re.compile(
+    r"dispatch[_-]?(?:run[_-]?)?id\s*[:=]\s*[`\"]?([^\s`\"\n]+)",
+    re.I,
+)
+# Bare `override: polish` is forgeable (H3). Require user-explicit phrasing.
 OVERRIDE_SELF_RE = re.compile(
-    r"override\s*:\s*.*(?:自写|不用\s*Codex|你自己写|polish|trivial)",
+    r"override\s*:\s*(?:"
+    r"用户要求自写"
+    r"|不用\s*Codex"
+    r"|你自己写"
+    r"|(?:用户(?:要求|明示)|本轮明示).{0,40}(?:polish|trivial|自写)"
+    r"|polish\s*[·•].{0,60}(?:用户|明示)"
+    r"|trivial\s*[·•].{0,60}(?:用户|明示)"
+    r")",
     re.I,
 )
+_FIXTURE_SPEC_NAMES = frozenset(
+    {
+        "demo",
+        "atk",
+        "pure",
+        "lazy",
+        "lazy-oracle",
+        "_template",
+    }
+)
+
+
+def _dispatch_log_dirs(start: Path | None = None) -> list[Path]:
+    dirs: list[Path] = []
+    seen: set[Path] = set()
+    candidates = [Path.cwd()]
+    if start is not None:
+        candidates.append(start.resolve())
+        candidates.extend(start.resolve().parents)
+    for base in candidates:
+        d = (base / ".codex-dispatch-logs").resolve()
+        if d.is_dir() and d not in seen:
+            seen.add(d)
+            dirs.append(d)
+        # host root often has logs; stop after a few parents
+        if len(dirs) >= 4:
+            break
+    return dirs
+
+
+def _resolve_dispatch_jsonl(run_id_or_name: str, start: Path | None = None) -> Path | None:
+    name = run_id_or_name.strip().strip("`\"'")
+    if not name:
+        return None
+    if not name.endswith(".jsonl"):
+        name_jsonl = f"{name}.jsonl"
+    else:
+        name_jsonl = name
+    base = Path(name_jsonl).name
+    stem = base[: -len(".jsonl")] if base.endswith(".jsonl") else base
+    for log_dir in _dispatch_log_dirs(start):
+        direct = log_dir / base
+        if direct.is_file():
+            return direct
+        # allow prefix match: goal_*_{pid}.jsonl cited as run-id
+        for p in sorted(log_dir.glob("*.jsonl")):
+            if stem and stem in p.name:
+                return p
+    # absolute / cwd-relative path citation
+    cand = Path(name)
+    if cand.is_file() and cand.suffix == ".jsonl":
+        return cand.resolve()
+    cwd_cand = Path.cwd() / name
+    if cwd_cand.is_file():
+        return cwd_cand.resolve()
+    return None
+
+
+def dispatch_evidence_valid(
+    run: str,
+    spec_dir: Path,
+) -> tuple[bool, str]:
+    """Return (ok, reason). Prefer dispatch-run-id → existing completed jsonl."""
+    if OVERRIDE_SELF_RE.search(run):
+        return True, "override"
+
+    run_ids = [m.group(1) for m in DISPATCH_RUN_ID_RE.finditer(run)]
+    if not run_ids:
+        if DISPATCH_PATH_RE.search(run):
+            return False, (
+                "path-only .codex-dispatch-logs/*.jsonl rejected — "
+                "add `dispatch-run-id: <id>` matching an existing completed jsonl"
+            )
+        return False, "missing dispatch-run-id: <id> or override: …"
+
+    last_reason = "dispatch jsonl not found on disk"
+    for token in run_ids:
+        path = _resolve_dispatch_jsonl(token, spec_dir)
+        if path is None or not path.is_file():
+            last_reason = f"dispatch jsonl missing for {token!r}"
+            continue
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            last_reason = f"cannot read {path.name}"
+            continue
+        if path.stat().st_size < 80:
+            last_reason = f"{path.name} too small to be a completed run"
+            continue
+        if not re.search(r"turn\.completed|\"type\"\s*:\s*\"turn\.completed\"", text):
+            last_reason = f"{path.name} missing turn.completed"
+            continue
+        spec_name = spec_dir.name
+        if (
+            spec_name
+            and spec_name not in _FIXTURE_SPEC_NAMES
+            and len(spec_name) >= 3
+            and spec_name not in text
+            and f"--spec {spec_name}" not in text
+            and f"--spec={spec_name}" not in text
+        ):
+            last_reason = (
+                f"{path.name} does not mention spec id {spec_name!r} "
+                "(refuse unrelated jsonl reuse)"
+            )
+            continue
+        return True, path.name
+    return False, last_reason
+
+
+def verify_deliver_stamp_valid(run: str) -> tuple[bool, str]:
+    """Reject missing/malformed/future verify-deliver stamps (H5)."""
+    m = VERIFY_DELIVER_STAMP_RE.search(run)
+    if not m:
+        return False, "missing"
+    # pull timestamp token after ok ·
+    tm = re.search(
+        r"verify-deliver\s*:\s*ok\s*[·•]\s*(\S+)",
+        run,
+        re.I,
+    )
+    if not tm:
+        return False, "malformed"
+    raw = tm.group(1).strip().strip("`\"'")
+    # expect ISO8601-ish
+    normalized = raw.replace("Z", "+00:00")
+    try:
+        when = datetime.fromisoformat(normalized)
+    except ValueError:
+        return False, f"unparseable time {raw!r}"
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=timezone.utc)
+    now = datetime.now(timezone.utc)
+    if when > now + timedelta(hours=2):
+        return False, f"stamp in the future ({raw})"
+    return True, raw
 
 
 def check_run_honesty(
@@ -796,11 +988,12 @@ def check_run_honesty(
 
     # Nail 1: close-gate stamp (verify-deliver exit 0 record)
     if claimed_pass and not allow_unstamped_deliver:
-        if not VERIFY_DELIVER_STAMP_RE.search(run):
+        ok_stamp, stamp_reason = verify_deliver_stamp_valid(run)
+        if not ok_stamp:
             report.fail(
                 f"{spec_dir.name}/run.md: claims 可交付/acceptance-passed/prod-smoke 通过 "
-                "but missing `verify-deliver: ok · <time>` "
-                "(run `make verify-deliver HOST=<repo> SPEC=<id>` first)"
+                f"but verify-deliver stamp invalid ({stamp_reason}); "
+                "run `make verify-deliver HOST=<repo> SPEC=<id>` first"
             )
         else:
             report.ok(f"{spec_dir.name}: verify-deliver stamp present")
@@ -874,7 +1067,7 @@ def check_run_honesty(
                 if clean(v).lower() in {"pass", "fail", "blocked"}:
                     batch_has_result = True
                 break
-    claimed_impl = "实现完成" in run or (
+    claimed_impl = bool(IMPL_DONE_EUPHEMISM_RE.search(run)) or (
         mode in {"build", "building", "repair", "repairing"}
         and freeze_filled
         and batch_has_result
@@ -907,17 +1100,18 @@ def check_run_honesty(
                 )
             else:
                 report.ok(f"{spec_dir.name}: Build oracle-freeze + 红绿证据 ok")
-        # P3 evidence-derived: dispatch jsonl or explicit override
-        if not (
-            DISPATCH_EVIDENCE_RE.search(run) or OVERRIDE_SELF_RE.search(run)
-        ):
+        # P3 evidence-derived: existing dispatch jsonl (bound) or explicit override
+        ok_ev, ev_reason = dispatch_evidence_valid(run, spec_dir)
+        if not ok_ev:
             report.fail(
-                f"{spec_dir.name}/run.md: Build/Repair claims 实现完成 but missing "
-                "dispatch evidence (`.codex-dispatch-logs/<id>.jsonl` or "
-                "`dispatch-run-id: …`) or `override: 用户要求自写|polish|trivial`"
+                f"{spec_dir.name}/run.md: Build/Repair claims 实现完成 but dispatch "
+                f"evidence invalid ({ev_reason}); need existing "
+                "`.codex-dispatch-logs/<id>.jsonl` with turn.completed "
+                "(and spec id when not a fixture) or "
+                "`override: 用户要求自写|polish · 用户本轮明示|…`"
             )
         else:
-            report.ok(f"{spec_dir.name}: Build dispatch evidence / override present")
+            report.ok(f"{spec_dir.name}: Build dispatch evidence / override present ({ev_reason})")
 
     # Production: P5 filled without P2/P3
     def _prod_field(prefix: str) -> str:
