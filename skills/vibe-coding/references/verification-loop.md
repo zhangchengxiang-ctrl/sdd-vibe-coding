@@ -42,10 +42,13 @@ verify-deliver: ok · <ISO8601>
 ```text
 oracle-freeze: intact
 红绿证据: red `<cmd>` exit=<n> · green `<cmd>` exit=0
+dispatch-run-id: <id>   # 或路径 `.codex-dispatch-logs/<id>.jsonl`
+# 若明文自写 / Polish：override: 用户要求自写|polish|trivial
 ```
 
 有自动化 → **先红后绿**，两态命令+退出码写入上式。  
 Polish / trivial / 无自动化 → `红绿证据: N/A · polish|trivial|无自动化`（仍禁甩用户发现）。  
+缺 dispatch 证据且无 override → `check_spec` Fail（诚实声明派生，非散文禁令）。  
 指挥侧 diff：不得含 `tests.md` / 验收矩阵；见 `dispatch-codex` 验收清单。
 
 ### 3. Maker ≠ grader（验收不派 Codex）

@@ -12,17 +12,13 @@ disable-model-invocation: true
 
 本 Skill 只负责已确认的 Shape Rail（含冷启动子流程）。先读宿主 `AGENTS.md`、
 [`project-kind.md`](../vibe-coding/references/project-kind.md)、产品真源和
-[`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)。
+[`gates.md`](../vibe-coding/references/gates.md)。
 有体验或 UI 诉求时：**先打开**
-[`design-standards/LOAD-MAP.md`](../vibe-coding/references/design-standards/LOAD-MAP.md)
-（字段门控唯一真源），并**立刻**读
-[`product-judgment.md`](../vibe-coding/references/design-standards/product-judgment.md)：
-先写 Job Brief（Job / Desired outcome / Consequence），再谈控件与视觉；
-填不出三必填 → 停问，禁止线框定稿。  
-改存量 UI 先读 [change-control.md](../vibe-coding/references/design-standards/change-control.md)。
-具体页面评审输出用 [`ui-page-gate.md`](../vibe-coding/references/design-standards/ui-page-gate.md)。
-评审意见用 [critique-format.md](./references/critique-format.md)（须对照 Job Brief / `rule/*`）。
-用户描述产品问题、判断取舍和确认结果即可。
+[`design-standards/LOAD-MAP.md`](../vibe-coding/references/design-standards/LOAD-MAP.md)，
+并立刻读 [`product-judgment.md`](../vibe-coding/references/design-standards/product-judgment.md)
+（Job Brief 先于控件）。改存量 UI 见 [change-control.md](../vibe-coding/references/design-standards/change-control.md)。
+评审用 [`ui-page-gate.md`](../vibe-coding/references/design-standards/ui-page-gate.md) /
+[critique-format.md](./references/critique-format.md)。
 
 ## 冷启动（优先于普通 Shape）
 
@@ -46,12 +42,9 @@ disable-model-invocation: true
 - 只需要用户决定的互斥或不可逆事项。
 
 Shape 产出：`docs/product/` 产品方案 / 切片与理解卡。  
-**硬门：** 本轨不创建实施 Spec、不改业务代码、不部署；技术偏好不替代产品决定。  
-**交叉硬门：** 「设计方案 / 构建产品文档 / 走查 / 应该支持… / 优化体验」**不是**写码授权。  
-写码授权见 [`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)：(a) 已有 Spec；(b)「开始做」**或「确认方案 / 就按这个做」**；(c) Polish。  
-许愿路径：人确认产品方案 → 交回 vibe-coding **自动研发编排**（Plan→Build→…→人类验收包），见 [`wish-delivery.md`](../vibe-coding/references/wish-delivery.md)。  
-若用户本轮明示 polish / 按 refinement 修 / 修走查 P0–P1：本 Skill **结束 Shape**，交回 vibe-coding **Polish** 档（[`change-control.md`](../vibe-coding/references/design-standards/change-control.md) §3）；material 仍留 Shape。  
-权限 / 数据边界类诉求：进入 Plan 前先有可读的代码与 Schema 事实（见 Plan「事实映射门」）。
+**硬门：** 本轨不创建实施 Spec、不改业务代码、不部署。  
+写码授权 / 许愿编排：见 [`gates.md`](../vibe-coding/references/gates.md)。  
+明示 polish → 结束 Shape，交回 vibe-coding Polish 档（[`change-control.md`](../vibe-coding/references/design-standards/change-control.md)）；material 仍留 Shape。
 
 ## 工作方式
 
@@ -103,36 +96,10 @@ Shape 产出：`docs/product/` 产品方案 / 切片与理解卡。
 
 ## 产品包
 
-成块能力可存放在：
-
-```text
-docs/product/modules/<slug>/
-├── README.md
-├── 01-experience.md
-├── 02-product-model.md
-├── 03-presentation.md
-├── 04-runtime.md
-└── 05-delivery.md
-```
-
-只创建当前问题需要的层，不为空目录凑文档。章节合同与剪枝以
-[`product-package.md`](./references/product-package.md) 为唯一真源。
-
-| 层 | 负责 | 本层边界外 |
-|---|---|---|
-| Experience | 角色、旅程、操控面、失败体验 | 表结构、算法 |
-| Product model | 能力、对象、状态、权限、冻结决策 | UI 配置、实现代码 |
-| Presentation | IA、入口、文案和视觉语义 | 数据库和 API 细节 |
-| Runtime intent | 运行边界和关键路径意图 | 完整技术设计 |
-| Delivery | 首切片、后续切片、风险和指标 | Spec 切片 / Plan |
-
-简单诉求可以只写 demand pool 或单页设计，不强制五层产品包。
-
-有 UI 时，落盘或确认产品包前：Job Brief + 人话验收齐套，再按
-[LOAD-MAP](../vibe-coding/references/design-standards/LOAD-MAP.md)
-对应场景自检（失败与权限路径、状态可见、可访问性底线）；违反项写入切片非目标或待决。
-配置/授权/分发面强制 `rule/separate-access-vs-delivery` 与 `rule/no-impl-jargon`。
-系统架构分层归 Plan。`ux.md` / `visual.md` 仅为原则索引，不作施工入口。
+成块能力可存放在 `docs/product/modules/<slug>/`（01–05）。  
+**默认剪枝：** 简单诉求只写 demand pool 或单页；**禁止**为齐套建空层。  
+章节合同：[`product-package.md`](./references/product-package.md)。  
+方案脊：[`perceptible-path.md`](./references/perceptible-path.md) + [`scheme-antipatterns.md`](./references/scheme-antipatterns.md)。
 
 ## 交付给 Plan / 研发编排
 
@@ -147,5 +114,4 @@ Shape 结束时在内部工件保存：
 - 产品真源路径；
 - 下一动作：许愿路径 = 方案确认后自动 `plan`→编排；经典路径 = 等人说切 Spec。
 
-用户前台只给理解卡、必要的决策卡、**产品方案确认请求**；阶段闸门见 `workflow-contract.md`「许愿式交付」。  
-人确认方案后，由 vibe-coding 进入研发自动编排（不必再等人说 Plan）。
+用户前台只给理解卡、必要决策卡、**产品方案确认请求**。确认后由 vibe-coding 按 [`gates.md`](../vibe-coding/references/gates.md) 自动编排。

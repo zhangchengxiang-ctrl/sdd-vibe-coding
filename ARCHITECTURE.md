@@ -22,8 +22,10 @@
   skills/vibe-coding/SKILL.md
 
 合同层（跨仓唯一真源）
-  skills/vibe-coding/references/workflow-contract.md
-  skills/vibe-coding/references/wish-delivery.md   # 许愿式高质量交付（对人北极星）
+  skills/vibe-coding/references/gates.md          # 常驻：人闸·写码授权·施工通道
+  skills/vibe-coding/references/states.md         # 关版/状态词
+  skills/vibe-coding/references/rails.md          # Build/Verify/Repair 清单
+  skills/vibe-coding/references/workflow-contract.md  # 薄索引 → 上三者
   skills/vibe-coding/references/evidence-contract.md
   skills/vibe-coding/references/workspace-contract.md
   skills/vibe-coding/references/design-standards/   # LOAD-MAP·tokens·pages·overlays·copy·anchor…
@@ -53,8 +55,10 @@
 
 ## 真源边界
 
-- 流程、状态词、完成声明、**施工通道**（指挥侧 Build = 派发）、**许愿式闸门**：只改 `workflow-contract.md`
-  （对人北极星叙事：`wish-delivery.md`；勿与闸门双写冲突时以 workflow-contract 为准）
+- **人闸 / 写码授权 / 施工通道 / 许愿编排**：只改 `gates.md`
+- **状态词 / 关版 / 完成声明**：只改 `states.md`
+- **Build / Verify / Repair 清单**：只改 `rails.md`
+- `workflow-contract.md` 仅为指向上述三文件的薄索引（兼容旧链）
 - 验证层次、**Evidence Kind**、行为优先、Deliver Gate、Fail 分类：只改 `evidence-contract.md`
   （证伪执行：`skills/testing/references/falsify-checklist.md`；弱 Oracle：`skills/spec/references/oracle-strength.md`；
   **关版三钉**（verify-deliver 戳 / Oracle 冻结 / maker≠grader）：`verification-loop.md`；
@@ -75,7 +79,8 @@
   `require-conductor-falsify.sh`；`codex-dispatch.sh`；
   **禁反问授权块：** `references/cli-authorization.md`）
 - 公开 CI 门（无 evals）：`scripts/public-gates.sh` / `make public-gates`
-  （selftest + hooks-selftest + `check-contract-sync.sh` + `PHASE3_PLUGIN_ONLY=1`）
+  （selftest + hooks + contract-sync + phase3 + **rot-meter**；single-definition / orphan-refs）
+- 腐烂度量：`scripts/rot-meter.sh` + `scripts/rot-baseline.json`（上限只许下调）
 - 运行时 hooks / 旅程状态机：`scripts/hooks/`、`scripts/wish-journey.sh`、
   [`runtime-hooks.md`](./skills/vibe-coding/references/runtime-hooks.md)
 - 单个 Rail 的前台话术与执行约束：改对应 `skills/<rail>/SKILL.md`
@@ -86,11 +91,17 @@
 
 `templates/docs` 只保留最小落盘结构并链接合同真源；合同正文在 skills。
 
+## 维护铁律（腐烂）
+
+1. 质量差 → 禁止默认加规则；先删/合并/换目标/换样例/换评测。  
+2. 宣称「优化」的 PR：`skills/` 净行优先为负。  
+3. `make rot` 上限只许下调。
+
 ## 常见改动路径
 
 | 目标 | 首选修改点 | 联动检查 |
 |---|---|---|
-| 新增状态词或调整语义 | `workflow-contract.md` | `templates/docs/product/*`, `VERSION.md`, `check_docs.py` |
+| 新增状态词或调整语义 | `states.md` | `templates/docs/product/*`, `VERSION.md`, `check_docs.py` |
 | 调整 Fail 分类 | `evidence-contract.md` | `templates/docs/specs/_template/run.md` |
 | 调整 Workspace 字段 | `workspace-contract.md` | `plan.md`, `spec/SKILL.md`, `check_docs.py` |
 | 调整 optional 文档策略 | `optional/README.md` | 对应 optional 模板 |
@@ -122,7 +133,7 @@
 2. 模板没有复制同一合同大段正文；
 3. `AGENTS.md` 是宿主唯一项目事实面（无 `docs/guides/` 第二份）；
 4. 本机有 `evals/` 时跑 `make verify`；公开克隆可跳过；
-5. 文档中的状态词与 `workflow-contract.md` 一致。
+5. 文档中的状态词与 `states.md` 一致。
 
 ## 维护者附录：外借实践（BORROW）
 
@@ -137,4 +148,4 @@
 | BMAD 多 persona | **不吸收** | — | 角色剧场 / 全 SDLC persona | 永不默认；仅笔记 |
 | Preview-before-prod 社区工作流 | **未吸** | 宿主 AGENTS 可自填 | 插件不绑死 Vercel | 有通用预览约定再抽 |
 
-记录新外借时：补一行上表；冲突以 `workflow-contract.md` 为准。
+记录新外借时：补一行上表；冲突以 `gates.md` / `states.md` 为准。

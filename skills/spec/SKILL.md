@@ -106,7 +106,7 @@ Verify 执行证伪见 testing [`falsify-checklist.md`](../testing/references/fa
 
 数据库迁移仅在某个切片 **Verified** 证明现有关联无法唯一解析时才出现。
 
-纵向切片是 **A 验收单元**（对人 / Oracle）。Codex 回合默认完成单元是 **D 派发单元**（272K 打包，可含多个 A；见 dispatch-units）。作者按入口切 A，**禁止**按 Codex 回合手切。
+纵向切片是 **A 验收单元**（对人 / Oracle）。Codex 回合默认完成单元是 **D**（见 [`dispatch-units.md`](../dispatch-codex/references/dispatch-units.md)）。作者按入口切 A，**禁止**按 Codex 回合手切。
 
 ## Plan 流程
 

@@ -4,7 +4,7 @@
 
 **许愿式高质量交付：** 人提愿望并确认产品方案 → AI 按质量条自动研发 → 无 UI 机器关版 / 有 UI 人点验 → 上线。  
 跨仓工作流在 **skills**；本仓命令与红线在宿主 **AGENTS.md** / `docs/`。  
-北极星合同：[`skills/vibe-coding/references/wish-delivery.md`](./skills/vibe-coding/references/wish-delivery.md)。  
+北极星：[`skills/vibe-coding/SKILL.md`](./skills/vibe-coding/SKILL.md)（高质量内核）+ [`gates.md`](./skills/vibe-coding/references/gates.md)。  
 Cursor 另经 `make install-cursor` 投影 **`~/.cursor/rules/sdd-*.mdc`** 作会话硬闸。
 
 > 用户前台保持简单；`docs/`、Spec、handoff 是 Agent 的内部交付记忆。
@@ -43,7 +43,7 @@ UI 小改（非 material）→ Polish
 Production issue → Diagnose → Incident / Repair / Plan / Blocked
 ```
 
-写代码前硬闸见 `skills/vibe-coding/references/workflow-contract.md`（已确认 Spec，或明示「开始做 / 确认方案」，或明示 Polish 且非 material）。
+写代码前硬闸见 `skills/vibe-coding/references/gates.md`（已确认 Spec，或明示「开始做 / 确认方案」，或明示 Polish 且非 material）。
 
 ## 安装与常用命令（Make）
 

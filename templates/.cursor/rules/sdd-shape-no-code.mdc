@@ -1,24 +1,13 @@
 ---
-description: 写码前须方案/Spec/Polish 授权。真源 workflow-contract (a)(b)(c)
+description: 写码前须方案/Spec/Polish 授权。真源 gates.md (a)(b)(c)
 alwaysApply: true
 ---
 
 # 写码前硬闸
 
-**真源：** 插件 `vibe-coding/references/workflow-contract.md`（写码授权）+ `project-kind.md`。
+**真源：** `vibe-coding/references/gates.md`（写码授权）+ `project-kind.md`。
 
-## 0. 项目类型门
-
-先按 `sdd-vibe-entry` 解析 `project.kind`（`software` | `plugin` | `other`）。
-
-- **`plugin`**：不适用本节；改 skills/templates/scripts。  
-- **`other`**：放手，不建宿主式 `docs/product/`。  
-- **禁止**把非 `software` 仓强行当成宿主编码项目。
-
-## software 宿主
-
-改业务代码前至少一项：已确认 Spec；或本轮**明确指令做具体的事**（开始做 / 实现 / 修复 / 确认方案…自然语言即可，含承接本轮问题清单说「修复吧」）；或明示 Polish 且非 material。  
-皆无 → 只写 product/ + 只读调查。愿望/探讨（「我希望」「聊聊」「设计方案」「优化体验」）不算授权。  
-命中授权后**不要再用选择题反问范围**；指挥侧动手方式仍按施工通道（Build = 派发）。
-
-本规则由 `sdd-vibe-coding` install 投影。
+1. 先判 `project.kind`。`plugin` → 改 skills/templates/scripts；`other` → 放手；**禁止**把非 software 当宿主编码仓。  
+2. software：改业务码前须 (a)/(b)/(c)（真源 `gates.md`）。  
+3. 皆无 → 只写 product/ + 只读调查。愿望/探讨不算授权。  
+4. 命中授权后不要用选择题反问范围；指挥侧 Build = 派发（见 gates 施工通道）。

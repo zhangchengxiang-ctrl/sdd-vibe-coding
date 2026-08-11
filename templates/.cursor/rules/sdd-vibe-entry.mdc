@@ -5,39 +5,9 @@ alwaysApply: true
 
 # SDD 入口硬门
 
-**真源：** 插件 `vibe-coding/SKILL.md` + `references/project-kind.md` + `workflow-contract.md`。
+**真源：** `vibe-coding/SKILL.md` + `project-kind.md` + `gates.md`。
 
-## 0. 先判项目类型（`project.kind`）
-
-**禁止默认假定**当前工作区是 coding / 软件交付仓。仅 `software` | `plugin` | `other`。
-
-| kind | 入口 |
-|---|---|
-| `plugin` | 读 `ARCHITECTURE.md`；改 skills/templates/scripts |
-| `software` | 下方 |
-| `other` | 放手 |
-
-## software 宿主 — 何时加载 vibe-coding
-
-**仅当**本轮出现**显式 SDD 意图**时，**第一个工具调用**必须是 Read 已安装 `vibe-coding` 的 `SKILL.md`，再读宿主 `AGENTS.md`。
-
-显式意图（高信号）：
-
-- 用户 `/` 或 `@` 点名 `vibe-coding`，或明示「许愿」
-- 确认方案 / 就按这个做 / 切 Spec / 关版
-- 明示冷启动：初始化项目 / 接入存量（且要走 SDD）
-- 明示 Polish：polish / 抛光 / 前端小改 / 按 refinement 修
-- 明示 Verify：人类验收 / UX走查（作为验收轨）
-- 明示 Deploy：生产发布 / 上线 / 部署 / 发版
-- 派 Codex / 用 Codex 做
-
-**不算**显式意图（**禁止**因此 Read vibe-coding）：
-
-- 普通调研、读文档、SSH、配权限、取数、看 session、打开浏览器
-- 「修一下 / 实现 / 构建 / 排障 / 优化 / 我想要 / 聊聊 / 拆解」等日常话术（无上列高信号）
-- 未点名 SDD 的代码问答与探索
-
-未命中显式意图 → **不要**加载 vibe-coding；用域内 skill / 普通工具。  
-命中但未完成 Read → **禁止**改业务代码、禁止宣称可交付、禁止生产部署。
-
-本规则由 `sdd-vibe-coding` install 投影。
+1. 先判 `project.kind`（`software`|`plugin`|`other`）。**禁止**默认假定 software。  
+2. 仅显式 SDD 意图时，**第一个工具调用** = Read `vibe-coding/SKILL.md`，再读宿主 `AGENTS.md`。  
+3. 不算显式意图（调研/SSH/取数/修 bug/实现/排障/聊聊等）→ **禁止**因此加载 vibe-coding。  
+4. 命中但未完成 Read → **禁止**改业务代码 / 宣称可交付 / 生产部署。

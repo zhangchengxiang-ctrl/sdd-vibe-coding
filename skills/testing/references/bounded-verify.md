@@ -29,7 +29,7 @@ Visual QA **不替代**证伪。至少记录：
 - 两页或两 offset 响应可区分；或
 - 排序/筛选请求参数与结果序；  
 
-Evidence Kind 须为 `api-diff` / `network-har`（旁挂 smoke 不算）。
+Evidence Kind 须为 `api-diff` / `network-har`（旁挂 smoke 不算）。真源 [`evidence-contract.md`](../../vibe-coding/references/evidence-contract.md)。
 
 ## 与走查
 

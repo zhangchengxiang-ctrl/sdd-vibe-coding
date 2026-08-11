@@ -253,6 +253,22 @@ WEAK_ORACLE_PHRASES = (
     "works",
 )
 
+# Antipattern Oracles for T-001 / primary success path (scheme-antipatterns.md)
+LAZY_PATH_ORACLE_RE = re.compile(
+    r"focus\s*(textarea|input|输入框)"
+    r"|打开抽屉|open\s+drawer"
+    r"|点击\s*CTA|click\s+(the\s+)?cta"
+    r"|勾完|勾选完成|checklist\s*(完成|done|complete)"
+    r"|lesson\s*(完成|完成率|complete)"
+    r"|完成率\s*[≥>=]?"
+    r"|tour\s*(播完|完成|complete|finished)"
+    r"|引导\s*(走完|完成)"
+    r"|状态位|flag\s*(置位|=|true)"
+    r"|软回退.*(学会|完成)"
+    r"|residual|live[\s_-]?deferred",
+    re.IGNORECASE,
+)
+
 DATA_SURFACE_RE = re.compile(
     r"page_kind\s*[:：]\s*`?(list|dashboard)`?"
     r"|\bmotif\s*[:：]\s*`?(list|dashboard)`?"
@@ -288,6 +304,11 @@ def extract_then_body(test_body: str) -> str:
         re.S,
     )
     return m.group(1) if m else ""
+
+
+def then_is_lazy_path_oracle(then_text: str) -> bool:
+    """True when Then matches scheme-antipatterns lazy observation forms."""
+    return bool(LAZY_PATH_ORACLE_RE.search(then_text or ""))
 
 
 def then_is_weak(then_text: str) -> bool:
@@ -490,6 +511,27 @@ def check_tests(
                 f"{spec_dir.name}/tests.md: {tid} Then is weak Oracle "
                 "(only '能打开/有数据/冒烟通过' class — see oracle-strength.md)"
             )
+        # T-001 (or first success) must not use antipattern observation forms
+        if then and then_is_lazy_path_oracle(then):
+            is_primary = tid == "T-001" or (
+                "success" in clean(
+                    next(
+                        (
+                            r.get("Type", "")
+                            for r in index_rows
+                            if clean(r.get("ID", "")) == tid
+                        ),
+                        "",
+                    )
+                ).lower()
+                and tid == sorted(index_ids)[0]
+            )
+            if is_primary or tid == "T-001":
+                report.fail(
+                    f"{spec_dir.name}/tests.md: {tid} Then hits scheme-antipatterns "
+                    "(checklist/tour/focus/drawer/completion-rate class — "
+                    "see design/references/scheme-antipatterns.md)"
+                )
 
     # Data-surface: at least one Then must carry falsify hints
     if detect_data_surface(contract, plan, tests):
@@ -690,6 +732,17 @@ RED_GREEN_NA_OK = re.compile(
 RED_GREEN_PAIR_OK = re.compile(
     r"(?i)(?:red|红).{0,80}exit\s*=\s*\d+.{0,120}(?:green|绿).{0,80}exit\s*=\s*0",
 )
+# P3: Build 实现完成 must cite dispatch jsonl OR explicit self-write override
+DISPATCH_EVIDENCE_RE = re.compile(
+    r"\.codex-dispatch-logs/[^\s`]+(?:\.jsonl)?"
+    r"|dispatch[_-]?(?:run[_-]?)?id\s*[:=]\s*\S+"
+    r"|codex-dispatch[^\n]{0,80}turn\.completed",
+    re.I,
+)
+OVERRIDE_SELF_RE = re.compile(
+    r"override\s*:\s*.*(?:自写|不用\s*Codex|你自己写|polish|trivial)",
+    re.I,
+)
 
 
 def check_run_honesty(
@@ -854,6 +907,17 @@ def check_run_honesty(
                 )
             else:
                 report.ok(f"{spec_dir.name}: Build oracle-freeze + 红绿证据 ok")
+        # P3 evidence-derived: dispatch jsonl or explicit override
+        if not (
+            DISPATCH_EVIDENCE_RE.search(run) or OVERRIDE_SELF_RE.search(run)
+        ):
+            report.fail(
+                f"{spec_dir.name}/run.md: Build/Repair claims 实现完成 but missing "
+                "dispatch evidence (`.codex-dispatch-logs/<id>.jsonl` or "
+                "`dispatch-run-id: …`) or `override: 用户要求自写|polish|trivial`"
+            )
+        else:
+            report.ok(f"{spec_dir.name}: Build dispatch evidence / override present")
 
     # Production: P5 filled without P2/P3
     def _prod_field(prefix: str) -> str:

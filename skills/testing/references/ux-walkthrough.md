@@ -44,6 +44,6 @@
 Verify **不改实现**。收齐 P0–P2 后，对人前台可给一句下一步示例：
 
 - 非 material 抛光项：「可以说『按本批走查修 P0–P1』进入 Polish（不新开 Spec）」  
-- material（主路径/导航/权限/默认 CTA 等）：「须回 Shape 或补 Spec，不能走 polish」
+- 主路径/导航/权限/默认 CTA 等：须回 Shape 或补 Spec（分级真源 [change-control.md](../../vibe-coding/references/design-standards/change-control.md)）
 
 分级与 material 门 → [change-control.md](../../vibe-coding/references/design-standards/change-control.md)。

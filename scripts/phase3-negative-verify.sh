@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Phase 3 negative acceptance — machine-checkable gates after Phase 0–2.
+# Phase 3 negative acceptance — behavioral gates (no slogan grep).
 # Usage: bash scripts/phase3-negative-verify.sh
-# Optional: PHASE3_AGENTDECK / PHASE3_BI / PHASE3_DATASAGE
+# Optional: PHASE3_PLUGIN_ONLY=1 (public CI; skip install projection)
+# Host drift checks moved to scripts/host-drift.sh (manual; not in public-gates).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -35,7 +36,7 @@ echo "== Phase 3 negative verify =="
 echo "ROOT=$ROOT"
 PLUGIN_ONLY="${PHASE3_PLUGIN_ONLY:-0}"
 
-# --- Plugin rules / skills projection (skip when PHASE3_PLUGIN_ONLY=1 for public CI) ---
+# --- Install projection existence (decision 1: keep) ---
 if [[ "$PLUGIN_ONLY" != "1" ]]; then
   for f in sdd-vibe-entry sdd-shape-no-code sdd-deploy-p4 sdd-codex-cli; do
     if [[ -L "$HOME/.cursor/rules/${f}.mdc" || -f "$HOME/.cursor/rules/${f}.mdc" ]]; then
@@ -54,59 +55,23 @@ else
   skip "cursor-install-projection" "PHASE3_PLUGIN_ONLY=1"
 fi
 
-grep -q "第一个工具调用" "$ROOT/templates/.cursor/rules/sdd-vibe-entry.mdc" \
-  && ok "rule-text:sdd-vibe-entry" || bad "rule-text:sdd-vibe-entry" "missing 第一个工具调用"
-grep -q "显式 SDD 意图" "$ROOT/templates/.cursor/rules/sdd-vibe-entry.mdc" \
-  && ok "rule-text:sdd-vibe-entry-explicit" || bad "rule-text:sdd-vibe-entry-explicit" "missing 显式 SDD 意图 gate"
-grep -q "不算" "$ROOT/templates/.cursor/rules/sdd-vibe-entry.mdc" \
-  && ok "rule-text:sdd-vibe-entry-negative" || bad "rule-text:sdd-vibe-entry-negative" "missing 不算显式意图"
-grep -q "project.kind" "$ROOT/templates/.cursor/rules/sdd-vibe-entry.mdc" \
-  && ok "rule-text:sdd-vibe-entry-kind" || bad "rule-text:sdd-vibe-entry-kind" "missing project.kind gate"
-grep -q "禁止默认假定" "$ROOT/templates/.cursor/rules/sdd-vibe-entry.mdc" \
-  && ok "rule-text:sdd-vibe-entry-no-default-software" || bad "rule-text:sdd-vibe-entry-no-default-software" "missing no-default-software"
+# --- Template / skill asset existence (not slogan content) ---
+for rule in sdd-vibe-entry sdd-shape-no-code sdd-deploy-p4 sdd-codex-cli; do
+  test -f "$ROOT/templates/.cursor/rules/${rule}.mdc" \
+    && ok "rule-file:$rule" || bad "rule-file:$rule" "missing template"
+done
 for _sk in design spec testing deploy debug dispatch-codex; do
   grep -q "disable-model-invocation: true" "$ROOT/skills/$_sk/SKILL.md" \
     && ok "skill-dmi:$_sk" || bad "skill-dmi:$_sk" "missing disable-model-invocation"
 done
-grep -q "禁止因普通调研" "$ROOT/skills/vibe-coding/SKILL.md" \
-  && ok "skill:vibe-narrow-desc" || bad "skill:vibe-narrow-desc" "vibe-coding description not narrowed"
-grep -q "不算" "$ROOT/templates/.cursor/rules/sdd-shape-no-code.mdc" \
-  && ok "rule-text:sdd-shape-no-code" || bad "rule-text:sdd-shape-no-code" "missing"
-grep -q "项目类型门" "$ROOT/templates/.cursor/rules/sdd-shape-no-code.mdc" \
-  && ok "rule-text:sdd-shape-no-code-kind" || bad "rule-text:sdd-shape-no-code-kind" "missing kind gate"
 test -f "$ROOT/skills/vibe-coding/references/project-kind.md" \
   && ok "skill:project-kind" || bad "skill:project-kind" "missing project-kind.md"
 test -f "$ROOT/skills/design/references/project-init.md" \
   && ok "skill:project-init" || bad "skill:project-init" "missing project-init.md"
-grep -q "≤5\|<=5\|整轮拍板" "$ROOT/skills/design/references/project-init.md" \
-  && ok "skill:project-init-ask-cap" || bad "skill:project-init-ask-cap" "missing ≤5 ask cap"
-grep -q "冷启动" "$ROOT/skills/vibe-coding/SKILL.md" \
-  && ok "skill:vibe-cold-start-route" || bad "skill:vibe-cold-start-route" "missing 冷启动 route"
-grep -q "Build ≠ Deploy" "$ROOT/templates/.cursor/rules/sdd-deploy-p4.mdc" \
-  && ok "rule-text:sdd-deploy-p4" || bad "rule-text:sdd-deploy-p4" "missing"
-grep -q "禁止" "$ROOT/templates/.cursor/rules/sdd-codex-cli.mdc" \
-  && ok "rule-text:sdd-codex-cli" || bad "rule-text:sdd-codex-cli" "missing"
-
-grep -q "FIRST ACTION" "$ROOT/skills/vibe-coding/SKILL.md" \
-  && ok "skill:vibe-coding-FIRST-ACTION" || bad "skill:vibe-coding-FIRST-ACTION" "missing"
-
-# --- product-judgment gate (UI decision layer) ---
 test -f "$ROOT/skills/vibe-coding/references/design-standards/product-judgment.md" \
   && ok "skill:product-judgment" || bad "skill:product-judgment" "missing product-judgment.md"
-grep -q "product-judgment.md" "$ROOT/skills/vibe-coding/references/design-standards/LOAD-MAP.md" \
-  && ok "skill:load-map-judgment" || bad "skill:load-map-judgment" "LOAD-MAP missing product-judgment"
-grep -q "Job Brief" "$ROOT/skills/vibe-coding/references/design-standards/LOAD-MAP.md" \
-  && ok "skill:load-map-job-brief" || bad "skill:load-map-job-brief" "LOAD-MAP missing Job Brief field"
-grep -q "product-judgment.md" "$ROOT/skills/design/SKILL.md" \
-  && ok "skill:design-judgment" || bad "skill:design-judgment" "design SKILL missing product-judgment"
-grep -q "FIRST ACTION" "$ROOT/skills/testing/SKILL.md" \
-  && grep -q "product-judgment.md" "$ROOT/skills/testing/SKILL.md" \
-  && ok "skill:testing-judgment-first" || bad "skill:testing-judgment-first" "testing SKILL missing FIRST ACTION→product-judgment"
-grep -q "product-judgment.md" "$ROOT/skills/testing/references/ux-walkthrough.md" \
-  && grep -q "FIRST ACTION" "$ROOT/skills/testing/references/ux-walkthrough.md" \
-  && ok "skill:ux-walkthrough-judgment" || bad "skill:ux-walkthrough-judgment" "ux-walkthrough missing judgment FIRST ACTION"
-grep -q "detect_job_brief" "$ROOT/skills/spec/scripts/check_spec.py" \
-  && ok "skill:check-spec-job-brief" || bad "skill:check-spec-job-brief" "check_spec missing detect_job_brief"
+test -f "$ROOT/skills/vibe-coding/references/design-standards/LOAD-MAP.md" \
+  && ok "skill:load-map" || bad "skill:load-map" "missing LOAD-MAP.md"
 
 # --- preflight-rail ---
 tmp=$(mktemp -d)
@@ -195,84 +160,122 @@ else
   bad "check_spec:deliver+deploy-negative" "expected >=4 honesty errors"
 fi
 
-# --- Hosts (skip in public CI) ---
-if [[ "$PLUGIN_ONLY" == "1" ]]; then
-  skip "hosts" "PHASE3_PLUGIN_ONLY=1"
-  echo
-  echo "======== SUMMARY ========"
-  printf '%s\n' "${RESULTS[@]}"
-  echo "-------------------------"
-  echo "PASS=$PASS FAIL=$FAIL SKIP=$SKIP"
-  [[ "$FAIL" -eq 0 ]]
-  exit 0
+# --- T-001 lazy path oracle must Fail (scheme-antipatterns) ---
+set +e
+python3 - <<'PY'
+import importlib.util, sys, os, tempfile
+from pathlib import Path
+plugin = Path(os.environ["PHASE3_ROOT"])
+spec = importlib.util.spec_from_file_location(
+    "check_spec", plugin / "skills/spec/scripts/check_spec.py"
+)
+m = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(m)
+r = m.Report()
+tests = """
+## 索引
+| ID | Type | R |
+|----|------|---|
+| T-001 | success | R-1 |
+
+## T-001
+### Given
+- 新用户打开引导
+### When
+- 走完 checklist
+### Then（Oracle）
+- 用户可见：勾完 checklist / lesson 完成率 100%
+- 副作用：无
+"""
+# minimal harness: call then_is_lazy + check_tests path
+assert m.then_is_lazy_path_oracle("勾完 checklist / lesson 完成率 100%"), "detector miss"
+tmp = Path(tempfile.mkdtemp()) / "lazy-oracle"
+tmp.mkdir()
+(tmp / "VERSION.md").write_text("status: draft\n", encoding="utf-8")
+(tmp / "contract.md").write_text("# contract\n", encoding="utf-8")
+(tmp / "plan.md").write_text("## 架构与设计边界\n- 边界：沿用现有\n", encoding="utf-8")
+(tmp / "run.md").write_text("# run\n", encoding="utf-8")
+(tmp / "tests.md").write_text(tests, encoding="utf-8")
+m.check_tests(tmp, tests, [], r, structure_only=False)
+sys.exit(0 if r.errors >= 1 else 1)
+PY
+lo=$?
+set -e
+if [[ $lo -eq 0 ]]; then
+  ok "check_spec:t001-lazy-oracle-negative"
+else
+  bad "check_spec:t001-lazy-oracle-negative" "expected T-001 checklist oracle to Fail"
 fi
 
-AGENTDECK="${PHASE3_AGENTDECK:-/home/zcx/code/agentdeck}"
-BI="${PHASE3_BI:-/home/zcx/code/bi-kaonai-dashboard}"
-DATASAGE="${PHASE3_DATASAGE:-/home/zcx/code/data-sage}"
-
-if [[ -d "$BI" ]]; then
-  if grep -q 'vibe-coding' "$BI/AGENTS.md" \
-    && grep -Eq '@AGENTS\.md|AGENTS\.md' "$BI/CLAUDE.md" \
-    && ! grep -q 'StarRocks' "$BI/CLAUDE.md"; then
-    ok "host:bi-entry"
-  else
-    bad "host:bi-entry" "CLAUDE/AGENTS not cleaned or missing vibe-coding"
-  fi
-  if grep -q 'Build ≠ Deploy' "$BI/AGENTS.md"; then
-    ok "host:bi-deploy-gate"
-  else
-    bad "host:bi-deploy-gate" "missing Build≠Deploy in AGENTS"
-  fi
+# --- Build 实现完成 without dispatch evidence must Fail ---
+set +e
+python3 - <<'PY'
+import importlib.util, sys, os
+from pathlib import Path
+plugin = Path(os.environ["PHASE3_ROOT"])
+spec = importlib.util.spec_from_file_location(
+    "check_spec", plugin / "skills/spec/scripts/check_spec.py"
+)
+m = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(m)
+r = m.Report()
+run = """
+- 状态：`building`
+- 当前模式：`build`
+- 实现冻结时间：2026-08-11T00:00:00Z
+oracle-freeze: intact
+红绿证据: N/A · 无自动化
+## 批次结果
+| 结果 |
+|------|
+| Pass |
+"""
+m.check_run_honesty(Path("demo"), run, r, structure_only=False)
+# expect fail for missing dispatch evidence
+sys.exit(0 if r.errors >= 1 else 1)
+PY
+de=$?
+set -e
+if [[ $de -eq 0 ]]; then
+  ok "check_spec:dispatch-evidence-negative"
 else
-  skip "host:bi" "not found"
+  bad "check_spec:dispatch-evidence-negative" "expected missing dispatch evidence to Fail"
 fi
 
-if [[ -d "$DATASAGE" ]]; then
-  if grep -q 'vibe-coding' "$DATASAGE/AGENTS.md" && grep -q '优先' "$DATASAGE/AGENTS.md"; then
-    ok "host:datasage-agents-pointer"
-  else
-    bad "host:datasage-agents-pointer" "missing plugin priority"
-  fi
-  if [[ -d "$DATASAGE/.agents/skills/datasage-pytest" && ! -e "$DATASAGE/.agents/skills/testing" ]]; then
-    ok "host:datasage-pytest-rename"
-  else
-    bad "host:datasage-pytest-rename" "testing not renamed to datasage-pytest"
-  fi
-  if grep -Eq '已降权|路由降权' "$DATASAGE/.agents/skills/spec-generate/SKILL.md"; then
-    ok "host:datasage-spec-generate-deprecated"
-  else
-    bad "host:datasage-spec-generate-deprecated" "no deprecation marker"
-  fi
-  if grep -Eq 'archived|归档' "$DATASAGE/docs/guides/factory-workflow.md"; then
-    ok "host:datasage-factory-archived"
-  else
-    bad "host:datasage-factory-archived" "factory-workflow not archived"
-  fi
+# positive: override accepted
+set +e
+python3 - <<'PY'
+import importlib.util, sys, os
+from pathlib import Path
+plugin = Path(os.environ["PHASE3_ROOT"])
+spec = importlib.util.spec_from_file_location(
+    "check_spec", plugin / "skills/spec/scripts/check_spec.py"
+)
+m = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(m)
+r = m.Report()
+run = """
+- 状态：`building`
+- 当前模式：`build`
+- 实现冻结时间：2026-08-11T00:00:00Z
+oracle-freeze: intact
+红绿证据: N/A · polish
+override: polish
+## 批次结果
+| 结果 |
+|------|
+| Pass |
+"""
+m.check_run_honesty(Path("demo"), run, r, structure_only=False)
+# dispatch-related errors should be 0; other honesty may warn
+sys.exit(0 if r.errors == 0 else 1)
+PY
+dp=$?
+set -e
+if [[ $dp -eq 0 ]]; then
+  ok "check_spec:dispatch-override-positive"
 else
-  skip "host:datasage" "not found"
-fi
-
-if [[ -d "$AGENTDECK" ]]; then
-  if grep -q '禁止' "$AGENTDECK/.cursor/rules/01-first-principles.mdc" \
-    && grep -q 'spec-generate' "$AGENTDECK/.cursor/rules/01-first-principles.mdc"; then
-    ok "host:agentdeck-no-spec-generate"
-  else
-    bad "host:agentdeck-no-spec-generate" "01-first-principles not updated"
-  fi
-  if grep -q '58-docs-backfill' "$AGENTDECK/AGENTS.md"; then
-    bad "host:agentdeck-ghost-58" "AGENTS still cites 58-docs-backfill"
-  else
-    ok "host:agentdeck-ghost-58-cleared"
-  fi
-  if grep -q '适配器' "$AGENTDECK/.cursor/skills/deploy/SKILL.md" \
-    && grep -q '适配器' "$AGENTDECK/.cursor/skills/verify-ui/SKILL.md"; then
-    ok "host:agentdeck-adapters"
-  else
-    bad "host:agentdeck-adapters" "deploy/verify-ui missing 适配器"
-  fi
-else
-  skip "host:agentdeck" "not found"
+  bad "check_spec:dispatch-override-positive" "override: polish should pass"
 fi
 
 echo
@@ -291,6 +294,7 @@ M4 Verify@agentdeck: refuse 可交付 without role×path falsify
 M5 Codex: no CallMcpTool user-codex; only codex-dispatch.sh
 M6 data-sage: 「写个产品 Spec」→ plugin five-piece, not spec-generate
 M7 UX走查@任意宿主: first Reads 含 product-judgment + LOAD-MAP（可用 make eval-skill-load）
+Host drift: make host-drift   # optional; not in public-gates
 EOF
 
 [[ "$FAIL" -eq 0 ]]

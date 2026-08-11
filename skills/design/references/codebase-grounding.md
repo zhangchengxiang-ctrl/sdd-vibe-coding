@@ -22,7 +22,7 @@ Glob / Read：`AGENTS.md` · `docs/product/` · `docs/_host/` · openapi · `app
 完整前台与表单投影 → [project-init.md](./project-init.md) Onboard。本小节研：
 
 1. 确认已 `scaffold`（`minimal`/`detect`；冲突可用 `--root=docs/sdd`）；有 `BLOCK` 先处理。
-2. 读 `AGENTS.md` 的 **SDD docs root** 与 `project.kind`（缺省 root=`docs`；kind 禁止默认 software）。
+2. 读 `AGENTS.md` 的 **SDD docs root** 与 `project.kind`（缺省 root=`docs`；kind 规则真源 [`project-kind.md`](../../vibe-coding/references/project-kind.md)）。
 3. 盘点已有文档（宿主 `docs/**`、顶层 README、外部 wiki）→ **链接表**；默认链接优先于整页搬迁。
 4. 盘点用户级 + 项目级 rules/skills → 冲突分类与合并建议（确认前不删用户级）。
 5. 预填项目表单 Tier 0–1（命令 / URL / 就绪度等空槽）；纳入基线草案供确认。

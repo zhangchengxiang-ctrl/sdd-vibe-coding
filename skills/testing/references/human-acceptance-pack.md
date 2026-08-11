@@ -46,7 +46,7 @@
 4. **已知限制**  
    未覆盖项、环境差、需真人 SSO 等。
 
-无此包（且不属于证据卡机器关版）→ 禁止请人关版，禁止宣称 `acceptance-passed`。
+无此包（且不属于证据卡机器关版）→ 不得请人关版。关版语义真源：[`states.md`](../../vibe-coding/references/states.md)。
 
 ## 话术硬门
 

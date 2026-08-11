@@ -65,19 +65,10 @@ UI 回归定位可指向 [debug-playbook](../vibe-coding/references/design-stand
 7. 记录命令、时间、环境、版本、观察值；Evidence 写 `kind=… · 路径`（见 evidence-contract §1.1）；
 8. 对全部 Fail 统一归因、聚类并形成一份 Repair 方案；Verify 只读实现；
 9. **产出验收侧交付**（[`human-acceptance-pack.md`](./references/human-acceptance-pack.md)）：无 UI → 证据卡；有 UI → 验收包；
-10. 无 UI 可机跑：写 `acceptance-passed` 后 `make close-spec` 收口归档，前台交证据卡（**禁止**请人再跑同一脚本）；
-    有 UI：`run.md` 置 `awaiting-human-acceptance`；前台请人按包点验——**禁止**此时说可交付/可关版；
-11. 有 UI 人明示「通过 / 没问题 / 关版」后：跑 `make verify-deliver`，写 `acceptance-passed`，`VERSION.md` → `archived`，将目录搬到 `docs/specs/archive/<id>/`，更新索引 / gap-closed 指针，再问是否 Deploy。
+10. 关版分叉与状态词：见 [`states.md`](../vibe-coding/references/states.md) + [`rails.md`](../vibe-coding/references/rails.md) Verify 节；有 UI 人明示后 `make close-spec`。
 
 UI/人工 Test 至少需要一次真实通道 V2（见 [browser-verify](./references/browser-verify.md)）。  
-**硬门：** Oracle 保持在 `tests.md`（或系列矩阵真源）；观察结果只写 `run.md`。  
-**硬门：** API/DOM/Toast/`/health`/window-smoke/脚本旁路单独不构成 Job 通过。  
-**硬门：** 同会话 Build 冒烟结果不得原样誊为 Verify Pass。  
-**硬门：** 暖缓存/HIT 结果不得冒充用户冷路径 Pass。  
-**硬门：** 授权/配置类须消费侧 Before→After；管理面「已生效」单独不够。  
-**硬门（钉 3）：** Verify / 系列验收默认在本轨（Cursor/指挥侧）执行；**禁止**派 Codex 做主验收或「验到可交付」。Codex 最多生成矩阵草稿，或 ≤20min、完成条件=指定命令 stdout 的窄派单。  
-**硬门（验收闸）：** 有 UI / 人判断：无验收包 → 禁止请人关版；无人确认 → 禁止 `acceptance-passed`。无 UI 可机跑：证据卡 + `verify-deliver` 即可机器关版。  
-**硬门（钉 1）：** 宣称 `可交付` / `acceptance-passed` 前必须 `make verify-deliver HOST=<repo> SPEC=<id>` exit 0，且 `run.md` 有 `verify-deliver: ok · <时间>`。
+轨清单硬门（Oracle 冻结、钉 1/3、验收闸）：见 [`rails.md`](../vibe-coding/references/rails.md) / [`verification-loop.md`](../vibe-coding/references/verification-loop.md)——本文件不复述。
 
 ## 用户前台输出
 
@@ -97,9 +88,7 @@ Matrix、commit、Workspace 等工程术语。正式报告仍保存完整工程�
 需要分级发现时，在交付卡之后展开“技术详情（可选）”或 P0/P1/P2 列表。  
 若确有待决，交付卡后可单列一句「下一步」——**禁止**把可自跑的打开/硬刷/确认是否正常写成下一步。
 
-**话术硬门：** Build 结束只说「实现完成」；「可交付 / 可关版」仅在关版分叉完成且钉 1 通过后使用。无 UI 禁止「请再跑 test.sh」。  
-**话术硬门：** 禁止「有条件可交付」掩盖未证 P0；未证 = Fail 或 Blocked。  
-**关版硬门：** 对用户说可交付前跑通：`make verify-deliver HOST=<repo> SPEC=<id>`（写入 `verify-deliver: ok · <时间>`；缺戳则 `check_spec` fail）。
+**话术：** Build 结束只说「实现完成」。关版 / 可交付语义真源：[`states.md`](../vibe-coding/references/states.md) + [`verification-loop.md`](../vibe-coding/references/verification-loop.md)。
 
 ## Fail 路由
 

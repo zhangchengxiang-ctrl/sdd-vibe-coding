@@ -12,9 +12,10 @@ disable-model-invocation: true
 # Dispatch Codex：指挥施工
 
 本 Skill 只跑在 **Cursor / Claude Code** 指挥侧。先读宿主 `AGENTS.md` 与
-[`workflow-contract.md`](../vibe-coding/references/workflow-contract.md)「施工通道」、
+[`gates.md`](../vibe-coding/references/gates.md)（施工通道）、
 [`dispatch-units.md`](./references/dispatch-units.md)、
-[`context-pack.md`](./references/context-pack.md)。
+[`context-pack.md`](./references/context-pack.md)、
+[`cli-authorization.md`](./references/cli-authorization.md)。
 
 施工侧 Codex 须已安装同版本 `sdd-vibe-coding`（建议 `make install-dev` 软链），质量条由其
 默认执行。派单只含 **Context Pack / 薄模板**，合同正文由施工侧读磁盘。
@@ -29,7 +30,7 @@ disable-model-invocation: true
 
 | 用 | 指挥侧自做 |
 |---|---|
-| **vibe-coding Build/Repair 轨的每个 D**（许愿或经典「开始做」；硬门：打包 + Codex + Context Pack） | Polish / trivial（非 material）；Repair 小缺口（≤2 文件）；用户明文「你自己写」 |
+| **vibe-coding Build/Repair 轨的每个 D**（许愿或经典「开始做」；打包 + Codex + Context Pack） | Polish / trivial；Repair 小缺口（≤2 文件）；用户明文「你自己写」（真源 [`gates.md`](../vibe-coding/references/gates.md)） |
 | 用户明示派 Codex / 用 Codex 施工 | Shape / 产品拍板 / 改文档 / `check_spec` / 锁决策 / **验收对话** |
 | 已批准有界单元，用 Sol 离场施工 | 已在 Codex 会话里（走纯 Codex Harness） |
 | 矩阵/剧本**草稿**（非关版） | 无 Oracle 的 Build（先 Plan）；**Verify / 系列验收**（钉 3：禁 Codex 主验收） |

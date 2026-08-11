@@ -2,7 +2,7 @@
 
 > 蒸馏：Impeccable How-to-design、Vercel teaching-agents「material decision」。  
 > 改已有界面前先分叉；禁止「半 polish 半换皮」。  
-> 写码授权 (c) 话术真源：[`workflow-contract.md`](../workflow-contract.md)。
+> 写码授权 (c) 话术真源：[`gates.md`](../gates.md)。
 
 ## 1. Refinement vs Redesign
 

@@ -4,7 +4,8 @@
 .PHONY: help install install-dev install-cursor install-claude install-codex \
 	scaffold codex-dispatch wish-orchestrate context-pack verify check-docs check-spec verify-deliver close-spec \
 	preflight-rail require-falsify record-falsify dispatch-gates-selftest public-gates contract-sync \
-	phase3-negative eval-live eval-skill-load hooks-selftest sdd-authorize wish-journey
+	phase3-negative eval-live eval-skill-load hooks-selftest sdd-authorize wish-journey \
+	rot corrections host-drift single-definition orphan-refs
 
 HOST ?= .
 PROFILE ?= detect
@@ -54,8 +55,11 @@ help:
 		'  make require-falsify LOG_DIR=路径 [RUN_ID=]  指挥侧证伪门（须 COMMAND+EXIT_CODE+VERDICT）' \
 		'  make dispatch-gates-selftest  离线硬门自检（Plan / structured falsify / wish）' \
 		'  make hooks-selftest       运行时 hooks + wish-journey 自检' \
-		'  make public-gates         公开 CI 门（selftest+hooks+contract-sync+phase3 plugin-only）' \
-		'  make phase3-negative      Phase0–2 负向验收（规则投影/写码闸/dispatch/宿主入口）' \
+		'  make public-gates         公开 CI 门（selftest+hooks+contract-sync+phase3+rot；报告 single-def/orphan）' \
+		'  make rot                  腐烂度量（预算上限=基线；禁止回升）' \
+		'  make corrections          本机 transcript 纠正信号 → M1/M2/M3 桶（纯本地）' \
+		'  make host-drift           可选：外部宿主仓漂移（不进 public-gates）' \
+		'  make phase3-negative      Phase0–2 负向验收（规则投影/写码闸/dispatch）' \
 		'  make eval-skill-load      cursor-agent 探测：UX/Shape 是否 Read product-judgment/LOAD-MAP' \
 		'' \
 		'Maintainer (本地私有 · 需本机有 evals/)' \
@@ -183,7 +187,7 @@ record-falsify:
 dispatch-gates-selftest:
 	bash skills/dispatch-codex/scripts/selftest-gates.sh
 
-# Public CI gates (no private evals/): selftest + hooks + contract-sync + phase3 plugin-only.
+# Public CI gates (no private evals/): selftest + hooks + contract-sync + phase3 + rot.
 public-gates:
 	bash scripts/public-gates.sh
 
@@ -192,6 +196,24 @@ contract-sync:
 
 hooks-selftest:
 	bash scripts/hooks/selftest-hooks.sh
+
+# Rot budget meter. Ceiling = scripts/rot-baseline.json (ratchet: only lower).
+rot:
+	bash scripts/rot-meter.sh
+
+# Local transcript correction buckets (M1/M2/M3). Not a CI gate.
+corrections:
+	bash scripts/corrections.sh
+
+# Optional host-repo drift (agentdeck / bi / datasage). Not in public-gates.
+host-drift:
+	bash scripts/host-drift.sh
+
+single-definition:
+	bash scripts/single-definition.sh
+
+orphan-refs:
+	bash scripts/orphan-refs.sh
 
 # Runtime authorization markers for hooks.
 # Example: make sdd-authorize HOST=. KIND=build

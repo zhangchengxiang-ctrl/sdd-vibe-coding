@@ -1,18 +1,13 @@
 ---
-description: Build≠Deploy；生产须本轮 Deploy P4。真源 deploy skill + workflow-contract
+description: Build≠Deploy；生产须本轮 Deploy P4。真源 deploy + gates.md
 alwaysApply: true
 ---
 
 # Deploy P4 硬门
 
-**真源：** 插件 Skill `deploy` + `vibe-coding/references/workflow-contract.md`。
+**真源：** Skill `deploy` + `gates.md`。
 
-**Build ≠ Deploy。** Build / Repair / 许愿自动编排 **禁止**生产发布、reload、改 live、生产 SSH。
-
-**硬门：**
-
-1. 生产动作前路由 Skill `deploy`（或本轮明示「部署 / 上线 / 发布 / 发版」）  
-2. L1/L2：先 P2+P3 方案，再本轮 **P4** 批准才执行  
-3. 关版 /「全部做完」/「确认方案」**不等于**上生产  
-
-本规则由 `sdd-vibe-coding` install 投影。
+1. **Build ≠ Deploy。** Build / Repair / 许愿自动编排 **禁止**生产发布、reload、改 live、生产 SSH。  
+2. 生产动作前路由 Skill `deploy`（或本轮明示部署/上线/发布/发版）。  
+3. L1/L2：先 P2+P3，再本轮 **P4** 批准才执行。  
+4. 关版 /「全部做完」/「确认方案」**不等于**上生产。

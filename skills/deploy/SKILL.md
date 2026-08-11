@@ -12,8 +12,7 @@ disable-model-invocation: true
 仅在 vibe-coding 已路由到 **Deploy**，或用户显式调用本 Skill 时使用。  
 **不**替代 Shape/Plan/Build；**不**写业务功能代码（热修改码须另有 Build/Repair 授权）。
 
-**交叉硬门（Build 窜入）：** 若当前会话只批准了 Build /「开始做」/「确认方案」、且本轮未明示「部署 / 上线 / 发布」，**禁止 P5**。缺 P2/P3（L1/L2）或未获本轮 P4 → 停并摘要，不执行生产命令。  
-**交叉硬门（验收闸）：** 许愿路径下 Spec 仍为 `awaiting-human-acceptance`（有 UI 待人点验）、或未达 `acceptance-passed` 时，**禁止**进入生产 P5（人明文豁免并担责除外）。无 UI 机器关版后已是 `acceptance-passed` 才可谈 P5。
+**交叉硬门：** Build 窜入 / 验收闸未过 → 禁止 P5。细则见 [`gates.md`](../vibe-coding/references/gates.md) + [`states.md`](../vibe-coding/references/states.md)。
 
 先读：
 
@@ -56,11 +55,7 @@ L0：P2+P3 可极简（触及面 + Agent 跑的最小产品冒烟），仍禁止
 | Agent / 人 | 定级；写 P2+P3；采纳或延期 sidecar；批准后执行；**Agent 跑 P6**；关版标签 |
 | Skill `testing` | 用户只要「验收生产」时可只跑 P6 核对；不擅自开 P5 |
 
-**硬门：** 宣称 `prod-smoke 通过` 前须自探活；禁止「通过 + 请你硬刷确认」。见
-[`verification-loop.md`](../vibe-coding/references/verification-loop.md)。  
-**硬门（钉 1）：** 宣称 `prod-smoke 通过` 前必须
-`make verify-deliver HOST=<repo> SPEC=<id>` exit 0，且 `run.md` 有
-`verify-deliver: ok · <时间>`（缺戳 → `check_spec` fail）。
+**硬门（钉 1）：** 宣称 `prod-smoke 通过` 前须 `make verify-deliver`（真源 [`verification-loop.md`](../vibe-coding/references/verification-loop.md)）。
 
 ## 关版
 
@@ -70,6 +65,6 @@ L0：P2+P3 可极简（触及面 + Agent 跑的最小产品冒烟），仍禁止
 - `[部署·L2·prod-smoke 未过/Blocked: 反向代理未同步 live]`
 
 延期 MUST 必须 Open 到下次 P1。Deliver Gate 回写字段见 `evidence-contract.md`。
-关版前跑 `make verify-deliver`；标签写「通过」时戳必须已在。
+关版戳：见 [`verification-loop.md`](../vibe-coding/references/verification-loop.md) 钉 1。
 
 对人前台：说清要发什么、风险级、批准点、冒烟是否通过；不堆内部阶段号，除非用户追问。

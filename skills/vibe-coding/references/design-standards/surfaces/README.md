@@ -44,6 +44,6 @@
 | surface | 必读 |
 |---------|------|
 | `product` | [product.md](./product.md) → 按任务加 [product-shells.md](./product-shells.md)、datatable、forms-states、primitives、[../audit/ai-tells.md](../audit/ai-tells.md) |
-| `consumer` | [consumer.md](./consumer.md) + consumer-primitives + ai-tells |
+| `consumer` | [consumer.md](./consumer.md) + ai-tells |
 
 未声明 surface → **不得定视觉方向、不得写新页业务 UI**（与 ui-page-gate 同等硬门）。

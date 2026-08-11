@@ -51,25 +51,22 @@
 
 | 你在做什么 | 必读（按序） |
 |------------|--------------|
-| 判定 B/C、写切片 | **product-judgment** → surfaces/README → product.md 或 consumer.md；craft-knobs |
-| **配置 / 授权 / 分发 / 发布范围**（谁能用、怎么发、ACL、成员选择器） | **product-judgment**（人话验收+交互单位）→ copy（禁黑话）→ overlays → bulk-actions |
-| 新建/改应用壳 | surfaces/product-shells.md |
-| **列表页** | pages/list.md → components/product-datatable.md → product-forms-states（空态） |
-| **详情页** | pages/detail.md → product-forms-states → overlays.md（预览用 Sheet） |
-| **设置页** | **product-judgment** → pages/settings.md → product-forms-states → copy.md |
-| **看板** | pages/dashboard.md → tokens/color-roles（chart）→ ai-tells |
-| **整页/大表单** | **product-judgment** → pages/form.md → product-forms-states → product-primitives |
-| Modal / Sheet / Drawer / 行内 | **先 product-judgment（交互单位）** → [components/overlays.md](./components/overlays.md)（只定容器） |
-| Cmd+K / 命令面板 | components/command-palette.md |
-| 批量选择/行动条 | **product-judgment** `rule/batch-same-search` → components/bulk-actions.md |
-| 按钮/输入/Tag 尺度 | components/product-primitives.md 或 consumer-primitives.md |
-| 控件 hover/focus/disabled | components/interaction-states.md |
-| C 端主路径 | product-judgment → surfaces/consumer.md → pages/consumer.md → consumer-primitives |
-| C 端落地 growth | surfaces/consumer.md「growth」→ pages/consumer.md → copy.md · craft-knobs |
-| 文案/错误/空态措辞 | [copy.md](./copy.md) + product-judgment `rule/no-impl-jargon` |
-| 焦点/表单 a11y 审计 | audit/web-interface.md |
-| UI 回归 / 错缝 / AI 脸 | [debug-playbook.md](./debug-playbook.md) |
-| 对照好坏 | [exemplars/](./exemplars/README.md)（含 judgment） |
+| 判定 B/C、写切片 | **product-judgment** → [surfaces/README](./surfaces/README.md) → [product](./surfaces/product.md) 或 [consumer](./surfaces/consumer.md)；craft-knobs |
+| **配置 / 授权 / 分发** | **product-judgment** → [copy](./copy.md) → [overlays](./components/overlays.md) |
+| 新建/改应用壳 | [product-shells](./surfaces/product-shells.md) |
+| **列表页** | [pages/list](./pages/list.md) → [product-datatable](./components/product-datatable.md) → [forms-states](./components/product-forms-states.md) |
+| **详情页** | [pages/detail](./pages/detail.md) → forms-states → overlays |
+| **设置页** | product-judgment → [pages/settings](./pages/settings.md) → forms-states → copy |
+| **看板** | [pages/dashboard](./pages/dashboard.md) → [color-roles](./tokens/color-roles.md) → ai-tells |
+| **整页/大表单** | product-judgment → [pages/form](./pages/form.md) → forms-states → [product-primitives](./components/product-primitives.md) |
+| Modal / Sheet / Drawer | product-judgment → [overlays](./components/overlays.md) |
+| 按钮/输入/Tag 尺度 | [product-primitives](./components/product-primitives.md) |
+| 控件五态 | [interaction-states](./components/interaction-states.md) |
+| C 端主路径 | product-judgment → [consumer surface](./surfaces/consumer.md) → [pages/consumer](./pages/consumer.md) |
+| 文案/错误/空态 | [copy](./copy.md) |
+| UI 回归 / AI 脸 | [debug-playbook](./debug-playbook.md) |
+| 对照好坏 | [exemplars](./exemplars/README.md) |
+| 按需索引 | [components/README](./components/README.md) · [tokens/README](./tokens/README.md) · [pages/README](./pages/README.md) |
 
 ## 按 Rail（摘要；强度见上表）
 
@@ -78,7 +75,7 @@
 | Shape | **先 Job Brief**；写 Design Read；必须 surface；有具体页则 page_kind/motif；knobs 建议；anchor 可后置；读对应 surfaces |
 | Plan | 合同写 Job Brief + surface；page_kind/motif + Design Read + anchor 建议（机检 warn）；架构边界点名服从本包 |
 | Build | **Job Brief 齐全** + **本表场景行全文** + 需要时 ui-page-gate 评审模板；改存量先 change-control；确认前不写页 |
-| Verify | 同 surface/page_kind；**先证伪**（testing/falsify-checklist）；对照人话验收 / Job；ai-tells + web-interface + copy 抽检；有界轮次见 testing/bounded-verify；list/dashboard 须 api-diff/network-har |
+| Verify | 同 surface/page_kind；**先证伪**（testing/falsify-checklist）；对照人话验收 / Job；ai-tells + copy 抽检；有界轮次见 testing/bounded-verify；list/dashboard 须 api-diff/network-har |
 
 ## 禁止
 
