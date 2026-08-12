@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Orphan references: every skills/*/references/*.md (except fixtures/_archive)
-# must be reachable within 2 hops from some SKILL.md.
+# Orphan + broken outbound refs under skills/.
+# - Orphan: references/*.md (except fixtures/_archive) unreachable within 2 hops of SKILL.md
+# - Broken: relative *.md link target missing (skips http, _archive, fixtures)
 #
 # Usage:
 #   bash scripts/orphan-refs.sh [--count|--strict]
@@ -17,20 +18,29 @@ done
 
 tmp=$(mktemp)
 python3 - "$tmp" <<'PY'
+import re
 import sys
 from pathlib import Path
-import re
 
 out_path = Path(sys.argv[1])
-root = Path(".").resolve()
-link_re = re.compile(r"\]\(([^)]+\.md)[^)]*\)")
+link_re = re.compile(r"\]\(([^)]+)\)")
+
+def skip_path(s: str) -> bool:
+    s = s.replace("\\", "/")
+    return "/_archive/" in s or "/fixtures/" in s
 
 def resolve(base: Path, link: str):
-    link = link.split("#")[0].strip()
-    if not link or link.startswith("http"):
-        return None
+    link = link.split("#")[0].split("?")[0].strip()
+    if not link or link.startswith(("http://", "https://", "mailto:")):
+        return None, "skip"
+    if not link.endswith(".md"):
+        return None, "skip"
     p = (base / link).resolve()
-    return p if p.is_file() else None
+    try:
+        p.relative_to(Path(".").resolve())
+    except ValueError:
+        return None, "broken"
+    return (p if p.is_file() else None), ("ok" if p.is_file() else "broken")
 
 skills = list(Path("skills").rglob("SKILL.md"))
 reachable = set()
@@ -48,8 +58,8 @@ for _ in range(3):
         except OSError:
             continue
         for m in link_re.finditer(text):
-            r = resolve(f.parent, m.group(1))
-            if r and r not in reachable:
+            r, st = resolve(f.parent, m.group(1))
+            if st == "ok" and r not in reachable:
                 reachable.add(r)
                 nxt.append(r)
     frontier = nxt
@@ -57,12 +67,37 @@ for _ in range(3):
 orphans = []
 for f in sorted(Path("skills").glob("*/references/**/*.md")):
     s = str(f).replace("\\", "/")
-    if "/_archive/" in s or "/fixtures/" in s:
+    if skip_path(s):
         continue
     if f.resolve() not in reachable:
         orphans.append(s)
 
-out_path.write_text(str(len(orphans)) + "\n" + "\n".join(orphans) + ("\n" if orphans else ""), encoding="utf-8")
+broken = []
+for f in sorted(Path("skills").rglob("*.md")):
+    s = str(f).replace("\\", "/")
+    if skip_path(s):
+        continue
+    try:
+        lines = f.read_text(encoding="utf-8", errors="ignore").splitlines()
+    except OSError:
+        continue
+    for i, line in enumerate(lines, 1):
+        for m in link_re.finditer(line):
+            raw = m.group(1)
+            _, st = resolve(f.parent, raw)
+            if st == "broken":
+                target = raw.split("#")[0].split("?")[0].strip()
+                broken.append(f"{s}:{i} -> {target}")
+
+total = len(orphans) + len(broken)
+parts = [str(total)]
+if orphans:
+    parts.append("ORPHANS:")
+    parts.extend(orphans)
+if broken:
+    parts.append("BROKEN:")
+    parts.extend(broken)
+out_path.write_text("\n".join(parts) + ("\n" if total or orphans or broken else "\n"), encoding="utf-8")
 PY
 
 count=$(head -1 "$tmp" | tr -d '[:space:]')
@@ -74,7 +109,7 @@ if [[ "$MODE" == "count" ]]; then
   exit 0
 fi
 
-echo "== orphan-refs orphans=$count =="
+echo "== orphan-refs orphans+broken=$count =="
 if [[ -n "${list:-}" ]]; then
   printf '%s\n' "$list"
 fi

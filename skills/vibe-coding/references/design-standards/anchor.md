@@ -21,7 +21,7 @@ diverge: <本产品相对锚点的 1–3 条差量>
 | 真产品 | Linear Issues 列表、Stripe Payments、Notion 数据库、GitHub PR、淘宝商详、微信会话 |
 | 具名 profile | `profile:linear-dense` / `profile:stripe-data` / `profile:vercel-flush` / `profile:notion-doc` / `profile:commerce-mobile` |
 
-`profile:*` 对应 [surfaces/product-shells.md](./surfaces/product-shells.md) 或 consumer motif，不是形容词。
+`profile:*` 对应具名壳/ motif 约定（写进合同 `shell:` / `motif:`），不是形容词。
 
 ## 非法（必须重写）
 

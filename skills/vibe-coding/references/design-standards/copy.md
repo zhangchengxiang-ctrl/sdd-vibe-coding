@@ -1,7 +1,7 @@
 # Copy（UX Writing 合同）
 
 > 蒸馏自 Vercel writing 习惯、WIG Content、空态/错误最佳实践。  
-> 与 [product-forms-states.md](./components/product-forms-states.md)、[pages/](./pages/) 交叉。
+> 与 [product-judgment.md](./product-judgment.md)、[LOAD-MAP.md](./LOAD-MAP.md) 交叉。
 
 ## 总则
 

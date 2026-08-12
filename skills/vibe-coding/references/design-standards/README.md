@@ -15,15 +15,14 @@
 | [anchor.md](./anchor.md) | 参考锚点（Build 前硬门；Shape 可后置） |
 | [copy.md](./copy.md) | UX Writing |
 | [tokens/](./tokens/) | 封闭尺度与色角色 |
-| [surfaces/](./surfaces/) | product / consumer / 四壳 |
-| [pages/](./pages/) | list/detail/settings/dashboard/form/consumer |
-| [components/](./components/) | primitives、表、表单、五态、overlays、Cmd+K、批量 |
-| [audit/](./audit/) | ai-tells、web-interface |
+| [audit/](./audit/) | ai-tells |
 | [exemplars/](./exemplars/README.md) | 正反例 |
 | [ui-page-gate.md](./ui-page-gate.md) | 写页面前**评审输出模板**（加载义务见 LOAD-MAP） |
 | [visual.md](./visual.md) | 原则索引（非施工入口） |
 | [ux.md](./ux.md) | 体验启发式（非施工入口） |
 | [system-architecture.md](./system-architecture.md) | 架构通则 |
+
+> 历史 `pages/` · `components/` · `surfaces/` 在 `references/_archive/design-standards/`（非施工必读）。
 
 ## 覆盖顺序
 
@@ -37,9 +36,7 @@ Spec ≫ AGENTS.md / docs/product/{PRODUCT,DESIGN}.md ≫ docs/architecture/ ≫
 Job Brief 未齐 → 不定视觉、不输出线框定稿（product-judgment）
 未声明 surface → 不定视觉、不写新页
 未写 Design Read → 不定视觉（craft-knobs）
-product → surfaces/product +（改壳）product-shells + pages/<kind> + components…
-consumer → surfaces/consumer + pages/consumer + consumer-primitives
-page_kind 与 motif 等价；Build 前 anchor 必填；改存量先 change-control
+合同写 UI surface + page_kind|motif；Build 前 anchor 必填；改存量先 change-control
 ```
 
 场景表、Rail 强度、豁免 → **[LOAD-MAP](./LOAD-MAP.md)**（勿在本 README 复述强度表）。
@@ -53,3 +50,4 @@ page_kind 与 motif 等价；Build 前 anchor 必填；改存量先 change-contr
 
 - 不新建 Design Rail；不在 templates 复制本包长文  
 - 不搬宿主组件库 API 全文 / Vercel 品牌 CSS  
+- 不把已归档页种/控件册重新挂回常驻必读  

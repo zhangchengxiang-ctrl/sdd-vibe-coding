@@ -1,7 +1,7 @@
 # AI tells（产品面输出扫描 · 蒸馏）
 
 > 来源意图：product-ui-design `ai-tells.md` + Vercel design.md reject 列表。  
-> **输出完成前自扫**；命中则替换。`surface: product` 全适用；`consumer` in-product 同样禁后台味与发光点；growth 另遵 surfaces/consumer，仍禁本表「模板脸」项。
+> **输出完成前自扫**；命中则替换。`surface: product` 全适用；`consumer` in-product 同样禁后台味与发光点；growth 仍禁本表「模板脸」项。
 
 ## 色
 
@@ -56,5 +56,4 @@
 | 任意 `p-[13px]` | 4px 封闭尺度 |
 | 「Submit / 出了点问题」 | 具体动词；错误含下一步 |
 
-全文色角色 → [../tokens/color-roles.md](../tokens/color-roles.md)。  
-交互审计 → [web-interface.md](./web-interface.md)。
+全文色角色 → [../tokens/color-roles.md](../tokens/color-roles.md)。

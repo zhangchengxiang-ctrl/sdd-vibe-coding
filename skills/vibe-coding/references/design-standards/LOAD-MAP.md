@@ -2,7 +2,8 @@
 
 > **有 UI 施工时先读本表再开写。** 不读本表 = 未执行 design-standards。  
 > 路径均相对 `skills/vibe-coding/references/design-standards/`。  
-> **字段×Rail 强度、豁免、场景必读：只以本文件为准**；其它册/Skill 只链到这里，勿另写强度表。
+> **字段×Rail 强度、豁免、场景必读：只以本文件为准**；其它册/Skill 只链到这里，勿另写强度表。  
+> `pages/` · `components/` · `surfaces/` 已归档（`references/_archive/design-standards/`）；施工以本表字段门 + 下列保留册为准，不再按页种/控件册展开。
 
 ## 字段门控（唯一真源）
 
@@ -29,8 +30,8 @@
 
 | 情形 | 仍须 | 可跳过 |
 |------|------|--------|
-| trivial：笔误 / 单点 CSS / 已知单控件 bug（不改合同·导航·跨面入口·权限可见性） | 相关控件册（如有）+ 输出前 [ai-tells](./audit/ai-tells.md) 抽一眼 | 完整前缀、Job Brief 重写、ui-page-gate、新 anchor |
-| **Polish / 非 material refinement**（见 [change-control.md](./change-control.md) §3；须写码硬闸 (c)） | LOAD-MAP **场景行**相关册 + ai-tells；声明 `change: refinement`；沿用已有 Job Brief（无则从界面推断并标假设） | 新 Spec、完整产品包、完整页面评审、重写 Design Read / Job Brief、新 anchor |
+| trivial：笔误 / 单点 CSS / 已知单控件 bug（不改合同·导航·跨面入口·权限可见性） | 输出前 [ai-tells](./audit/ai-tells.md) 抽一眼 | 完整前缀、Job Brief 重写、ui-page-gate、新 anchor |
+| **Polish / 非 material refinement**（见 [change-control.md](./change-control.md) §3；须写码硬闸 (c)） | ai-tells；声明 `change: refinement`；沿用已有 Job Brief（无则从界面推断并标假设） | 新 Spec、完整产品包、完整页面评审、重写 Design Read / Job Brief、新 anchor |
 | 已有 Spec 内的非 material UI 修补（Repair / 批内抛光） | 同上 + 对照既有 Job Brief | 新开另一份 Spec |
 
 触及导航 / 跨表面入口 / 主任务路径 / shell / visitor_mode / **权限或分发模型** 大改 → **非豁免**，走完整前缀（含 Job Brief）；不得用 Polish 话术绕过。
@@ -40,7 +41,7 @@
 0. **[product-judgment.md](./product-judgment.md)** — Job Brief + 人话验收；**IA / 交互单位先于视觉**  
 1. [craft-knobs.md](./craft-knobs.md) — **Design Read** 一行；建议 visitor_mode + variance/motion/density  
 2. [anchor.md](./anchor.md) — 写下 anchor / diverge（Shape 可后置；**Build 前必须**）  
-3. 定 `UI surface` + `page_kind`/`motif` → [surfaces/README.md](./surfaces/README.md) · [pages/README.md](./pages/README.md)  
+3. 定 `UI surface` + `page_kind`/`motif`（值写进合同；细则不再分册）  
 4. [tokens/](./tokens/)（有宿主 DS 则只遵角色与禁令）  
 5. [audit/ai-tells.md](./audit/ai-tells.md) — **输出前再扫一遍**
 
@@ -51,37 +52,30 @@
 
 | 你在做什么 | 必读（按序） |
 |------------|--------------|
-| 判定 B/C、写切片 | **product-judgment** → [surfaces/README](./surfaces/README.md) → [product](./surfaces/product.md) 或 [consumer](./surfaces/consumer.md)；craft-knobs |
-| **配置 / 授权 / 分发** | **product-judgment** → [copy](./copy.md) → [overlays](./components/overlays.md) |
-| 新建/改应用壳 | [product-shells](./surfaces/product-shells.md) |
-| **列表页** | [pages/list](./pages/list.md) → [product-datatable](./components/product-datatable.md) → [forms-states](./components/product-forms-states.md) |
-| **详情页** | [pages/detail](./pages/detail.md) → forms-states → overlays |
-| **设置页** | product-judgment → [pages/settings](./pages/settings.md) → forms-states → copy |
-| **看板** | [pages/dashboard](./pages/dashboard.md) → [color-roles](./tokens/color-roles.md) → ai-tells |
-| **整页/大表单** | product-judgment → [pages/form](./pages/form.md) → forms-states → [product-primitives](./components/product-primitives.md) |
-| Modal / Sheet / Drawer | product-judgment → [overlays](./components/overlays.md) |
-| 按钮/输入/Tag 尺度 | [product-primitives](./components/product-primitives.md) |
-| 控件五态 | [interaction-states](./components/interaction-states.md) |
-| C 端主路径 | product-judgment → [consumer surface](./surfaces/consumer.md) → [pages/consumer](./pages/consumer.md) |
+| 判定 B/C、写切片 | **product-judgment** → craft-knobs；声明 surface + page_kind/motif |
+| **配置 / 授权 / 分发** | **product-judgment** → [copy](./copy.md) |
+| 新建/改应用壳 | product-judgment → change-control；合同写 `shell:` |
+| **列表 / 详情 / 设置 / 看板 / 表单 / C 端主路径** | product-judgment → craft-knobs → ai-tells；合同写 `page_kind`/`motif` |
+| Modal / Sheet / Drawer / 批量 | product-judgment → copy（先定交互单位，再选容器） |
 | 文案/错误/空态 | [copy](./copy.md) |
-| UI 回归 / AI 脸 | [debug-playbook](./debug-playbook.md) |
+| UI 回归 / AI 脸 | [debug-playbook](./debug-playbook.md) → ai-tells |
 | 对照好坏 | [exemplars](./exemplars/README.md) |
-| 按需索引 | [components/README](./components/README.md) · [tokens/README](./tokens/README.md) · [pages/README](./pages/README.md) |
+| 按需索引 | [tokens/README](./tokens/README.md) · 本表 |
 
 ## 按 Rail（摘要；强度见上表）
 
 | Rail | 动作 |
 |------|------|
-| Shape | **先 Job Brief**；写 Design Read；必须 surface；有具体页则 page_kind/motif；knobs 建议；anchor 可后置；读对应 surfaces |
+| Shape | **先 Job Brief**；写 Design Read；必须 surface；有具体页则 page_kind/motif；knobs 建议；anchor 可后置 |
 | Plan | 合同写 Job Brief + surface；page_kind/motif + Design Read + anchor 建议（机检 warn）；架构边界点名服从本包 |
-| Build | **Job Brief 齐全** + **本表场景行全文** + 需要时 ui-page-gate 评审模板；改存量先 change-control；确认前不写页 |
+| Build | **Job Brief 齐全** + **本表场景行** + 需要时 ui-page-gate 评审模板；改存量先 change-control；确认前不写页 |
 | Verify | 同 surface/page_kind；**先证伪**（testing/falsify-checklist）；对照人话验收 / Job；ai-tells + copy 抽检；有界轮次见 testing/bounded-verify；list/dashboard 须 api-diff/network-har |
 
 ## 禁止
 
-- 跳过 product-judgment / Job Brief，直接 overlays 或 tokens 开画  
+- 跳过 product-judgment / Job Brief，直接 tokens 开画  
 - 只读 [visual.md](./visual.md) / [ux.md](./ux.md) 开头就开写（二者是原则索引，非施工入口）  
 - 跳过 Design Read / surface 用「现代干净」代替  
 - Build 前跳过 anchor 用空话形容  
-- 列表不读 datatable、详情不读 detail、弹层不读 overlays  
+- 把已归档 pages/components/surfaces 当必读再展开施工  
 - UI/验收使用实现黑话（主体、投影未完成、registry…）冒充产品语言  

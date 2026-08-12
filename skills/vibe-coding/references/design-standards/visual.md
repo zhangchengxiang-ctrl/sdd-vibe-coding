@@ -9,7 +9,7 @@
 
 ## 1. 一屏一主任务
 
-唯一主行动/主信息；次要降级；growth 首屏预算见 surfaces/consumer。
+唯一主行动/主信息；次要降级；growth 首屏预算写进合同 motif。
 
 ## 2. 先灰度，后上色
 
@@ -37,7 +37,7 @@
 
 ## 8. a11y
 
-WCAG 子集 + [audit/web-interface.md](./audit/web-interface.md)。
+WCAG 子集 + 宿主 a11y 约定；输出前扫 ai-tells。
 
 ## 9. 自检
 

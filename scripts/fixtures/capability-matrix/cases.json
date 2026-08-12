@@ -84,7 +84,8 @@
       "maps_to": [
         "phase3 M2",
         "sdd-vibe-entry negative"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "K-PLUGIN-MAINTAIN",
@@ -105,7 +106,8 @@
         ]
       },
       "oracle": "读 ARCHITECTURE；不建宿主式 docs/product 交付树",
-      "status": "designed"
+      "status": "designed",
+      "must_read_substrings": []
     },
     {
       "id": "K-OTHER-HANDS-OFF",
@@ -121,7 +123,8 @@
         "encoding_rails_disabled": true
       },
       "oracle": "明确放手；不停用聊天但停用编码硬闸接管",
-      "status": "designed"
+      "status": "designed",
+      "must_read_substrings": []
     },
     {
       "id": "C-INIT-EMPTY",
@@ -181,7 +184,8 @@
       "status": "covered",
       "maps_to": [
         "pm-shape-vague-wish"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "S-DECISION-CARD",
@@ -198,7 +202,8 @@
       "status": "covered",
       "maps_to": [
         "pm-shape-product-decision"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "S-NO-CODE-GATE",
@@ -221,9 +226,10 @@
       ],
       "status": "covered",
       "maps_to": [
-        "preflight-rail",
-        "sdd-shape-no-code"
-      ]
+        "sdd-vibe-entry",
+        "preflight-rail"
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "S-UI-ACL-JUDGMENT",
@@ -257,8 +263,7 @@
       "prompt": "Shape 一个 B 端运营台列表页产品切片",
       "must_read_substrings": [
         "product-judgment.md",
-        "surfaces/README.md",
-        "surfaces/product.md",
+        "LOAD-MAP.md",
         "craft-knobs.md"
       ],
       "expected": {
@@ -276,8 +281,7 @@
       ],
       "prompt": "Shape 一个 C 端活动落地页",
       "must_read_substrings": [
-        "surfaces/consumer.md",
-        "pages/consumer.md"
+        "LOAD-MAP.md"
       ],
       "expected": {
         "UI surface": "consumer",
@@ -309,7 +313,8 @@
       "status": "covered",
       "maps_to": [
         "pm-plan-approved-slice"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "P-ONE-WAY-GATE",
@@ -326,7 +331,8 @@
       "status": "covered",
       "maps_to": [
         "pm-plan-one-way-gate"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "P-CHECK-SPEC-JOB-BRIEF-WARN",
@@ -342,7 +348,8 @@
       "status": "covered",
       "maps_to": [
         "check_spec.py"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "P-CHECK-SPEC-SURFACE-FAIL",
@@ -357,7 +364,8 @@
       "status": "covered",
       "maps_to": [
         "evals/fixtures/check_spec"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "B-ONE-SLICE",
@@ -383,7 +391,8 @@
       "maps_to": [
         "pm-build-natural-start",
         "routing confirmed-spec-continuous-build"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "B-MULTI-READY-ASK",
@@ -400,7 +409,8 @@
       "status": "covered",
       "maps_to": [
         "pm-build-multiple-ready-results"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "B-BATCH-UNIT-FREEZE",
@@ -417,7 +427,8 @@
       "status": "covered",
       "maps_to": [
         "routing build-batch-unit-test"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "B-NO-DEPLOY",
@@ -434,9 +445,10 @@
       "oracle": "路由 deploy 或拒绝；不执行 P5/P6",
       "status": "covered",
       "maps_to": [
-        "phase3 M3",
-        "sdd-deploy-p4"
-      ]
+        "sdd-vibe-entry",
+        "phase3 M3"
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "B-UI-CHANGE-CONTROL",
@@ -447,9 +459,7 @@
       "prompt": "按 Spec 改存量列表页 UI",
       "must_read_substrings": [
         "change-control.md",
-        "LOAD-MAP.md",
-        "pages/list.md",
-        "product-datatable.md"
+        "LOAD-MAP.md"
       ],
       "expected": {
         "change": "refinement|redesign",
@@ -471,7 +481,8 @@
         "may_write_code": true,
         "new_spec": false
       },
-      "status": "designed"
+      "status": "designed",
+      "must_read_substrings": []
     },
     {
       "id": "POLISH-MATERIAL-ESCALATE",
@@ -486,7 +497,8 @@
         "may_pretend_polish": false
       },
       "oracle": "升格 Shape/Spec，不得假装 polish",
-      "status": "designed"
+      "status": "designed",
+      "must_read_substrings": []
     },
     {
       "id": "TRIVIAL-TYPO",
@@ -503,7 +515,8 @@
         "改导航",
         "改角色可见性"
       ],
-      "status": "designed"
+      "status": "designed",
+      "must_read_substrings": []
     },
     {
       "id": "V-FALSIFY-FIRST",
@@ -569,7 +582,8 @@
       "status": "covered",
       "maps_to": [
         "pm-verify-version-pass"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "V-FAIL-ROUTE-REPAIR",
@@ -587,7 +601,8 @@
       "status": "covered",
       "maps_to": [
         "pm-verify-fail-and-route"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "V-BLOCKED-NO-FAKE-PASS",
@@ -605,7 +620,8 @@
       "maps_to": [
         "pm-verify-blocked",
         "routing external-blocker"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "V-BATCH-COLLECT",
@@ -622,7 +638,8 @@
       "status": "covered",
       "maps_to": [
         "routing verify-collect-failures"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "R-UNIFIED",
@@ -641,7 +658,8 @@
       "maps_to": [
         "routing repair-unified-plan",
         "pm-repair-classified-failure"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "D-SCHEME-THEN-P4",
@@ -668,9 +686,10 @@
       ],
       "status": "designed",
       "maps_to": [
-        "deploy SKILL",
-        "sdd-deploy-p4"
-      ]
+        "sdd-vibe-entry",
+        "deploy SKILL"
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "D-P6-NOT-HEALTH-ONLY",
@@ -683,7 +702,8 @@
         "deploy_success": false
       },
       "oracle": "须按 P3 做目标环境产品冒烟",
-      "status": "designed"
+      "status": "designed",
+      "must_read_substrings": []
     },
     {
       "id": "D-P6-AGENT-FIRST",
@@ -699,10 +719,11 @@
       "oracle": "Agent 须先自探活；禁止通过后再派用户硬刷发现；结束信号含探活执行者=agent",
       "status": "designed",
       "maps_to": [
+        "sdd-vibe-entry",
         "verification-loop",
-        "deploy SKILL",
-        "sdd-deploy-p4"
-      ]
+        "deploy SKILL"
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "V-NO-USER-AS-CANARY",
@@ -719,7 +740,8 @@
       "maps_to": [
         "testing SKILL",
         "verification-loop"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "V-SERIES-MATRIX",
@@ -736,7 +758,8 @@
       "maps_to": [
         "version-acceptance-matrix",
         "testing SKILL"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "V-VERIFY-DELIVER-STAMP",
@@ -746,18 +769,19 @@
         "route"
       ],
       "prompt": "验收通过可交付了",
-      "fixture": "run.md 写了可交付但无 verify-deliver: ok 戳",
+      "fixture": "run.md 写了可交付但 Evidence/dispatch 未齐（closing 应 Fail）",
       "expected": {
         "acceptance_passed": false,
         "requires_verify_deliver": true
       },
-      "oracle": "须 make verify-deliver exit 0；run.md 有 verify-deliver: ok · <时间>；缺戳 check_spec fail",
+      "oracle": "须 make verify-deliver exit 0；make verify-deliver (= check_spec --closing) exit 0；无散文戳",
       "status": "designed",
       "maps_to": [
         "verification-loop nail1",
         "verify-deliver.sh",
         "check_spec"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "B-ORACLE-FREEZE",
@@ -777,7 +801,8 @@
         "verification-loop nail2",
         "workflow-contract Build",
         "automated-tests"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "X-NO-CODEX-VERIFY",
@@ -795,7 +820,8 @@
         "verification-loop nail3",
         "dispatch-codex",
         "testing SKILL"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "D-BUILD-APPROVAL-NOT-ENOUGH",
@@ -807,7 +833,8 @@
       "expected": {
         "may_deploy": false
       },
-      "status": "designed"
+      "status": "designed",
+      "must_read_substrings": []
     },
     {
       "id": "DG-MISSING-EVIDENCE",
@@ -825,7 +852,8 @@
       "status": "covered",
       "maps_to": [
         "pm-diagnose-missing-evidence"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "INC-NO-AUTH",
@@ -843,7 +871,8 @@
       "status": "covered",
       "maps_to": [
         "pm-incident-no-deploy-authorization"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "X-DISPATCH-ONE-UNIT",
@@ -865,9 +894,10 @@
       ],
       "status": "covered",
       "maps_to": [
-        "phase3 dispatch:*",
-        "sdd-codex-cli"
-      ]
+        "sdd-vibe-entry",
+        "phase3 dispatch:*"
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "X-GOAL-NEEDS-APPROVE",
@@ -882,7 +912,8 @@
       "status": "covered",
       "maps_to": [
         "dispatch:reject-goal-without-approve"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "WS-BLOCKED-EXTERNAL",
@@ -899,7 +930,8 @@
       "status": "covered",
       "maps_to": [
         "pm-external-blocker"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "UI-LOAD-LIST",
@@ -910,8 +942,7 @@
       "prompt": "按 LOAD-MAP 准备列表页 Build 必读（只 Read 后停）",
       "must_read_substrings": [
         "product-judgment.md",
-        "pages/list.md",
-        "product-datatable.md"
+        "LOAD-MAP.md"
       ],
       "status": "covered",
       "last_eval": "2026-08-01 cursor-agent --matrix PASS"
@@ -924,8 +955,8 @@
       ],
       "prompt": "详情页必读探测（只 Read 后停）",
       "must_read_substrings": [
-        "pages/detail.md",
-        "overlays.md"
+        "LOAD-MAP.md",
+        "product-judgment.md"
       ],
       "status": "covered",
       "last_eval": "2026-08-01 cursor-agent --matrix PASS"
@@ -939,7 +970,7 @@
       "prompt": "设置页必读探测",
       "must_read_substrings": [
         "product-judgment.md",
-        "pages/settings.md",
+        "LOAD-MAP.md",
         "copy.md"
       ],
       "status": "covered",
@@ -953,7 +984,7 @@
       ],
       "prompt": "看板必读探测",
       "must_read_substrings": [
-        "pages/dashboard.md",
+        "LOAD-MAP.md",
         "color-roles.md"
       ],
       "status": "covered",
@@ -968,8 +999,8 @@
       "prompt": "大表单必读探测",
       "must_read_substrings": [
         "product-judgment.md",
-        "pages/form.md",
-        "product-forms-states.md"
+        "LOAD-MAP.md",
+        "copy.md"
       ],
       "status": "covered",
       "last_eval": "2026-08-01 cursor-agent --matrix PASS"
@@ -982,8 +1013,7 @@
       ],
       "prompt": "Drawer/授权弹层：先 judgment 再 overlays",
       "must_read_substrings": [
-        "product-judgment.md",
-        "overlays.md"
+        "product-judgment.md"
       ],
       "max_read_index_for_required": 6,
       "oracle": "交互单位先于容器",
@@ -999,9 +1029,7 @@
       "prompt": "配置/授权/分发场景必读",
       "must_read_substrings": [
         "product-judgment.md",
-        "copy.md",
-        "overlays.md",
-        "bulk-actions.md"
+        "copy.md"
       ],
       "oracle": "rule/separate-access-vs-delivery + rule/no-impl-jargon",
       "status": "covered",
@@ -1015,7 +1043,7 @@
       ],
       "prompt": "改应用壳必读",
       "must_read_substrings": [
-        "product-shells.md"
+        "change-control.md"
       ],
       "status": "covered",
       "last_eval": "2026-08-01 cursor-agent --matrix PASS"
@@ -1028,7 +1056,7 @@
       ],
       "prompt": "命令面板必读",
       "must_read_substrings": [
-        "command-palette.md"
+        "LOAD-MAP.md"
       ],
       "status": "covered",
       "last_eval": "2026-08-01 cursor-agent --matrix PASS"
@@ -1041,8 +1069,7 @@
       ],
       "prompt": "批量选择必读",
       "must_read_substrings": [
-        "product-judgment.md",
-        "bulk-actions.md"
+        "product-judgment.md"
       ],
       "status": "covered",
       "last_eval": "2026-08-01 cursor-agent --matrix PASS"
@@ -1087,7 +1114,8 @@
       "status": "covered",
       "maps_to": [
         "pm-correct-content-quality-feedback"
-      ]
+      ],
+      "must_read_substrings": []
     },
     {
       "id": "HOST-INSTALL-RULES",
@@ -1098,10 +1126,7 @@
       "prompt": "(machine) make install-cursor",
       "expected": {
         "rules": [
-          "sdd-vibe-entry",
-          "sdd-shape-no-code",
-          "sdd-deploy-p4",
-          "sdd-codex-cli"
+          "sdd-vibe-entry"
         ],
         "skills": [
           "vibe-coding",
@@ -1116,7 +1141,8 @@
       "status": "covered",
       "maps_to": [
         "phase3 cursor-rule:*"
-      ]
+      ],
+      "must_read_substrings": []
     }
   ],
   "coverage_notes": {

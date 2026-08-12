@@ -25,10 +25,10 @@ trivial / Polish / 非 material refinement → 见 LOAD-MAP **豁免**；可不�
 | 决策 | |
 |------|--|
 | 交互单位 | 跟 Job 走，不跟内部类型表（product-judgment `rule/interaction-unit`） |
-| 骨架 | 服从 pages/`page_kind`；混任务拆页；redundancy hunt（[pages/README](./pages/README.md)） |
+| 骨架 | 服从合同 `page_kind`/`motif`；混任务拆页；redundancy hunt（见 [LOAD-MAP](./LOAD-MAP.md)） |
 | 主次 / 披露 / 密度 / 路径 | ID 优先选择器 |
 
-覆盖层：先定交互单位与批量规则，再选容器——新建短表→Modal；行预览→Sheet；单字段→行内（[components/overlays.md](./components/overlays.md)）。
+覆盖层：先定交互单位与批量规则，再选容器——新建短表→Modal；行预览→Sheet；单字段→行内。
 
 ## 阶段三：探测宿主资源
 
@@ -58,4 +58,4 @@ anchor / diverge：
 ## 阶段五：实现 / 验收
 
 按 LOAD-MAP 场景行加载册；宿主 DS 优先；输出前扫 ai-tells；文案守 copy.md。  
-验收：浏览器走主干 Job；对照 pages 自检 + ai-tells + web-interface。
+验收：浏览器走主干 Job；对照 LOAD-MAP 场景行 + ai-tells。

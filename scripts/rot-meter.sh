@@ -19,10 +19,10 @@ for arg in "$@"; do
   esac
 done
 
-# --- metrics ---
-skills_bytes=$(find skills -name '*.md' -type f -print0 | xargs -0 cat 2>/dev/null | wc -c | tr -d ' ')
-skills_md_count=$(find skills -name '*.md' -type f | wc -l | tr -d ' ')
-skills_lines=$(find skills -name '*.md' -type f -print0 | xargs -0 cat 2>/dev/null | wc -l | tr -d ' ')
+# --- metrics (active corpus only; _archive is not budget) ---
+skills_bytes=$(find skills -name '*.md' -type f ! -path '*/_archive/*' -print0 | xargs -0 cat 2>/dev/null | wc -c | tr -d ' ')
+skills_md_count=$(find skills -name '*.md' -type f ! -path '*/_archive/*' | wc -l | tr -d ' ')
+skills_lines=$(find skills -name '*.md' -type f ! -path '*/_archive/*' -print0 | xargs -0 cat 2>/dev/null | wc -l | tr -d ' ')
 mdc_count=$(find templates/.cursor/rules -name '*.mdc' -type f 2>/dev/null | wc -l | tr -d ' ')
 
 # per-SKILL.md lines

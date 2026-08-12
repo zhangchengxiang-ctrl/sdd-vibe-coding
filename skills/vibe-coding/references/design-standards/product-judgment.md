@@ -99,10 +99,9 @@ Job Brief:
 | 本册之后才读 | 用途 |
 |--------------|------|
 | [craft-knobs.md](./craft-knobs.md) | Design Read / 旋钮 |
-| [components/overlays.md](./components/overlays.md) | Modal vs Sheet **容器**（不替代交互单位） |
-| [components/bulk-actions.md](./components/bulk-actions.md) | 批量条视觉与确认 |
 | [copy.md](./copy.md) | 动词与错误句式（仍守 `rule/no-impl-jargon`） |
 | [ui-page-gate.md](./ui-page-gate.md) | 写页前评审块（须含 Job Brief） |
+| [LOAD-MAP.md](./LOAD-MAP.md) | 场景加读与字段门（页种/控件册已归档） |
 
 ## 自检
 
