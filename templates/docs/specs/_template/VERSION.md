@@ -13,7 +13,7 @@
 
 状态只使用：
 `draft | ready | in-progress | verifying | blocked | archived | cancelled`。  
-关版用 `make close-spec HOST=<repo> SPEC=<id>`（一条命令：戳 → `archived` → 搬入
+关版用 `make close-spec HOST=<repo> SPEC=<id>`（一条命令：验闸 → `archived` → 搬入
 `docs/specs/archive/<id>/`）；勿只改状态位留在施工队列。
 
 Delivery Target 只使用：

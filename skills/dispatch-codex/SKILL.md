@@ -260,7 +260,7 @@ DISPATCH_ID=<D1> SLICE_IDS=S1,S2
 - [ ] 证伪输出经 `record-conductor-falsify`（或等价字段）写入
       `.codex-dispatch-logs/<run-id>_falsify.log`，且
       `make require-falsify LOG_DIR=<cwd>/.codex-dispatch-logs RUN_ID=<run-id>` 通过
-- [ ] 未向用户宣称「可交付」（除非已走 Verify + `make verify-deliver` 且戳在）
+- [ ] 未向用户宣称「可交付」（除非已走 Verify + `make verify-deliver` exit 0）
 
 **Build 派单：** `--slice S1` 或 `S1,S2` / `DISPATCH_ID` / `SLICE_IDS=`。无打包的「整份 Spec」→ 拒绝，禁止 Goal 硬撑。
 

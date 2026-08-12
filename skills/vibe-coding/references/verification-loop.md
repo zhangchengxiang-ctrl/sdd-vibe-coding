@@ -19,7 +19,7 @@ make verify-deliver HOST=<repo> SPEC=<id>
 # 或一次收口：make close-spec HOST=<repo> SPEC=<id>
 ```
 
-`verify-deliver` 以 `check_spec --closing` 为闸：Evidence 列非空、dispatch 证据或 `override:`、证伪记录。**不再写/校验散文戳**；关版动作本身即门。
+`check_spec --closing` 即闸：矩阵 ≥1 行真 Test=Pass、其 Evidence 非占位且 `log=` 路径须存在、dispatch 证据或 `override:`、证伪记录。
 
 **许愿路径关版分叉：** Agent 工程证伪 + `verify-deliver` 之后：  
 - 无 UI 且 P0 可机跑 → 交[证据卡](../../testing/references/human-acceptance-pack.md)并写 `acceptance-passed`（**禁止**请人再跑同一脚本）；  

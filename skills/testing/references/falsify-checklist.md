@@ -8,7 +8,7 @@
 ## 硬门
 
 1. **证伪先于结案**：适用 Test 标 Pass 前，须执行本切片「怎么证伪」步骤（写在 `tests.md` Then / 自动化，或下方默认刀）。
-2. Build 轨完成语义 / 关版戳 / Oracle 冻结：见 [`rails.md`](../../vibe-coding/references/rails.md) + [`verification-loop.md`](../../vibe-coding/references/verification-loop.md)（本文件不复述）。
+2. Build 轨完成语义 / 关版闸 / Oracle 冻结：见 [`rails.md`](../../vibe-coding/references/rails.md) + [`verification-loop.md`](../../vibe-coding/references/verification-loop.md)（本文件不复述）。
 3. **同会话 Build→Verify**：禁止把 Build 期间的 window-smoke / health 结果原样誊为 Verify Pass；须重跑证伪或等价命令并记新证据。
 4. **指挥施工**：`maker ≠ grader` — 指挥侧至少亲自跑 **1 条** 证伪命令（或复核其输出），不只读施工侧 `run.md`。真源 verification-loop。
 5. **禁改 Oracle（钉 2）**：证伪失败 → Result=`Fail`；禁止改 `tests.md` / 矩阵 Oracle 消 Fail。

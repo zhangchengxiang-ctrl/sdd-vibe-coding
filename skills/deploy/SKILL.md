@@ -65,6 +65,6 @@ L0：P2+P3 可极简（触及面 + Agent 跑的最小产品冒烟），仍禁止
 - `[部署·L2·prod-smoke 未过/Blocked: 反向代理未同步 live]`
 
 延期 MUST 必须 Open 到下次 P1。Deliver Gate 回写字段见 `evidence-contract.md`。
-关版戳：见 [`verification-loop.md`](../vibe-coding/references/verification-loop.md) 钉 1。
+关版闸：见 [`verification-loop.md`](../vibe-coding/references/verification-loop.md) 钉 1。
 
 对人前台：说清要发什么、风险级、批准点、冒烟是否通过；不堆内部阶段号，除非用户追问。

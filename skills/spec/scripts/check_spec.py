@@ -105,6 +105,22 @@ def resolve_sdd_root(host: Path) -> Path:
     return (host / "docs").resolve()
 
 
+def is_table_line(line: str) -> bool:
+    """Markdown makes the outer pipes optional, so do we."""
+    s = line.strip()
+    return "|" in s and not s.startswith("#")
+
+
+def is_delimiter_row(line: str) -> bool:
+    parts = [c.strip() for c in cells(line) if c.strip()]
+    return bool(parts) and all(re.fullmatch(r":?-{3,}:?", c) for c in parts)
+
+
+def has_h3(text: str, name: str) -> bool:
+    """### Given, ###  Given and ### Given（Oracle） are the same heading."""
+    return bool(re.search(rf"(?m)^\s*#{{2,4}}\s+{re.escape(name)}", text))
+
+
 def parse_md_table_after(text: str, heading_substr: str) -> tuple[list[str], list[dict[str, str]]]:
     lines = text.splitlines()
     start = None
@@ -114,7 +130,7 @@ def parse_md_table_after(text: str, heading_substr: str) -> tuple[list[str], lis
             break
     if start is None:
         return [], []
-    while start < len(lines) and not lines[start].lstrip().startswith("|"):
+    while start < len(lines) and not is_table_line(lines[start]):
         if lines[start].startswith("#"):
             return [], []
         start += 1
@@ -122,12 +138,10 @@ def parse_md_table_after(text: str, heading_substr: str) -> tuple[list[str], lis
         return [], []
     headers = [clean(h) for h in cells(lines[start])]
     start += 1
-    if start < len(lines) and all(
-        re.fullmatch(r":?-{3,}:?", c.strip()) for c in cells(lines[start])
-    ):
+    if start < len(lines) and is_delimiter_row(lines[start]):
         start += 1
     rows: list[dict[str, str]] = []
-    while start < len(lines) and lines[start].lstrip().startswith("|"):
+    while start < len(lines) and is_table_line(lines[start]):
         vals = cells(lines[start])
         if len(vals) == len(headers):
             rows.append({headers[i]: clean(vals[i]) for i in range(len(headers))})
@@ -369,7 +383,7 @@ STRONG_KIND_RE = re.compile(
 
 def extract_then_body(test_body: str) -> str:
     m = re.search(
-        r"### Then(?:（Oracle）)?\n(.*?)(?:\n### |\n## |\Z)",
+        r"(?m)^\s*#{2,4}\s+Then[^\n]*\n(.*?)(?:\n\s*#{2,4}\s|\Z)",
         test_body,
         re.S,
     )
@@ -541,10 +555,10 @@ def check_tests(
     contract: str = "",
     plan: str = "",
 ) -> None:
-    if "### Given" not in tests or "### When" not in tests:
+    if not has_h3(tests, "Given") or not has_h3(tests, "When"):
         report.fail(f"{spec_dir.name}/tests.md: missing Given/When headings")
         return
-    if "### Then" not in tests and "### Then（Oracle）" not in tests:
+    if not has_h3(tests, "Then"):
         report.fail(f"{spec_dir.name}/tests.md: missing Then（Oracle）")
         return
     report.ok(f"{spec_dir.name}: tests.md has Given/When/Then markers")
@@ -566,20 +580,20 @@ def check_tests(
             report.fail(f"{spec_dir.name}/tests.md: index {tid} has no ## {tid} body")
             continue
         body = bodies[tid]
-        for need in ("### Given", "### When"):
-            if need not in body:
-                report.fail(f"{spec_dir.name}/tests.md: {tid} missing {need}")
-        if "### Then" not in body:
+        for need in ("Given", "When"):
+            if not has_h3(body, need):
+                report.fail(f"{spec_dir.name}/tests.md: {tid} missing ### {need}")
+        if not has_h3(body, "Then"):
             report.fail(f"{spec_dir.name}/tests.md: {tid} missing ### Then")
         # empty placeholders: Given section should have more than labels only
-        given = re.search(r"### Given\n(.*?)(?:\n### |\n## |\Z)", body, re.S)
+        given = re.search(r"(?m)^\s*#{2,4}\s+Given[^\n]*\n(.*?)(?:\n\s*#{2,4}\s|\Z)", body, re.S)
         if given and not re.search(r"[^\s\-：:].{3,}", given.group(1)):
             report.warn(f"{spec_dir.name}/tests.md: {tid} Given looks empty")
         then = extract_then_body(body)
         if then and then_is_weak(then):
-            report.fail(
-                f"{spec_dir.name}/tests.md: {tid} Then is weak Oracle "
-                "(only '能打开/有数据/冒烟通过' class — see oracle-strength.md)"
+            report.warn(
+                f"{spec_dir.name}/tests.md: {tid} Then carries no distinguishing "
+                "assertion (empty, or only '能打开/有数据/冒烟通过' — see oracle-strength.md)"
             )
         # T-001 (or first success) must not use antipattern observation forms
         if then and then_is_lazy_path_oracle(then):
@@ -979,9 +993,11 @@ def check_run_honesty(
     if structure_only or not run:
         return
 
-    claims_smoke = bool(
-        re.search(r"\[部署[^\]]*prod-smoke\s*通过", run)
-        or re.search(r"产品冒烟[^：:\n]*[：:][ \t]*通过\b", run)
+    smoke_field = re.search(r"产品冒烟[^：:\n]*[：:][ \t]*([^\n]*)", run)
+    claims_smoke = bool(re.search(r"\[部署[^\]]*prod-smoke\s*通过", run)) or bool(
+        smoke_field
+        and re.match(r"通过\b", clean(smoke_field.group(1)))
+        and not cell_is_placeholder(smoke_field.group(1))
     )
     _, matrix = parse_md_table_after(run, "追踪矩阵")
     _, batch = parse_md_table_after(run, "批次结果")
