@@ -9,8 +9,8 @@
 - 新建 / 大改用户可见页面：先读 [LOAD-MAP](./design-standards/LOAD-MAP.md) + [product-judgment](./design-standards/product-judgment.md)
 - 完成实现后冻结代码，跑完整单元测试批次；记录失败后统一 Repair
 - 有自动化 → 先红后绿；红/绿写入 `run.md`「红绿证据」；Polish/trivial/无自动化写 `N/A`
-- **硬门：** 只可报「实现完成」；禁止宣称「可交付」/ `acceptance-passed`  
-- **声明派生：** 「实现完成」→ `dispatch-run-id:` 或 `override: 用户要求自写` / `polish · 用户本轮明示`；`acceptance-passed`→真实 `verify-deliver` 戳（见 `check_spec`）
+- **硬门：** 只可报「实现完成」；禁止宣称「可交付」/ `acceptance-passed` 
+- **声明派生：** 「实现完成」→ `dispatch-run-id:` 或 `override: 用户要求自写` / `polish · 用户本轮明示`；`acceptance-passed` → `make verify-deliver`（`check_spec --closing`）
 - **硬门：** 禁止 Deploy P5/P6 或读写生产；须路由 Skill `deploy` + 本轮 P4
 - **硬门（钉 2 · Oracle 冻结）：** 禁止改 `tests.md` 与产品包验收矩阵；`run.md` 须有 `oracle-freeze: intact`
 
@@ -22,7 +22,7 @@
 - 同会话不得把 Build 冒烟原样誊为 Verify Pass
 - 结束信号与三钉：[`verification-loop.md`](./verification-loop.md)
 - **关版分叉：** 无 UI 可机跑 → falsify + `verify-deliver` 后 `acceptance-passed`；有 UI → `awaiting-human-acceptance`，无人明示前禁止关版
-- **钉 1：** 宣称 `acceptance-passed` / 可交付前须 `make verify-deliver` exit 0
+- **钉 1：** 宣称 `acceptance-passed` / 可交付前须 `make verify-deliver`（`check_spec --closing`）exit 0
 - **钉 3：** Verify 默认指挥侧执行；禁止派 Codex 做主验收
 - 系列/多角色：[`version-acceptance-matrix.md`](../../testing/references/version-acceptance-matrix.md)
 

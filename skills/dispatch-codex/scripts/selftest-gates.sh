@@ -87,8 +87,10 @@ SKIP_STRUCTURED_FALSIFY=1 check "falsify-skip-structured-env" 0 \
 
 # --- record-conductor-falsify ---
 check "record-falsify-success" 0 \
-  bash "$RECORD" --log-dir "$LOG" --run-id rec1 --slice S1 -- true
+  bash "$RECORD" --log-dir "$LOG" --run-id rec1 --slice S1 -- echo probe-ok
 check "require-after-record" 0 bash "$REQUIRE" --log-dir "$LOG" --run-id rec1
+bash "$RECORD" --log-dir "$LOG" --run-id rec_noop --slice S1 -- true >/dev/null || true
+check "require-noop-command" 1 bash "$REQUIRE" --log-dir "$LOG" --run-id rec_noop
 check "record-falsify-fail-cmd" 1 \
   bash "$RECORD" --log-dir "$LOG" --run-id rec2 --slice S1 -- false
 check "require-after-record-fail" 1 bash "$REQUIRE" --log-dir "$LOG" --run-id rec2

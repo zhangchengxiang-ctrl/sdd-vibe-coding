@@ -55,7 +55,7 @@
 
 ### 结论
 
-- verify-deliver: （宣称可交付 / acceptance-passed / prod-smoke 通过前须 `make verify-deliver`；成功后由脚本写入 `ok · <时间>`）
+- verify-deliver: （宣称可交付 / acceptance-passed / prod-smoke 通过前须 `make verify-deliver` = `check_spec --closing` exit 0）
 - 是否可以交付：`可交付 | 不可交付 | 受阻`
 - 一句话原因：
 - 本次验收覆盖：

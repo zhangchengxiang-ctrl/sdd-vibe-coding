@@ -65,6 +65,13 @@ check_structured() {
     echo "require-conductor-falsify: FAIL $f missing COMMAND: (use record-conductor-falsify.sh)" >&2
     return 1
   fi
+  # Reject no-op commands that cannot detect defects (cost(forgery) floor).
+  case "$(echo "$cmd" | tr -s '[:space:]' ' ' | sed 's/^ //;s/ $//')" in
+    true|:|"exit 0"|"/bin/true"|"/usr/bin/true"|echo|':' ) 
+      echo "require-conductor-falsify: FAIL $f COMMAND is a no-op ($cmd)" >&2
+      return 1
+      ;;
+  esac
   ec="$(field_value "$f" EXIT_CODE)"
   if [[ ! "$ec" =~ ^[0-9]+$ ]]; then
     echo "require-conductor-falsify: FAIL $f missing/invalid EXIT_CODE:" >&2

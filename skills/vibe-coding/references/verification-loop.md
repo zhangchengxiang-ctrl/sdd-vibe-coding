@@ -16,15 +16,10 @@
 
 ```bash
 make verify-deliver HOST=<repo> SPEC=<id>
+# 或一次收口：make close-spec HOST=<repo> SPEC=<id>
 ```
 
-成功后 `run.md` 须有机检字段：
-
-```text
-verify-deliver: ok · <ISO8601>
-```
-
-缺字段 → `check_spec` fail。脚本负责写入该戳；禁止手写假戳绕过（戳仅证明本机跑过闸）。
+`verify-deliver` 以 `check_spec --closing` 为闸：Evidence 列非空、dispatch 证据或 `override:`、证伪记录。**不再写/校验散文戳**；关版动作本身即门。
 
 **许愿路径关版分叉：** Agent 工程证伪 + `verify-deliver` 之后：  
 - 无 UI 且 P0 可机跑 → 交[证据卡](../../testing/references/human-acceptance-pack.md)并写 `acceptance-passed`（**禁止**请人再跑同一脚本）；  
@@ -79,7 +74,7 @@ Polish / trivial：只跑改动面自探活；仍禁甩用户发现；**不**强
 产品证据: kind=<名> · <路径或命令摘要>
 触及面: …（勾选或 N/A+理由）
 需要用户做什么: 无需动作 | 按验收包点验 | 批准… | 真人SSO/密钥…
-verify-deliver: ok · <时间>     # 可交付 / acceptance-passed / prod-smoke 通过时必有
+verify-deliver: ran (check_spec --closing exit 0)   # 可交付 / acceptance-passed / prod-smoke 通过时必有
 完成标签或结论: …
 ```
 

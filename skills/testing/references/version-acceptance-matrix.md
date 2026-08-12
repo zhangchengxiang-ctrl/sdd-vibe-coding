@@ -104,7 +104,7 @@ docs/product/modules/<slug>/06-acceptance-matrix.md   # 或宿主语言后缀
 P0 结果: 全 Pass | 失败列表 | Blocked 列表
 探活执行者: agent
 需要用户做什么: 无需动作 | 批准 Repair | 真人/租户授权
-verify-deliver: ok · <时间>   # 系列关版宣称可交付前必有（钉 1）
+verify-deliver: ran (check_spec --closing exit 0)   # 系列关版宣称可交付前必有（钉 1）
 ```
 
 ### P0 行级结果表（系列关版必需）

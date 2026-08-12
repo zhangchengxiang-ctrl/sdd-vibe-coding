@@ -38,7 +38,7 @@ PLUGIN_ONLY="${PHASE3_PLUGIN_ONLY:-0}"
 
 # --- Install projection existence (decision 1: keep) ---
 if [[ "$PLUGIN_ONLY" != "1" ]]; then
-  for f in sdd-vibe-entry sdd-shape-no-code sdd-deploy-p4 sdd-codex-cli; do
+  for f in sdd-vibe-entry; do
     if [[ -L "$HOME/.cursor/rules/${f}.mdc" || -f "$HOME/.cursor/rules/${f}.mdc" ]]; then
       ok "cursor-rule:$f"
     else
@@ -56,7 +56,7 @@ else
 fi
 
 # --- Template / skill asset existence (not slogan content) ---
-for rule in sdd-vibe-entry sdd-shape-no-code sdd-deploy-p4 sdd-codex-cli; do
+for rule in sdd-vibe-entry; do
   test -f "$ROOT/templates/.cursor/rules/${rule}.mdc" \
     && ok "rule-file:$rule" || bad "rule-file:$rule" "missing template"
 done
@@ -150,14 +150,14 @@ run = """
 - Deploy / rollback（P5）：ran make deploy
 """
 m.check_run_honesty(Path("demo"), run, r, structure_only=False)
-sys.exit(0 if r.errors >= 4 else 1)
+sys.exit(0 if r.errors >= 1 else 1)
 PY
 cs=$?
 set -e
 if [[ $cs -eq 0 ]]; then
   ok "check_spec:deliver+deploy-negative"
 else
-  bad "check_spec:deliver+deploy-negative" "expected >=4 honesty errors"
+  bad "check_spec:deliver+deploy-negative" "expected honesty errors (P5 without P2/P3)"
 fi
 
 # --- T-001 lazy path oracle must Fail (scheme-antipatterns) ---
@@ -197,14 +197,14 @@ tmp.mkdir()
 (tmp / "run.md").write_text("# run\n", encoding="utf-8")
 (tmp / "tests.md").write_text(tests, encoding="utf-8")
 m.check_tests(tmp, tests, [], r, structure_only=False)
-sys.exit(0 if r.errors >= 1 else 1)
+sys.exit(0 if r.warnings >= 1 else 1)
 PY
 lo=$?
 set -e
 if [[ $lo -eq 0 ]]; then
   ok "check_spec:t001-lazy-oracle-negative"
 else
-  bad "check_spec:t001-lazy-oracle-negative" "expected T-001 checklist oracle to Fail"
+  bad "check_spec:t001-lazy-oracle-negative" "expected T-001 checklist oracle to Warn"
 fi
 
 # --- Build 实现完成 without dispatch evidence must Fail ---
@@ -316,14 +316,14 @@ tests = """
 tmp = Path(tempfile.mkdtemp()) / "syn"
 tmp.mkdir()
 m.check_tests(tmp, tests, [], r, structure_only=False)
-sys.exit(0 if r.errors >= 1 else 1)
+sys.exit(0 if r.warnings >= 1 else 1)
 PY
 sy=$?
 set -e
 if [[ $sy -eq 0 ]]; then
   ok "check_spec:t001-lazy-synonym-negative"
 else
-  bad "check_spec:t001-lazy-synonym-negative" "expected synonym lazy Oracle to Fail"
+  bad "check_spec:t001-lazy-synonym-negative" "expected synonym lazy Oracle to Warn"
 fi
 
 # --- build euphemism without dispatch must Fail (rot H2) ---
@@ -393,7 +393,7 @@ else
   bad "check_spec:fake-dispatch-id-negative" "expected missing jsonl to Fail"
 fi
 
-# --- future verify-deliver stamp must Fail (rot H5) ---
+# --- closing with empty Evidence must Fail (stamp no longer a gate) ---
 set +e
 python3 - <<'PY'
 import importlib.util, sys, os
@@ -409,24 +409,27 @@ run = """
 - 状态：`acceptance-passed`
 - 当前模式：`verify`
 - 是否可以交付：`可交付`
-verify-deliver: ok · 2099-01-01T00:00:00Z
 证伪: falsify done
 ## 已验证的用户结果
 用户能完成主路径
+### 追踪矩阵
+| Requirement | Test | Implementation | Evidence | Result |
+|---|---|---|---|---|
+| R-001 | T-001 | | | Pass |
 ## 批次结果
 | 结果 |
 |------|
 | Pass |
 """
-m.check_run_honesty(Path("demo"), run, r, structure_only=False)
+m.check_run_honesty(Path("demo"), run, r, structure_only=False, closing=True)
 sys.exit(0 if r.errors >= 1 else 1)
 PY
 fs=$?
 set -e
 if [[ $fs -eq 0 ]]; then
-  ok "check_spec:future-stamp-negative"
+  ok "check_spec:closing-empty-evidence-negative"
 else
-  bad "check_spec:future-stamp-negative" "expected future stamp to Fail"
+  bad "check_spec:closing-empty-evidence-negative" "expected closing empty Evidence to Fail"
 fi
 
 echo

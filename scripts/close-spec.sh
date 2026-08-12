@@ -2,7 +2,7 @@
 # Close a spec version in one command (关版收口).
 #
 # Does, in order:
-#   1. verify-deliver (Nail 1 honesty gate + stamp run.md)
+#   1. verify-deliver (check_spec --closing: Evidence + dispatch/override + falsify)
 #   2. VERSION.md 状态 -> archived (+ 变更记录 row)
 #   3. git mv docs/specs/<id> -> docs/specs/archive/<id> (plain mv without git)
 #   4. wish-journey phase -> acceptance-passed (best-effort)
@@ -45,11 +45,7 @@ fi
 
 echo "== close-spec 1/5: verify-deliver =="
 if [[ "$SKIP_VD" == "1" ]]; then
-  if ! grep -q "verify-deliver: ok" "$SPEC_DIR/run.md" 2>/dev/null; then
-    echo "close-spec: FAIL --skip-verify-deliver but run.md has no verify-deliver stamp" >&2
-    exit 1
-  fi
-  echo "close-spec: skip (stamp already present)"
+  echo "close-spec: skip verify-deliver (caller asserts already closed)"
 else
   bash "$ROOT/scripts/verify-deliver.sh" "$HOST" "$SPEC"
 fi

@@ -17,7 +17,7 @@
 
 ### 1.1 Evidence Kind（`run.md` Evidence 列）
 
-> 每种证据证明什么；**单独不足以支撑 Job Pass 的 Kind 不得标 Pass。**  
+> 每种证据证明什么；**单独不足以支撑 Job Pass 的 Kind 不得标 Pass。** 
 > 写法：`kind=<名> · <路径或命令摘要>`。机检见 `check_spec`；执行见 testing
 > [`falsify-checklist.md`](../../testing/references/falsify-checklist.md)。
 
@@ -178,8 +178,7 @@ UX 判定标准见 [`ux-standards.md`](../../testing/references/ux-standards.md)
 **硬门：** 结论为通过 / `prod-smoke 通过` 时，`需要用户做什么` 默认 `无需动作`；禁止把
 「请打开页面 / 硬刷新确认是否正常」当作验收步骤（那是 Agent 探活义务）。  
 **硬门（钉 1）：** 宣称 `可交付` / `acceptance-passed` / `prod-smoke 通过` 前须
-`make verify-deliver HOST=<repo> SPEC=<id>` exit 0，且 `run.md` 含
-`verify-deliver: ok · <时间>`（见 [`verification-loop.md`](./verification-loop.md)）。
+`make verify-deliver HOST=<repo> SPEC=<id>` exit 0（`check_spec --closing`；见 [`verification-loop.md`](./verification-loop.md)）。
 
 ## 7. 完成声明
 
