@@ -70,9 +70,19 @@ note(honesty(run_claim, closing=True) >= 1, "claim-drift-neutralized",
 
 head = "证伪: done\noverride: 用户要求自写\n### 追踪矩阵\n"
 head += "| Requirement | Test | Implementation | Evidence | Result |\n|---|---|---|---|---|\n"
-good = head + "| R-001 | T-001 | a.ts | kind=unit · 3 assertions | Pass |\n"
-note(honesty(good, closing=True) == 0, "closing-evidence", "filled Pass row closes")
-note(honesty(good, closing=True) == 0, "real-pass-row-closes", "no new false alarm")
+
+# a close must rest on one artifact; typing a Pass row is not enough
+with tempfile.TemporaryDirectory() as td:
+    h = Path(td); sd = h / "docs/specs/s1"; sd.mkdir(parents=True)
+    typed = head + "| R-001 | T-001 | a.ts | kind=unit · 3 assertions | Pass |\n"
+    note(honesty(typed, closing=True, spec_dir=sd) >= 1, "typed-close-rejected",
+         "no artifact on disk")
+    (h / "artifacts").mkdir(); (h / "artifacts/t001.log").write_text("ok\n", encoding="utf-8")
+    real = head + "| R-001 | T-001 | a.ts | kind=unit · log=artifacts/t001.log | Pass |\n"
+    note(honesty(real, closing=True, spec_dir=sd) == 0, "closing-evidence",
+         "filled Pass row + real artifact closes")
+    note(honesty(real, closing=True, spec_dir=sd) == 0, "real-pass-row-closes",
+         "no new false alarm")
 
 ovr = "- 当前模式：`build`\n- 结论：实现完成\noverride: 用户要求自写\noracle-freeze: intact\n红绿证据: N/A · 无自动化\n"
 note(honesty(ovr) == 0, "override-1line", f"err={honesty(ovr)}")

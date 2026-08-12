@@ -897,13 +897,15 @@ def _resolve_dispatch_jsonl(run_id_or_name: str, start: Path | None = None) -> P
 def dispatch_evidence_valid(
     run: str,
     spec_dir: Path,
+    *,
+    allow_override: bool = True,
 ) -> tuple[bool, str]:
     """Return (ok, reason). Prefer dispatch-run-id → existing completed jsonl.
 
     All cited run-ids must be valid. Spec id match uses token boundaries
     (good-spec must not match inside good-spec-v2).
     """
-    if OVERRIDE_SELF_RE.search(run):
+    if allow_override and OVERRIDE_SELF_RE.search(run):
         return True, "override"
 
     run_ids = [m.group(1) for m in DISPATCH_RUN_ID_RE.finditer(run)]
@@ -960,26 +962,46 @@ def _matrix_evidence(row: dict) -> str:
 EVIDENCE_PATH_RE = re.compile(r"(?i)\b(?:log|path|file|artifact|report)\s*=\s*([^\s·,，、|]+)")
 
 
-def missing_evidence_paths(cell: str, spec_dir: Path) -> list[str]:
-    """Paths an Evidence cell explicitly names but that are not on disk.
+def _resolve_cited(p: str, spec_dir: Path) -> Path | None:
+    cand = Path(p)
+    if cand.is_absolute():
+        return cand if cand.exists() else None
+    roots = [spec_dir, *spec_dir.parents[:3]]
+    return next((r / p for r in roots if (r / p).exists()), None)
 
-    Only `log=`/`path=`/`file=`… are checked: this verifies claims the author
+
+def evidence_paths(cell: str, spec_dir: Path) -> list[tuple[str, Path | None]]:
+    """(cited path, resolved path or None) for paths an Evidence cell names.
+
+    Only `log=`/`path=`/`file=`… are read: this verifies claims the author
     already made rather than demanding a new artifact.
     """
     out = []
-    roots = [spec_dir, *spec_dir.parents[:3]]
     for raw in EVIDENCE_PATH_RE.findall(cell):
         p = raw.strip("`'\"()")
         if not p or p.startswith(("http://", "https://")) or "…" in p or "*" in p:
             continue
-        cand = Path(p)
-        if cand.is_absolute():
-            if not cand.exists():
-                out.append(p)
-            continue
-        if not any((r / p).exists() for r in roots):
-            out.append(p)
+        out.append((p, _resolve_cited(p, spec_dir)))
     return out
+
+
+def missing_evidence_paths(cell: str, spec_dir: Path) -> list[str]:
+    return [p for p, hit in evidence_paths(cell, spec_dir) if hit is None]
+
+
+def closing_anchor(run: str, spec_dir: Path, evidence_cells: list[str]) -> str:
+    """Something on disk that closing rests on, so typing alone cannot close."""
+    for cell in evidence_cells:
+        for p, hit in evidence_paths(cell, spec_dir):
+            if hit is not None:
+                return f"evidence path {p}"
+    ok, _ = dispatch_evidence_valid(run, spec_dir, allow_override=False)
+    if ok:
+        return "dispatch jsonl"
+    for m in re.finditer(r"[\w./\\-]*_falsify\.log", run):
+        if _resolve_cited(m.group(0).strip("`"), spec_dir):
+            return f"falsify log {m.group(0)}"
+    return ""
 
 
 def check_run_honesty(
@@ -1044,6 +1066,12 @@ def check_run_honesty(
                     f"{spec_dir.name}/run.md: Evidence names a path that does not "
                     f"exist ({missing})"
                 )
+        if not closing_anchor(run, spec_dir, evidence_cells):
+            report.fail(
+                f"{spec_dir.name}/run.md: closing requires one artifact on disk — "
+                "an Evidence `log=`/`path=` that exists, a dispatch-run-id with a "
+                "completed jsonl, or the falsify PASS log"
+            )
         ok_ev, ev_reason = dispatch_evidence_valid(run, spec_dir)
         if not ok_ev:
             report.fail(
