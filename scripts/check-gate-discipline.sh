@@ -12,22 +12,32 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+# A gate that cannot find its base must say so loudly: under CI, no base is
+# FAIL, not a pass. Fail-open is the failure mode this whole series deleted.
+no_base() {
+  if [[ -n "${CI:-}" ]]; then
+    echo "FAIL: gate-discipline found no base ref ($1); set GATE_DISCIPLINE_BASE" >&2
+    exit 1
+  fi
+  echo "== gate-discipline SKIP ($1; set GATE_DISCIPLINE_BASE to enforce) =="
+  exit 0
+}
+
 BASE="${GATE_DISCIPLINE_BASE:-}"
 if [[ -z "$BASE" ]]; then
-  if git rev-parse --verify origin/main >/dev/null 2>&1; then
-    BASE=origin/main
-  elif git rev-parse --verify main >/dev/null 2>&1; then
-    BASE=main
-  else
-    echo "== gate-discipline SKIP (no base ref) =="
-    exit 0
-  fi
+  # Prefer the remote's own default branch over guessing main/master.
+  head_ref=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null || true)
+  for cand in "$head_ref" origin/main origin/master main master; do
+    [[ -n "$cand" ]] || continue
+    if git rev-parse --verify "$cand" >/dev/null 2>&1; then
+      BASE="$cand"
+      break
+    fi
+  done
+  [[ -n "$BASE" ]] || no_base "no base ref"
 fi
 
-if ! git rev-parse --verify "$BASE" >/dev/null 2>&1; then
-  echo "== gate-discipline SKIP (missing $BASE) =="
-  exit 0
-fi
+git rev-parse --verify "$BASE" >/dev/null 2>&1 || no_base "missing $BASE"
 
 mapfile -t changed < <(git diff --name-only "$BASE"...HEAD 2>/dev/null || true)
 if [[ ${#changed[@]} -eq 0 ]]; then

@@ -44,6 +44,26 @@ FACT_HEADER_ALIASES = {
 }
 EMPTYISH = {"", "—", "-", "n/a", "N/A", "TODO", "TBD", "…", "..."}
 
+# Words the run.md template ships inside cells as "pick one" menus. A cell that
+# only restates the menu is an unfilled cell, not evidence.
+_OPTION_WORDS = {
+    "pass", "fail", "blocked", "agent", "blocked-needs-auth",
+    "通过", "未过", "已通过", "未通过", "无法验证", "不适用",
+}
+
+
+def cell_is_placeholder(val: str) -> bool:
+    """True for empty cells and for untouched template placeholders."""
+    v = clean(val).strip("`").strip()
+    if v in EMPTYISH:
+        return True
+    # `kind=… ·` and friends: nothing left once the label and ellipses go
+    body = re.sub(r"(?i)\bkind\s*=", " ", v).replace("…", " ").replace("...", " ")
+    if not re.sub(r"[·、,，/|\\\-—:：`\s]+", " ", body).strip():
+        return True
+    parts = [p.strip(" `").lower() for p in re.split(r"[/|]", v) if p.strip(" `")]
+    return len(parts) >= 2 and sum(p in _OPTION_WORDS for p in parts) >= 2
+
 
 class Report:
     def __init__(self) -> None:
@@ -923,6 +943,31 @@ def _matrix_evidence(row: dict) -> str:
     return clean(row.get("Evidence", ""))
 
 
+EVIDENCE_PATH_RE = re.compile(r"(?i)\b(?:log|path|file|artifact|report)\s*=\s*([^\s·,，、|]+)")
+
+
+def missing_evidence_paths(cell: str, spec_dir: Path) -> list[str]:
+    """Paths an Evidence cell explicitly names but that are not on disk.
+
+    Only `log=`/`path=`/`file=`… are checked: this verifies claims the author
+    already made rather than demanding a new artifact.
+    """
+    out = []
+    roots = [spec_dir, *spec_dir.parents[:3]]
+    for raw in EVIDENCE_PATH_RE.findall(cell):
+        p = raw.strip("`'\"()")
+        if not p or p.startswith(("http://", "https://")) or "…" in p or "*" in p:
+            continue
+        cand = Path(p)
+        if cand.is_absolute():
+            if not cand.exists():
+                out.append(p)
+            continue
+        if not any((r / p).exists() for r in roots):
+            out.append(p)
+    return out
+
+
 def check_run_honesty(
     spec_dir: Path,
     run: str,
@@ -961,22 +1006,37 @@ def check_run_honesty(
             report.fail(
                 f"{spec_dir.name}/run.md: closing but matrix has Fail/Blocked ({bad})"
             )
-        evidence_cells = [
-            clean(_matrix_evidence(r))
+        passing = [
+            r
             for r in matrix
-            if clean(r.get("Test", "")) not in EMPTYISH
+            if not cell_is_placeholder(r.get("Test", ""))
+            and clean(r.get("Result", "")).lower() == "pass"
         ]
-        if evidence_cells and all(e in EMPTYISH for e in evidence_cells):
+        if not passing:
+            report.fail(
+                f"{spec_dir.name}/run.md: closing requires at least one 追踪矩阵 row "
+                "with a real Test and Result=Pass"
+            )
+        evidence_cells = [clean(_matrix_evidence(r)) for r in passing]
+        if not evidence_cells or all(cell_is_placeholder(e) for e in evidence_cells):
             report.fail(
                 f"{spec_dir.name}/run.md: closing requires non-empty Evidence column"
             )
+        for cell in evidence_cells:
+            for missing in missing_evidence_paths(cell, spec_dir):
+                report.fail(
+                    f"{spec_dir.name}/run.md: Evidence names a path that does not "
+                    f"exist ({missing})"
+                )
         ok_ev, ev_reason = dispatch_evidence_valid(run, spec_dir)
         if not ok_ev:
             report.fail(
                 f"{spec_dir.name}/run.md: closing requires dispatch evidence ({ev_reason})"
             )
         has_kind = any(
-            re.search(r"(?i)kind\s*=", e) for e in evidence_cells if e not in EMPTYISH
+            re.search(r"(?i)kind\s*=", e)
+            for e in evidence_cells
+            if not cell_is_placeholder(e)
         )
         if not re.search(r"证伪|falsify", run, re.I) and not has_kind:
             report.fail(

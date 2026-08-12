@@ -35,7 +35,7 @@ run "dispatch-gates-selftest" bash skills/dispatch-codex/scripts/selftest-gates.
 run "contract-sync" bash scripts/check-contract-sync.sh
 run "phase3-plugin-only" env PHASE3_PLUGIN_ONLY=1 bash scripts/phase3-negative-verify.sh
 run "rot-meter" bash scripts/rot-meter.sh
-run "gate-cases-baseline" bash scripts/gate-cases-runner.sh --baseline-only
+run "gate-cases" bash scripts/gate-cases-runner.sh
 run "gate-discipline" bash scripts/check-gate-discipline.sh
 report "single-definition" bash scripts/single-definition.sh
 report "orphan-refs" bash scripts/orphan-refs.sh

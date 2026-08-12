@@ -53,6 +53,31 @@ note("OK" if honesty(ovr) == 0 else "HOLE", "override-1line", f"err={honesty(ovr
 eng = "- 当前模式：`build`\n- 结论：implementation complete\n"
 note("OK" if honesty(eng) >= 1 else "HOLE", "E08-english-claim", f"err={honesty(eng)}")
 
+# forge measurement: the shipped template placeholders must not count as evidence
+head = "证伪: done\noverride: 用户要求自写\n### 追踪矩阵\n"
+head += "| Requirement | Test | Implementation | Evidence | Result |\n|---|---|---|---|---|\n"
+ph = head + "| R-001 | T-001 | | kind=… · | Pass / Fail / Blocked |\n"
+note("OK" if honesty(ph, closing=True) >= 1 else "HOLE", "placeholder-evidence",
+     f"err={honesty(ph, closing=True)}")
+
+# an Evidence cell naming an artifact that is not on disk must not close
+mp = head + "| R-001 | T-001 | a.ts | kind=unit · log=nope/missing.log | Pass |\n"
+note("OK" if honesty(mp, closing=True) >= 1 else "HOLE", "missing-artifact",
+     f"err={honesty(mp, closing=True)}")
+
+# guard the other side: a filled Pass row must still close (no new false alarm)
+good = head + "| R-001 | T-001 | a.ts | kind=unit · 3 assertions | Pass |\n"
+note("OK" if honesty(good, closing=True) == 0 else "HOLE", "real-pass-row-closes",
+     f"err={honesty(good, closing=True)}")
+
 print(f"== live probes HOLE={hole} OK={ok} ==")
-sys.exit(0)
+sys.exit(1 if hole else 0)
 PY
+
+# The discipline gate must fail closed when it cannot find a base to diff.
+if env CI=1 GATE_DISCIPLINE_BASE=refs/__none__ \
+    bash "$ROOT/scripts/check-gate-discipline.sh" >/dev/null 2>&1; then
+  echo "HOLE  gate-discipline-fail-closed — passed with no base ref under CI" >&2
+  exit 1
+fi
+echo "OK    gate-discipline-fail-closed — no base ref under CI exits 1"
