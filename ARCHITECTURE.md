@@ -71,7 +71,7 @@
   （Verify 接线薄页 `skills/testing/references/ux-standards.md`；启发式正文在 design-standards）
 - 产品回归启用条件与分层：只改 `skills/testing/references/product-regression.md`
 - Build 期自动化测试通则（含红绿证据）：只改 `skills/vibe-coding/references/automated-tests.md`
-- 事实映射门、纵向切片、测试合同门、Plan 流程、**check_spec 机检**（含 verify-deliver 戳 / oracle-freeze）：只改 `skills/spec/`（含 `scripts/check_spec.py`）
+- 事实映射门、纵向切片、测试合同门、Plan 流程、**check_spec 机检**（含 `--closing` / oracle-freeze）：只改 `skills/spec/`（含 `scripts/check_spec.py`）
 - Cursor/Claude → Codex 派单与指挥侧验收（禁 Codex 主验收）：只改 `skills/dispatch-codex/`
   （`SKILL.md`；Context Pack：`references/context-pack.md` + `scripts/build_context_pack.py`；
   许愿波次：`scripts/wish-orchestrate.sh` + `pack_dispatch_units.py` / `schedule_waves.py`（272K D + edit/verify-wave）；
@@ -79,15 +79,15 @@
   `require-conductor-falsify.sh`；`codex-dispatch.sh`；
   **禁反问授权块：** `references/cli-authorization.md`）
 - 公开 CI 门（无 evals）：`scripts/public-gates.sh` / `make public-gates`
-  （selftest + hooks + contract-sync + phase3 + **rot-meter**；single-definition / orphan-refs）
+  （selftest + contract-sync + phase3 + **rot-meter** + gate-cases + gate-discipline；single-definition / orphan-refs）
 - 腐烂度量：`scripts/rot-meter.sh` + `scripts/rot-baseline.json`（上限只许下调）
-- 运行时 hooks / 旅程状态机：`scripts/hooks/`、`scripts/wish-journey.sh`、
-  [`runtime-hooks.md`](./skills/vibe-coding/references/runtime-hooks.md)
+- 旅程状态机：`scripts/wish-journey.sh`
+- 门强度回测：`scripts/fixtures/gate-cases.tsv` + `scripts/gate-cases-runner.sh`
 - 单个 Rail 的前台话术与执行约束：改对应 `skills/<rail>/SKILL.md`
 - 宿主填写槽位与文档模板：改 `templates/docs/**` 与 `templates/AGENTS.md`
 - 结构校验规则：改本机 `evals/tools/check_docs.py`（公开仓无此目录）
-- 关版脚本：`scripts/verify-deliver.sh`（`make verify-deliver`）；
-  **关版收口一条命令：** `scripts/close-spec.sh`（`make close-spec`：戳 → `archived` → 搬迁 → journey）
+- 关版脚本：`scripts/verify-deliver.sh`（`make verify-deliver` → `check_spec --closing`）；
+  **关版收口一条命令：** `scripts/close-spec.sh`（`make close-spec`：closing 通过 → `archived` → 搬迁 → journey）
 
 `templates/docs` 只保留最小落盘结构并链接合同真源；合同正文在 skills。
 
@@ -95,7 +95,8 @@
 
 1. 质量差 → 禁止默认加规则；先删/合并/换目标/换样例/换评测。  
 2. 宣称「优化」的 PR：`skills/` 净行优先为负。  
-3. `make rot` 上限只许下调。
+3. `make rot` 上限只许下调。  
+4. **新增任何门 / 规则 / 文档的前提：** 先用实测证明现有门漏了，并指出被删除或替换的对象。机检 = PR 引用一条可复现探针（`scripts/fixtures/gate-cases.tsv` 行或等价 runner）+ `make rot` 不上升（见 `scripts/check-gate-discipline.sh`）。
 
 ## 常见改动路径
 
@@ -140,10 +141,10 @@
 | 来源 | 状态 | 吸收层 | 明确不吸收 | 撤销条件 |
 |------|------|--------|------------|----------|
 | OpenAI Codex Pack / AGENTS 地图 | **已吸收** | Context Pack；薄 AGENTS | AGENTS 百科化 | Pack 字段漂移且无宿主证据 |
-| OpenAI harness「机械约束>长文」 | **部分** | check_spec / dispatch / hooks | 全量自定义 lint 平台 | — |
+| OpenAI harness「机械约束>长文」 | **部分** | check_spec / dispatch | 全量自定义 lint 平台 | — |
 | GitHub Spec Kit 流程 | **同构** | Shape→Plan→Build | 整套 Spec Kit CLI / constitution 产品 | — |
 | OpenSpec 状态机清晰度 | **已吸收** | `wish-journey.sh` 磁盘相位 | 再造一套 Spec 模板 | 相位表与 workflow 冲突时以 workflow 为准 |
-| Claude Code Hooks | **已吸收** | `scripts/hooks/*` + scaffold `--hooks` | 自建第二调度器 | Cursor/Claude 取消 hook API |
+| Claude Code Hooks | **已删除** | — | 运行时 hooks（默认不装 / 可自签 / 假保证） | 2026-08 实测净负价值后移除 |
 | Claude Agent Teams | **观察** | — | 现在不吸（平台未稳） | 团队默认开启且 API 稳定后再议 |
 | BMAD 多 persona | **不吸收** | — | 角色剧场 / 全 SDLC persona | 永不默认；仅笔记 |
 | Preview-before-prod 社区工作流 | **未吸** | 宿主 AGENTS 可自填 | 插件不绑死 Vercel | 有通用预览约定再抽 |
