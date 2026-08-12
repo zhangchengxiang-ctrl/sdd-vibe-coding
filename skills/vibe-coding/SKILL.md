@@ -62,6 +62,5 @@ description: >-
 - Evidence：[`evidence-contract.md`](./references/evidence-contract.md)  
 - 三钉：[`verification-loop.md`](./references/verification-loop.md)  
 - SDD docs root：[`docs-root.md`](./references/docs-root.md)  
-- 运行时 hooks：[`runtime-hooks.md`](./references/runtime-hooks.md)  
 - Build 自动化通则：[`automated-tests.md`](./references/automated-tests.md)  
 - 索引（兼容旧链）：[`workflow-contract.md`](./references/workflow-contract.md)

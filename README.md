@@ -64,14 +64,13 @@ make install         # 推荐：有 CLI 的端都装；缺则 SKIP
 | `make install-codex` | 只装 Codex | 只动一端 |
 | `make scaffold HOST=/path/to/repo` | 宿主生成 `AGENTS.md` + `docs/`（默认 `HOST=.`，`PROFILE=detect`） | 空仓 / **存量**宿主初始化 |
 | `make check-spec HOST=/path/to/repo SPEC=id` | Spec 静态门（事实映射 / tests / 架构节 / run 诚实性） | Plan 齐套后、派 Build 前 |
-| `make verify-deliver HOST=/path SPEC=id` | Verify 关版门（check_spec + 戳 `verify-deliver: ok · <时间>`） | 宣称可交付 / prod-smoke 通过前 |
+| `make verify-deliver HOST=/path SPEC=id` | Verify 关版门（`check_spec --closing`） | 宣称可交付 / prod-smoke 通过前 |
 | `make preflight-rail HOST=/path` | Shape 写码闸（业务 dirty 无授权则失败） | 讨论/设计会话自检 |
 | `make codex-dispatch HOST=/path UNIT=plan\|build\|goal PROMPT_FILE=…` | 派 Codex（never + 墙钟；Build 需 `SPEC=`+`SLICE=`；Goal 需 `GOAL_APPROVED=1`） | 指挥侧外包有界单元 |
 | `make require-falsify LOG_DIR=… [RUN_ID=]` | 指挥侧结构化证伪门 | Codex Build 返回后、下一片前 |
 | `make record-falsify LOG_DIR=… RUN_ID=… CMD="…"` | 跑证伪命令并写取证日志 | 片间 falsify |
-| `make scaffold HOST=/path WITH_HOOKS=1` | 同上并安装运行时 hooks | 要把写码/Deploy 升到 hook 硬闸 |
-| `make sdd-authorize HOST=. KIND=build\|deploy-p4` | 写 `.sdd/authorize.*` 标记 | 方案确认后 / 本轮批准上线后 |
 | `make wish-journey HOST=. SPEC=id …` | 磁盘旅程相位 | 许愿半自动可恢复 |
+| `make gate-cases` | 91 例门强度回测目录 + live 探针 | 改门后回归 |
 | `make public-gates` | 公开 CI 门（无 evals） | PR / 克隆自检 |
 | `make phase3-negative` | Phase0–2 负向验收 | 修完纪律后自检 |
 
@@ -108,7 +107,7 @@ make scaffold HOST=/path DRY_RUN=1                    # 只探测，不写盘
 | `docs`（默认） | 与技能文档中的 `docs/product` 等路径一致 |
 | `docs/sdd` 等 | 写入子树，并在 `AGENTS.md` 盖章 `SDD docs root`；Agent 须按该根解析路径 |
 
-探测会打印 `OK` / `SKIP` / `BLOCK`；**永不覆盖**已有文件。硬冲突：挪到 `docs/_host/`、改用 `SDD_ROOT=docs/sdd`，或 `ALLOW_PARTIAL=1`。
+探测会打印 `OK` / `SKIP` / `BLOCK`；**永不覆盖**已有文件。硬冲突：挪到 `docs/_host/`、改用 `SDD_ROOT=docs/sdd`。
 
 不写 `.cursor/` / `.claude/`，不拷 check-docs。scaffold **不算**编码许可。
 

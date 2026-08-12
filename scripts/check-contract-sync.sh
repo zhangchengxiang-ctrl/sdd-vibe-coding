@@ -22,7 +22,7 @@ bad() { echo "FAIL  $1 — $2" >&2; fail=$((fail + 1)); }
   && ok "falsify-attestation" || bad "falsify-attestation" "missing"
 
 # --- projected rule templates exist ---
-for rule in sdd-vibe-entry sdd-shape-no-code sdd-deploy-p4 sdd-codex-cli; do
+for rule in sdd-vibe-entry; do
   f="$ROOT/templates/.cursor/rules/${rule}.mdc"
   [[ -f "$f" ]] && ok "rule:$rule" || bad "rule:$rule" "missing"
 done
@@ -47,15 +47,11 @@ test -f "$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh" \
 test -f "$ROOT/skills/dispatch-codex/scripts/wish-orchestrate.sh" \
   && ok "wish-orchestrate-script" || bad "wish-orchestrate-script" "missing"
 
-# --- hooks / journey ---
-test -f "$ROOT/scripts/hooks/gate-shell.sh" && test -f "$ROOT/scripts/hooks/gate-write.sh" \
-  && ok "hooks:gates" || bad "hooks:gates" "missing gate scripts"
+# --- journey ---
 test -f "$ROOT/scripts/wish-journey.sh" \
   && ok "wish-journey" || bad "wish-journey" "missing"
-test -f "$ROOT/templates/.cursor/hooks.json" \
-  && ok "hooks:template" || bad "hooks:template" "missing hooks.json"
-test -f "$ROOT/skills/vibe-coding/references/runtime-hooks.md" \
-  && ok "runtime-hooks-doc" || bad "runtime-hooks-doc" "missing"
+test -f "$ROOT/scripts/fixtures/gate-cases.tsv" \
+  && ok "gate-cases-tsv" || bad "gate-cases-tsv" "missing"
 test -f "$ROOT/templates/AGENTS.md" \
   && ok "agents-template" || bad "agents-template" "missing"
 

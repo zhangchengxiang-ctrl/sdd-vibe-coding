@@ -4,16 +4,14 @@
 .PHONY: help install install-dev install-cursor install-claude install-codex \
 	scaffold codex-dispatch wish-orchestrate context-pack verify check-docs check-spec verify-deliver close-spec \
 	preflight-rail require-falsify record-falsify dispatch-gates-selftest public-gates contract-sync \
-	phase3-negative eval-live eval-skill-load hooks-selftest sdd-authorize wish-journey \
-	rot corrections host-drift single-definition orphan-refs
+	phase3-negative eval-live eval-skill-load wish-journey \
+	rot corrections host-drift single-definition orphan-refs gate-cases
 
 HOST ?= .
 PROFILE ?= detect
 DRY_RUN ?=
-ALLOW_PARTIAL ?=
 SDD_ROOT ?= docs
 DOC_ROOT ?= ./templates
-WITH_HOOKS ?=
 SPEC ?=
 UNIT ?= build
 PROMPT_FILE ?=
@@ -24,7 +22,6 @@ AUTHORIZED ?=
 LOG_DIR ?=
 RUN_ID ?=
 CMD ?=
-KIND ?=
 SET ?=
 TRANSITION ?=
 STATUS ?=
@@ -40,11 +37,10 @@ help:
 		'  make install-cursor       只装 Cursor' \
 		'  make install-claude       只装 Claude Code' \
 		'  make install-codex        只装 Codex' \
-		'  make scaffold HOST=路径   AGENTS.md + SDD 文档树（PROFILE=；SDD_ROOT=；WITH_HOOKS=1）' \
-		'  make sdd-authorize HOST=路径 KIND=build|deploy-p4  运行时授权标记（hooks）' \
+		'  make scaffold HOST=路径   AGENTS.md + SDD 文档树（PROFILE=；SDD_ROOT=）' \
 		'  make wish-journey HOST=路径 SPEC=id [STATUS=1|SET=phase|TRANSITION=phase]' \
 		'  make check-spec HOST=路径 SPEC=id   Spec 静态门（事实映射/tests/架构节/run 诚实性）' \
-		'  make verify-deliver HOST=路径 SPEC=id  Verify 关版门（戳 verify-deliver: ok · <时间>）' \
+		'  make verify-deliver HOST=路径 SPEC=id  Verify 关版门（check_spec --closing）' \
 		'  make close-spec HOST=路径 SPEC=id   关版收口：verify-deliver→archived→搬入 archive/→journey' \
 		'  make preflight-rail HOST=路径 [AUTHORIZED=1]  Shape 写码闸（业务 dirty 则失败）' \
 		'  make codex-dispatch HOST=路径 UNIT=plan|build|goal PROMPT_FILE=文件' \
@@ -54,8 +50,8 @@ help:
 		'  make record-falsify LOG_DIR=路径 RUN_ID=id SLICE=S1 CMD="…"  结构化证伪取证' \
 		'  make require-falsify LOG_DIR=路径 [RUN_ID=]  指挥侧证伪门（须 COMMAND+EXIT_CODE+VERDICT）' \
 		'  make dispatch-gates-selftest  离线硬门自检（Plan / structured falsify / wish）' \
-		'  make hooks-selftest       运行时 hooks + wish-journey 自检' \
-		'  make public-gates         公开 CI 门（selftest+hooks+contract-sync+phase3+rot；报告 single-def/orphan）' \
+		'  make gate-cases            91 例门强度回测目录 + live 探针' \
+		'  make public-gates         公开 CI 门（selftest+contract-sync+phase3+rot；报告 single-def/orphan）' \
 		'  make rot                  腐烂度量（预算上限=基线；禁止回升）' \
 		'  make corrections          本机 transcript 纠正信号 → M1/M2/M3 桶（纯本地）' \
 		'  make host-drift           可选：外部宿主仓漂移（不进 public-gates）' \
@@ -91,8 +87,6 @@ scaffold:
 	if [ -n "$(PROFILE)" ]; then extra="$$extra --profile $(PROFILE)"; fi; \
 	if [ -n "$(SDD_ROOT)" ]; then extra="$$extra --root $(SDD_ROOT)"; fi; \
 	if [ "$(DRY_RUN)" = "1" ]; then extra="$$extra --dry-run"; fi; \
-	if [ "$(ALLOW_PARTIAL)" = "1" ]; then extra="$$extra --allow-partial"; fi; \
-	if [ "$(WITH_HOOKS)" = "1" ]; then extra="$$extra --hooks"; fi; \
 	bash scripts/scaffold.sh "$(HOST)" $$extra
 
 # Conductor→Codex dispatch via codex-dispatch.sh.
@@ -187,15 +181,15 @@ record-falsify:
 dispatch-gates-selftest:
 	bash skills/dispatch-codex/scripts/selftest-gates.sh
 
-# Public CI gates (no private evals/): selftest + hooks + contract-sync + phase3 + rot.
+# Public CI gates (no private evals/): selftest + contract-sync + phase3 + rot.
 public-gates:
 	bash scripts/public-gates.sh
 
 contract-sync:
 	bash scripts/check-contract-sync.sh
 
-hooks-selftest:
-	bash scripts/hooks/selftest-hooks.sh
+gate-cases:
+	bash scripts/gate-cases-runner.sh
 
 # Rot budget meter. Ceiling = scripts/rot-baseline.json (ratchet: only lower).
 rot:
@@ -214,16 +208,6 @@ single-definition:
 
 orphan-refs:
 	bash scripts/orphan-refs.sh
-
-# Runtime authorization markers for hooks.
-# Example: make sdd-authorize HOST=. KIND=build
-#          make sdd-authorize HOST=. KIND=deploy-p4
-sdd-authorize:
-	@if [ -z "$(KIND)" ]; then \
-		echo 'Usage: make sdd-authorize HOST=<repo> KIND=build|deploy-p4'; \
-		exit 2; \
-	fi
-	bash scripts/hooks/authorize.sh --cwd "$(HOST)" --kind "$(KIND)"
 
 # Wish journey disk state machine.
 # Examples:

@@ -21,14 +21,14 @@ done
 # concept|extra_owners (comma-separated)|patterns
 map_file=$(mktemp)
 cat >"$map_file" <<'EOF'
-write_auth|templates/.cursor/rules/sdd-shape-no-code.mdc|写码授权|\(a\)|\(b\)|\(c\)
-construction|templates/.cursor/rules/sdd-codex-cli.mdc,skills/dispatch-codex/SKILL.md|施工通道
-human_gates|templates/.cursor/rules/sdd-deploy-p4.mdc|方案闸|验收闸|Deploy P4
+write_auth||写码授权|\(a\)|\(b\)|\(c\)
+construction|skills/dispatch-codex/SKILL.md|施工通道
+human_gates||方案闸|验收闸|Deploy P4
 states||acceptance-passed|awaiting-human-acceptance|close-spec
 rails||Oracle 冻结|oracle-freeze
-dispatch_unit|templates/.cursor/rules/sdd-codex-cli.mdc,skills/dispatch-codex/SKILL.md,skills/dispatch-codex/references/dispatch-units.md|派发单元|272K
+dispatch_unit|skills/dispatch-codex/SKILL.md,skills/dispatch-codex/references/dispatch-units.md|派发单元|272K
 material_polish|skills/vibe-coding/references/design-standards/change-control.md|\bmaterial\b
-project_kind|templates/.cursor/rules/sdd-vibe-entry.mdc,templates/.cursor/rules/sdd-shape-no-code.mdc,skills/vibe-coding/references/project-kind.md|project\.kind
+project_kind|templates/.cursor/rules/sdd-vibe-entry.mdc,skills/vibe-coding/references/project-kind.md|project\.kind
 evidence_kind|skills/vibe-coding/references/evidence-contract.md|Evidence Kind|Deliver Gate
 verification_loop|skills/vibe-coding/references/verification-loop.md|maker ≠ grader|verify-deliver
 EOF

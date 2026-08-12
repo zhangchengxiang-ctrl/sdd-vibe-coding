@@ -9,10 +9,8 @@
 #   bash scripts/wish-journey.sh --cwd HOST --spec ID --list-phases
 #
 # State file: <host>/.sdd/journey/<spec>.env
+# Auth markers (.sdd/authorize.*) removed with hooks — assert uses journey phase only.
 set -euo pipefail
-HOOKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/hooks" && pwd)"
-# shellcheck disable=SC1091
-source "$HOOKS_DIR/lib.sh"
 
 CWD="."
 SPEC=""
@@ -22,6 +20,27 @@ FORCE=0
 
 usage() {
   sed -n '2,14p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+sdd_find_root() {
+  local start="${1:-.}"
+  start="$(cd "$start" && pwd)"
+  if [[ -n "${SDD_HOST_ROOT:-}" && -d "${SDD_HOST_ROOT}" ]]; then
+    cd "$SDD_HOST_ROOT" && pwd
+    return
+  fi
+  local d="$start"
+  while true; do
+    if [[ -f "$d/AGENTS.md" || -d "$d/.sdd" || -d "$d/docs/specs" ]]; then
+      printf '%s\n' "$d"
+      return
+    fi
+    local parent
+    parent="$(dirname "$d")"
+    [[ "$parent" == "$d" ]] && break
+    d="$parent"
+  done
+  printf '%s\n' "$start"
 }
 
 while [[ $# -gt 0 ]]; do
@@ -118,13 +137,6 @@ case "$ACTION" in
     PHASE="$TARGET_PHASE"
     save
     echo "wish-journey: set phase=$PHASE ($FILE)"
-    # Side-effect: planning/building implies build auth marker convenience
-    if [[ "$PHASE" == "planning" || "$PHASE" == "building" ]]; then
-      if [[ ! -f "$ROOT/.sdd/authorize.build" ]]; then
-        bash "$HOOKS_DIR/authorize.sh" --cwd "$ROOT" --kind build --note "wish-journey:$PHASE" >/dev/null
-        echo "wish-journey: ensured .sdd/authorize.build"
-      fi
-    fi
     exit 0
     ;;
   transition)
@@ -137,48 +149,26 @@ case "$ACTION" in
     PHASE="$TARGET_PHASE"
     save
     echo "wish-journey: $FROM -> $PHASE"
-    if [[ "$PHASE" == "planning" || "$PHASE" == "building" ]]; then
-      if [[ ! -f "$ROOT/.sdd/authorize.build" ]]; then
-        bash "$HOOKS_DIR/authorize.sh" --cwd "$ROOT" --kind build --note "wish-journey:$PHASE" >/dev/null
-      fi
-    fi
     exit 0
     ;;
   assert)
     case "$TARGET_PHASE" in
       write|build)
-        if sdd_auth_build_ok "$ROOT" || [[ "${PHASE:-}" =~ ^(planning|building|awaiting-falsify|verifying|repairing)$ ]]; then
+        if [[ "${PHASE:-}" =~ ^(planning|building|awaiting-falsify|verifying|repairing)$ ]]; then
           echo "wish-journey: assert $TARGET_PHASE ok (phase=$PHASE)"
           exit 0
         fi
-        echo "wish-journey: assert $TARGET_PHASE FAIL (phase=$PHASE; need authorize.build or journey planning+)" >&2
+        echo "wish-journey: assert $TARGET_PHASE FAIL (phase=$PHASE; need journey planning+)" >&2
         exit 1
         ;;
       deploy)
-        if sdd_auth_deploy_ok "$ROOT"; then
-          echo "wish-journey: assert deploy ok"
-          exit 0
-        fi
-        echo "wish-journey: assert deploy FAIL (need .sdd/authorize.deploy-p4 <24h)" >&2
+        # Deploy P4 is human chat intent — journey cannot self-issue it.
+        echo "wish-journey: assert deploy FAIL (Deploy P4 requires human intent this turn; no authorize marker)" >&2
         exit 1
         ;;
       claim-deliver)
-        if [[ "${PHASE:-}" == "acceptance-passed" ]] || [[ "${PHASE:-}" == "awaiting-human-acceptance" ]]; then
-          # awaiting-human may not claim acceptance-passed; only acceptance-passed or verify-deliver
-          if [[ "${PHASE:-}" == "acceptance-passed" ]]; then
-            echo "wish-journey: assert claim-deliver ok"
-            exit 0
-          fi
-        fi
-        # Also allow if verify-deliver stamp exists in run.md — light check
-        RUN_MD=""
-        for cand in "$ROOT/docs/specs/$SPEC/run.md" "$ROOT/docs/specs/archive/$SPEC/run.md"; do
-          if [[ -f "$cand" ]]; then RUN_MD="$cand"; break; fi
-        done
-        if [[ -n "$RUN_MD" ]] \
-          && grep -q 'verify-deliver: ok' "$RUN_MD" 2>/dev/null \
-          && [[ "${PHASE:-}" == "awaiting-human-acceptance" || "${PHASE:-}" == "acceptance-passed" || "${PHASE:-}" == "verifying" ]]; then
-          echo "wish-journey: assert claim-deliver soft-ok (verify-deliver present; still need human for acceptance-passed)"
+        if [[ "${PHASE:-}" == "acceptance-passed" ]]; then
+          echo "wish-journey: assert claim-deliver ok"
           exit 0
         fi
         echo "wish-journey: assert claim-deliver FAIL (phase=$PHASE)" >&2

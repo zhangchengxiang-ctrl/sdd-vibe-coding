@@ -240,11 +240,11 @@ link_cursor_user_rules() {
   done
   shopt -u nullglob
 
-  # Remove pre-plugin user rule superseded by shipped sdd-codex-cli.mdc.
+  # Remove pre-plugin user rule superseded by sdd-vibe-entry.mdc + gates.md.
   local legacy="${user_rules}/codex-mcp.mdc"
   if [[ -e "$legacy" || -L "$legacy" ]]; then
     rm -f "$legacy"
-    echo "  removed deprecated ~/.cursor/rules/codex-mcp.mdc (superseded by sdd-codex-cli.mdc)"
+    echo "  removed deprecated ~/.cursor/rules/codex-mcp.mdc (superseded by sdd-vibe-entry.mdc + gates.md)"
   fi
 }
 
@@ -277,7 +277,7 @@ install_cursor() {
   link_cursor_user_rules "$rules_src"
   echo "OK Cursor: $dst (v$version)"
   echo "  Next: Developer: Reload Window → Plugins 见 ${PLUGIN_NAME}；Agent 输入 /vibe-coding"
-  echo "  Rules: ~/.cursor/rules/sdd-*.mdc（入口 / 写码闸 / Deploy P4 / Codex CLI）"
+  echo "  Rules: ~/.cursor/rules/sdd-vibe-entry.mdc（入口 + project.kind；其余真源 gates.md）"
 }
 
 install_claude() {
