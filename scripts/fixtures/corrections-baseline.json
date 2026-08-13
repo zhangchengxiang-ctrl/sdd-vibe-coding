@@ -1,0 +1,9 @@
+{
+  "measured_at": "2026-08-13",
+  "window_days": 30,
+  "sample_per_bucket": 10,
+  "note": "Hand-labelled from `corrections.sh 30 --emit-candidates`. Precision is (real user corrections) / (labelled candidates). Sessions age out of the rolling window, so re-draw the sample when coverage drops.",
+  "precision": {"M1": 0.20, "M2": 0.60, "M3": 0.50},
+  "sessions": {"M1": 35, "M2": 25, "M3": 60},
+  "est_real": {"M1": 7, "M2": 15, "M3": 30}
+}

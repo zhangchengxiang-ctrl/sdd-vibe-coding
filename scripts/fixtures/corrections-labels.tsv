@@ -1,0 +1,31 @@
+BUCKET	SNIPPET_SHA	LABEL	NOTE
+M1	061ea36a8158	false	dispatch prompt I wrote about prior product-regression errors
+M1	08cebb7998e6	false	dispatch prompt header naming project.kind=plugin
+M1	138180d6832e	false	plugin doc table quoted into a prompt
+M1	15e175cd7eef	false	plugin doc text (maker != grader) quoted into a prompt
+M1	1a75abb8525d	false	module dispatch plan, keyword incidental
+M1	1aefcab0f610	false	my own audit finding pasted back into a prompt
+M1	21bc58dd6bf9	false	my prompt asking an auditor to look for close/archive violations
+M1	258a013b2f0e	false	my prompt pinning which commit counts as current
+M1	25d4cc5d38a6	true	user asks why docs were not reorganized the /vibe-coding way
+M1	2aa09f9deb68	true	user: closed spec still sits in the queue; vocabulary fights the source of truth
+M2	05c94667cd3d	true	user: every plan writes more rules, you never delete, you stack patches
+M2	0e027727d742	false	scanner's own bucket patterns; escaped quotes evade the self-filter
+M2	11a5853693d6	true	user: fix the root cause, no patching
+M2	12bdfff740ae	true	user: design for the remote project instead of patching
+M2	13b18938006e	true	same rule-stacking complaint, another session
+M2	15a083300d18	false	host design constraint about a feature, not about agent rules
+M2	1a4fb2695804	false	data table row in a report
+M2	1d349435ade5	true	user: root-cause fix, patching forbidden
+M2	2133c71f6ae1	false	third-person summary of a host module's patch history
+M2	2af502f505ca	true	user: delete the junk rules you just wrote after I told you to stop
+M3	002fb257787e	true	user: stop being lazy, cheating and covering up
+M3	030f9b09a209	false	skill inventory line containing the word checklist
+M3	047f16b8f1f7	false	my prompt asking for a deletion checklist
+M3	0575ee99460b	false	my prompt about spec-* skill overlap
+M3	0b8489104440	false	my plan text describing stamp fixtures
+M3	0bd5b9804df6	true	user: are you unable to leave cheating mode
+M3	0fe43aef66d3	true	user: why are you still cheating instead of real testing
+M3	0feb11334817	true	user: why hack around it instead of driving the browser
+M3	11e40a997884	true	user: stop fobbing me off with demos
+M3	13fb9bf6f55d	false	my own audit conclusion pasted back into a prompt
