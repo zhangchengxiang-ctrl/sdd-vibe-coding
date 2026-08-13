@@ -175,6 +175,18 @@ print(f"== live probes HOLE={hole} OK={len(passed)} ==")
 sys.exit(1 if hole else 0)
 PY
 
+# An unwired script looks like coverage and is not: orphan-refs must catch one.
+# The name must be random — a literal here would appear in the corpus we scan.
+probe="$(mktemp "$ROOT/skills/dispatch-codex/scripts/XXXXXXXX.sh")"
+printf '#!/usr/bin/env bash\necho probe\n' >"$probe"
+if bash "$ROOT/scripts/orphan-refs.sh" --strict >/dev/null 2>&1; then
+  rm -f "$probe"
+  echo "HOLE  unwired-script-detected — orphan-refs passed with an unreferenced script" >&2
+  exit 1
+fi
+rm -f "$probe"
+echo "OK    unwired-script-detected — an unreferenced script fails orphan-refs --strict"
+
 # The discipline gate must fail closed when it cannot find a base to diff.
 if env CI=1 GATE_DISCIPLINE_BASE=refs/__none__ \
     bash "$ROOT/scripts/check-gate-discipline.sh" >/dev/null 2>&1; then

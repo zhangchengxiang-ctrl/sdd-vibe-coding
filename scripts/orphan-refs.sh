@@ -2,6 +2,8 @@
 # Orphan + broken outbound refs under skills/.
 # - Orphan: references/*.md (except fixtures/_archive) unreachable within 2 hops of SKILL.md
 # - Broken: relative *.md link target missing (skips http, _archive, fixtures)
+# - Unwired: skills/*/scripts/* named nowhere else. An unreachable script looks
+#   like coverage and is not; 454 lines of live selftest sat that way unnoticed.
 #
 # Usage:
 #   bash scripts/orphan-refs.sh [--count|--strict]
@@ -89,7 +91,24 @@ for f in sorted(Path("skills").rglob("*.md")):
                 target = raw.split("#")[0].split("?")[0].strip()
                 broken.append(f"{s}:{i} -> {target}")
 
-total = len(orphans) + len(broken)
+unwired = []
+corpus = []
+for f in list(Path("skills").rglob("*.md")) + list(Path("scripts").rglob("*")) \
+        + [Path("Makefile"), Path("ARCHITECTURE.md"), Path("README.md")]:
+    if f.is_file() and not skip_path(str(f)):
+        try:
+            corpus.append(f.read_text(encoding="utf-8", errors="ignore"))
+        except OSError:
+            pass
+for f in sorted(Path("skills").glob("*/scripts/*")):
+    s = str(f).replace("\\", "/")
+    if not f.is_file() or skip_path(s) or f.suffix == ".pyc":
+        continue
+    stem = f.stem
+    if not any(stem in text for text in corpus):
+        unwired.append(s)
+
+total = len(orphans) + len(broken) + len(unwired)
 parts = [str(total)]
 if orphans:
     parts.append("ORPHANS:")
@@ -97,6 +116,9 @@ if orphans:
 if broken:
     parts.append("BROKEN:")
     parts.extend(broken)
+if unwired:
+    parts.append("UNWIRED:")
+    parts.extend(unwired)
 out_path.write_text("\n".join(parts) + ("\n" if total or orphans or broken else "\n"), encoding="utf-8")
 PY
 
@@ -109,7 +131,7 @@ if [[ "$MODE" == "count" ]]; then
   exit 0
 fi
 
-echo "== orphan-refs orphans+broken=$count =="
+echo "== orphan-refs orphans+broken+unwired=$count =="
 if [[ -n "${list:-}" ]]; then
   printf '%s\n' "$list"
 fi

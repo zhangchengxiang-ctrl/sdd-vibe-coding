@@ -4,6 +4,7 @@
 .PHONY: help install install-dev install-cursor install-claude install-codex \
 	scaffold codex-dispatch wish-orchestrate context-pack verify check-docs check-spec verify-deliver close-spec \
 	preflight-rail require-falsify record-falsify dispatch-gates-selftest public-gates contract-sync \
+	dispatch-live-lifecycle dispatch-live-scenario \
 	phase3-negative eval-live eval-skill-load wish-journey \
 	rot corrections host-drift single-definition orphan-refs gate-cases
 
@@ -50,6 +51,8 @@ help:
 		'  make record-falsify LOG_DIR=路径 RUN_ID=id SLICE=S1 CMD="…"  结构化证伪取证' \
 		'  make require-falsify LOG_DIR=路径 [RUN_ID=]  指挥侧证伪门（须 COMMAND+EXIT_CODE+VERDICT）' \
 		'  make dispatch-gates-selftest  离线硬门自检（Plan / structured falsify / wish）' \
+		'  make dispatch-live-lifecycle  真机 codex exec 生命周期自检（烧 token）' \
+		'  make dispatch-live-scenario   真机多 D DAG 场景自检（烧 token）' \
 		'  make gate-cases            91 例门强度回测目录 + live 探针' \
 		'  make public-gates         公开 CI 门（selftest+contract-sync+phase3+rot；报告 single-def/orphan）' \
 		'  make rot                  腐烂度量（预算上限=基线；禁止回升）' \
@@ -180,6 +183,14 @@ record-falsify:
 # Offline hard-gate selftest (no Codex): Plan artifacts + structured falsify + wish status.
 dispatch-gates-selftest:
 	bash skills/dispatch-codex/scripts/selftest-gates.sh
+
+# LIVE selftests: real `codex exec` in an isolated /tmp host. Burn real tokens,
+# need `codex` on PATH + auth, and are the only end-to-end check of dispatch.
+dispatch-live-lifecycle:
+	bash skills/dispatch-codex/scripts/selftest-codex-lifecycle-live.sh
+
+dispatch-live-scenario:
+	bash skills/dispatch-codex/scripts/selftest-codex-scenario-live.sh
 
 # Public CI gates (no private evals/): selftest + contract-sync + phase3 + rot.
 public-gates:
