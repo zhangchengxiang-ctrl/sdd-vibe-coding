@@ -15,7 +15,7 @@ set -euo pipefail
 DAYS="${1:-14}"
 EMIT="${2:-}"
 LOAD_RE='vibe-coding|workflow-contract|check_spec|codex-dispatch|sdd-vibe|wish-orchestrate|dispatch-codex'
-M1_RE='推卸|甩锅|入口太|什么提示词都能|格式|不是.*Vibe|词表.*打架|关版.*归档|project\.kind|默认.*coding'
+M1_RE='推卸|甩锅|入口太|什么提示词都能|格式|不是.*Vibe|词表.*打架|关版.*归档|默认.*coding'
 M2_RE='叠补丁|打补丁|又写.*规则|停写|去掉.*规则|从来没有.*删除|垃圾规则|干净的重构'
 M3_RE='骗人|作弊|敷衍|轻易就通过|形式|齐套|Checklist|checklist|验收.*假|假冒烟|评分不变|说优化完'
 

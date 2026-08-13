@@ -3,7 +3,8 @@
   "window_days": 30,
   "sample_per_bucket": 10,
   "note": "Hand-labelled from `corrections.sh 30 --emit-candidates`. Precision is (real user corrections) / (labelled candidates). Sessions age out of the rolling window, so re-draw the sample when coverage drops.",
+  "m1_keyword_deletion": "Dropping `project\\.kind` cut M1 candidates 71->58 and sessions 35->29 but left precision at 0.20: the remaining false positives are prompts and docs I pasted in, not one bad keyword.",
   "precision": {"M1": 0.20, "M2": 0.60, "M3": 0.50},
-  "sessions": {"M1": 35, "M2": 25, "M3": 60},
-  "est_real": {"M1": 7, "M2": 15, "M3": 30}
+  "sessions": {"M1": 29, "M2": 25, "M3": 60},
+  "est_real": {"M1": 6, "M2": 15, "M3": 30}
 }

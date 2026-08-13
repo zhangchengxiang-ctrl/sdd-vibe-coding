@@ -1,6 +1,6 @@
 BUCKET	SNIPPET_SHA	LABEL	NOTE
 M1	061ea36a8158	false	dispatch prompt I wrote about prior product-regression errors
-M1	08cebb7998e6	false	dispatch prompt header naming project.kind=plugin
+M1	2e2d28577396	false	another project's .mdc directory tree pasted into a prompt
 M1	138180d6832e	false	plugin doc table quoted into a prompt
 M1	15e175cd7eef	false	plugin doc text (maker != grader) quoted into a prompt
 M1	1a75abb8525d	false	module dispatch plan, keyword incidental
