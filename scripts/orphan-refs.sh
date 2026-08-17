@@ -92,20 +92,39 @@ for f in sorted(Path("skills").rglob("*.md")):
                 broken.append(f"{s}:{i} -> {target}")
 
 unwired = []
-corpus = []
+corpus = []   # (resolved path, text) — the path is needed to exclude a candidate's own text
 for f in list(Path("skills").rglob("*.md")) + list(Path("scripts").rglob("*")) \
         + [Path("Makefile"), Path("ARCHITECTURE.md"), Path("README.md")]:
     if f.is_file() and not skip_path(str(f)):
         try:
-            corpus.append(f.read_text(encoding="utf-8", errors="ignore"))
+            corpus.append((f.resolve(), f.read_text(encoding="utf-8", errors="ignore")))
         except OSError:
             pass
-for f in sorted(Path("skills").glob("*/scripts/*")):
+
+
+def is_script(f: Path) -> bool:
+    """Top-level scripts/ also holds fixtures and baselines; only scan the runnable ones."""
+    if f.suffix in {".sh", ".py"}:
+        return True
+    try:
+        with f.open("rb") as fh:
+            return fh.read(2) == b"#!"
+    except OSError:
+        return False
+
+
+# skills/*/scripts/* plus top-level scripts/ — a gate that lives in the blind spot of
+# the unwired check can lie about coverage forever, which is the thing this check exists
+# to prevent. Self-exclusion matters: a script names itself in its own usage text, so
+# counting its own body as a reference makes the check vacuous (measured: 0 vs 2 hits).
+candidates = sorted(Path("skills").glob("*/scripts/*")) \
+    + sorted(f for f in Path("scripts").rglob("*") if f.is_file() and is_script(f))
+for f in candidates:
     s = str(f).replace("\\", "/")
     if not f.is_file() or skip_path(s) or f.suffix == ".pyc":
         continue
-    stem = f.stem
-    if not any(stem in text for text in corpus):
+    stem, own = f.stem, f.resolve()
+    if not any(stem in text for path, text in corpus if path != own):
         unwired.append(s)
 
 total = len(orphans) + len(broken) + len(unwired)

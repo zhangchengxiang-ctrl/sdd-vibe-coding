@@ -223,6 +223,65 @@ fi
 rm -f "$probe"
 echo "OK    unwired-script-detected — an unreferenced script fails orphan-refs --strict"
 
+# Top-level scripts/ used to be outside the unwired scan entirely. Extending the scan
+# is not enough on its own: the corpus contains top-level scripts, and a script names
+# itself in its own usage text, so counting its own body as a reference would leave the
+# check vacuous (measured: 0 hits vs 2 with self-exclusion).
+probe="$(mktemp "$ROOT/scripts/XXXXXXXX.sh")"
+stem="$(basename "$probe" .sh)"
+printf '#!/usr/bin/env bash\n# usage: bash scripts/%s.sh\necho "%s: hi"\n' "$stem" "$stem" >"$probe"
+if bash "$ROOT/scripts/orphan-refs.sh" --strict >/dev/null 2>&1; then
+  rm -f "$probe"
+  echo "HOLE  unwired-selfnaming-toplevel — a self-naming unwired script in scripts/ passed" >&2
+  exit 1
+fi
+rm -f "$probe"
+echo "OK    unwired-selfnaming-toplevel — a self-naming script in scripts/ cannot fake wiring"
+
+# i18n key existence. The plugin repo has no locales, so `make i18n-keys HOST=.` only
+# ever prints SKIP — a reachable script with nothing to assert is still not a gate.
+# These fixtures carry the assertion: the exact shape that shipped hardcoded English
+# to Chinese users while a real 368-line acceptance suite passed.
+i18n_fx="$(mktemp -d)"
+trap 'rm -rf "$i18n_fx"' EXIT
+mkdir -p "$i18n_fx/src/i18n/locales/en" "$i18n_fx/src/i18n/locales/zh-CN" "$i18n_fx/src/ui"
+printf '{"panel":{"title":"Title"}}\n' >"$i18n_fx/src/i18n/locales/en/common.json"
+printf '{"panel":{"title":"标题"}}\n'   >"$i18n_fx/src/i18n/locales/zh-CN/common.json"
+i18n_src="$i18n_fx/src/ui/Panel.tsx"
+i18n_run() { bash "$ROOT/scripts/check-i18n-keys.sh" --cwd "$i18n_fx" "$@" >/dev/null 2>&1; }
+i18n_note() {  # 1=condition already evaluated by caller via $? style; use explicit args
+  if [[ "$1" != "0" ]]; then
+    echo "HOLE  $2 — $3" >&2
+    exit 1
+  fi
+  echo "OK    $2 — $3"
+}
+
+printf "const a = t('panel.title');\n" >"$i18n_src"
+i18n_run && rc=0 || rc=1
+i18n_note "$((rc == 0 ? 0 : 1))" "i18n-complete-locales-green" \
+  "a key present in every locale is accepted"
+
+printf "const a = t('panel.subtitle', { defaultValue: 'Untitled' });\n" >"$i18n_src"
+i18n_run && rc=0 || rc=1
+i18n_note "$((rc == 1 ? 0 : 1))" "i18n-masked-defaultvalue-red" \
+  "a key in no locale masked by defaultValue is rejected"
+
+printf "const a = t('panel.subtitle');\n" >"$i18n_src"
+i18n_run && rc=0 || rc=1
+i18n_note "$((rc == 0 ? 0 : 1))" "i18n-unmasked-missing-warns" \
+  "an unmasked unknown key only warns (call-site namespacing is legal)"
+
+printf '{"panel":{"title":"Title","only":"EN"}}\n' >"$i18n_fx/src/i18n/locales/en/common.json"
+printf "const a = t('panel.title');\n" >"$i18n_src"
+i18n_run && rc=0 || rc=1
+i18n_note "$((rc == 0 ? 0 : 1))" "i18n-partial-locale-warns-by-default" \
+  "a key missing from one locale does not block Build"
+i18n_run --strict && rc=0 || rc=1
+i18n_note "$((rc == 1 ? 0 : 1))" "i18n-partial-locale-strict-red" \
+  "the same partial locale is rejected under --strict"
+rm -rf "$i18n_fx"; trap - EXIT
+
 # The discipline gate must fail closed when it cannot find a base to diff.
 if env CI=1 GATE_DISCIPLINE_BASE=refs/__none__ \
     bash "$ROOT/scripts/check-gate-discipline.sh" >/dev/null 2>&1; then

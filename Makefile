@@ -6,7 +6,8 @@
 	preflight-rail codex-preflight require-falsify record-falsify dispatch-gates-selftest public-gates contract-sync \
 	dispatch-live-lifecycle dispatch-live-scenario \
 	phase3-negative eval-live eval-skill-load wish-journey \
-	rot corrections host-drift single-definition orphan-refs gate-cases
+	rot corrections host-drift single-definition orphan-refs gate-cases \
+	i18n-keys adversarial-rot
 
 HOST ?= .
 PROFILE ?= detect
@@ -223,6 +224,20 @@ single-definition:
 
 orphan-refs:
 	bash scripts/orphan-refs.sh
+
+# i18n key existence against a host repo. The cheapest reality anchor there is:
+# an implementation shipped hardcoded English to Chinese users while a 368-line
+# acceptance suite passed, because it referenced keys that existed in no locale
+# and masked them with i18n's own `defaultValue`.
+#   make i18n-keys HOST=~/code/agentdeck          # findings, exit 1 on masked keys
+#   make i18n-keys HOST=~/code/agentdeck STRICT=1 # also fail on partial locales
+i18n-keys:
+	bash scripts/check-i18n-keys.sh --cwd $(HOST) $(if $(STRICT),--strict,)
+
+# Destructive/adversarial capability tests for the rot mechanisms (16 attacks).
+# NOT in public-gates: it runs public-gates itself, so nesting it would recurse.
+adversarial-rot:
+	bash scripts/adversarial-rot-verify.sh
 
 # Wish journey disk state machine.
 # Examples:
