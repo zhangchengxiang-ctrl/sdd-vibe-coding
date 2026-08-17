@@ -59,21 +59,46 @@ fi
 # The Oracle list comes from the dispatch throat, not a second parser: the definition of
 # "executable" must exist once. That call already exits 2 on an invalid or under-covered
 # Oracle set, so a refusal here is the same refusal the dispatch got.
-PACK_ARGS=(--json "$HOST" "$SPEC"); [[ -n "$SLICE" ]] && PACK_ARGS+=("$SLICE")
 PACK_ERR="$(mktemp)"; trap 'rm -f "$PACK_ERR"' EXIT
-# stdout only: folding stderr in would corrupt the JSON with any warning the pack prints.
-PACK_JSON="$(python3 "$PACK" "${PACK_ARGS[@]}" 2>"$PACK_ERR")" || {
-  cat "$PACK_ERR" >&2
-  die "the dispatch throat refuses this Oracle set — fix tests.md, not this run"
-}
+# No --slice means the whole Spec: closing needs every P0 Oracle, not one unit's. The
+# pack is per-slice by design, so iterate its own --list rather than teaching a second
+# place how to read plan.md.
+if [[ -n "$SLICE" ]]; then
+  TARGET_SLICES=("$SLICE")
+else
+  mapfile -t TARGET_SLICES < <(python3 "$PACK" --list "$HOST" "$SPEC" 2>"$PACK_ERR")
+  [[ "${#TARGET_SLICES[@]}" -gt 0 ]] || { cat "$PACK_ERR" >&2
+    die "no slices in $SPEC/plan.md — pass --slice, or fix the slice table"; }
+fi
 
-mapfile -t ORACLES < <(printf '%s' "$PACK_JSON" | python3 -c '
+ORACLES=(); SLICE_LABEL=""
+for sl in "${TARGET_SLICES[@]}"; do
+  [[ -n "$sl" ]] || continue
+  # stdout only: folding stderr in would corrupt the JSON with any warning the pack prints.
+  pj="$(python3 "$PACK" --json "$HOST" "$SPEC" "$sl" 2>"$PACK_ERR")" || {
+    cat "$PACK_ERR" >&2
+    if grep -q 'REFUSED' "$PACK_ERR"; then
+      die "the dispatch throat refuses $SPEC/$sl — fix tests.md, not this run"
+    fi
+    die "build_context_pack failed for $SPEC/$sl (see above) — this is not an Oracle verdict"
+  }
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    oid="${line%%$'\t'*}"
+    dup=0
+    for have in "${ORACLES[@]}"; do [[ "${have%%$'\t'*}" == "$oid" ]] && dup=1 && break; done
+    [[ "$dup" == "1" ]] || ORACLES+=("$line")
+  done < <(printf '%s' "$pj" | python3 -c '
 import json, sys
 pack = json.load(sys.stdin)
 for o in pack.get("oracles", []):
     print("\t".join([o.get("id", ""), o.get("kind", ""), o.get("cmd", "").strip("`").strip()]))
 ')
-SLICE_LABEL="$(printf '%s' "$PACK_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("dispatch_id",""))')"
+  if [[ -z "$SLICE_LABEL" ]]; then
+    SLICE_LABEL="$(printf '%s' "$pj" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("dispatch_id",""))')"
+  fi
+done
+[[ -n "$SLICE" ]] || SLICE_LABEL="all"
 [[ "${#ORACLES[@]}" -gt 0 ]] || die "no Oracles for $SPEC${SLICE:+ / $SLICE} — nothing to replay"
 
 MACHINE=(); HUMAN=()

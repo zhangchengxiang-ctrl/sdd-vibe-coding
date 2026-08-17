@@ -246,6 +246,12 @@ rm -rf "$TMP/fix-vis"; cp -r "$FIX" "$TMP/fix-vis"
 sed -i 's/| R-001 | 签名 token/| R-001 | 文案与移动端可读：签名 token/' \
   "$TMP/fix-vis/docs/specs/live-relay/contract.md"
 check "pack-refuses-visible-unit-only" 2 python3 "$PACKBIN" "$TMP/fix-vis" live-relay S1
+# …but a declared human oracle closes that same gap: `manual-only` must not be refused
+# where `human` is accepted, or the template's escape hatch is a lie.
+mkfix "$TMP/fix-vis-h" '`manual-only`'
+sed -i 's/| R-001 | 签名 token/| R-001 | 文案与移动端可读：签名 token/' \
+  "$TMP/fix-vis-h/docs/specs/live-relay/contract.md"
+check "pack-visible-closed-by-manual-only" 0 python3 "$PACKBIN" "$TMP/fix-vis-h" live-relay S1
 # The shipped tests.md template says to write `manual-only`, not `human`. If the throat
 # refuses the template's own vocabulary, that is this gate's bug: 3 live oracles say it.
 mkfix "$TMP/fix-manual" '`manual-only`'

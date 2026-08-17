@@ -187,6 +187,21 @@ note(oracle_errs("- 命令：`npx vitest run a.test.ts`", req_extra="；文案�
 note(oracle_errs("- 命令：`npx playwright test a.spec.ts`", req_extra="；文案与移动端可读",
                  closing=True)[0] == 0,
      "oracle-visible-browser-passes", "a browser oracle satisfies the user-visible bar")
+# Measured on 332 real requirement rows: bare case-insensitive `UI` matched inside UID,
+# setuid, build and required_for_new — 8 backend requirements with nothing to look at —
+# while a real confirmation modal was not flagged at all.
+note(oracle_errs("- 命令：`npx vitest run a.test.ts`", req_extra="；以目标 UID 执行探针",
+                 closing=True)[0] == 0,
+     "oracle-uid-is-not-user-visible",
+     "UID / setuid / build must not trip the user-visible gate")
+note(oracle_errs("- 命令：`npx vitest run a.test.ts`", req_extra="；上传确认弹窗展示文件数与总大小",
+                 closing=True)[0] >= 1,
+     "oracle-modal-is-user-visible",
+     "a confirmation modal needs a non-unit oracle (the old regex missed it entirely)")
+note(oracle_errs("- 命令：`manual-only`", req_extra="；上传确认弹窗展示文件数",
+                 closing=True)[0] == 0,
+     "oracle-modal-closed-by-human",
+     "manual-only is the one-line escape hatch for a visible requirement")
 
 # --- catalog accounting: every problem row names a probe or an open reason ---
 rows = list(csv.DictReader((root / "scripts/fixtures/gate-cases.tsv").open(encoding="utf-8"),

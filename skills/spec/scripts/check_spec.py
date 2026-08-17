@@ -550,8 +550,17 @@ HUMAN_ORACLE = {"human", "人工", "manual-only", "manual only", "manual"}
 LEADING_ENV = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=\S*\s+")
 # Requirement text that promises something a person can see. A unit test cannot
 # close these: sol skipped an entire user-visible requirement and still passed 11/11.
-USER_VISIBLE = re.compile(r"(?i)(UI|文案|copy|i18n|locale|双语|翻译|移动端|mobile|响应式|"
-                          r"页面|界面|视觉|可读|可访问|aria|截图|screenshot)")
+#
+# Calibrated against all 332 real requirement rows, because the first version was both
+# too eager and too blind. Bare case-insensitive `UI` matched inside `UID`, `setuid`,
+# `build` and even `required_for_new` — 8 backend/permission requirements with nothing
+# to look at were flagged — while 「上传确认弹窗展示文件数」, a modal, was not flagged at
+# all. Word boundaries on the ASCII tokens (identical match set on the corpus, free
+# insurance against `copytree`/`mobilenet`) plus the vocabulary a person actually reads
+# in these Specs: 62 → 73 matched, −8 false positives, +19 real visible requirements.
+USER_VISIBLE = re.compile(r"(?i)(\bUI\b|文案|\bcopy\b|i18n|locale|双语|翻译|移动端|\bmobile\b|"
+                          r"响应式|页面|界面|视觉|可读|可访问|\baria\b|截图|screenshot|"
+                          r"弹窗|\bmodal\b|\btoast\b|按钮|\bbutton\b|展示|显示|渲染|进度条)")
 NON_UNIT_ORACLE = re.compile(r"(?i)(playwright|browser|浏览器|e2e|截图|screenshot|"
                              r"i18n|locale|移动端|mobile|\b390|human|人工)")
 
@@ -633,7 +642,13 @@ def check_p0_oracle_commands(
 
     for req_text, tids in visible_reqs.items():
         pooled = "\n".join(bodies.get(t, "") for t in tids)
-        if not NON_UNIT_ORACLE.search(pooled):
+        # A declared human oracle satisfies this too — the same vocabulary the command
+        # classifier accepts, or the template's `manual-only` escape hatch would be a lie.
+        human_declared = any(
+            (automation_command(bodies.get(t, "")) or "").strip().strip("`").strip().lower()
+            in HUMAN_ORACLE for t in tids
+        )
+        if not (human_declared or NON_UNIT_ORACLE.search(pooled)):
             (report.fail if closing else report.warn)(
                 f"{spec_dir.name}/tests.md: user-visible requirement ({req_text.strip()[:48]}…) "
                 f"is gated only by unit tests via {', '.join(tids)} — needs a browser / i18n / "

@@ -259,7 +259,13 @@ def user_visible_gap(host: Path, sdd: Path, spec_id: str,
         if not (mapped & ids):
             continue
         text = " ".join(cs.clean(v) for v in row.values())
-        if cs.USER_VISIBLE.search(text) and not cs.NON_UNIT_ORACLE.search(pooled):
+        # A declared human oracle satisfies the bar. classify_oracles already labelled
+        # them, so this does not re-implement the vocabulary: `manual-only` reaches
+        # NON_UNIT_ORACLE as prose that does not match, and refusing the template's own
+        # escape hatch would be this gate's bug.
+        human_here = any(o.get("kind") == "human" and o["id"] in mapped for o in oracles)
+        if cs.USER_VISIBLE.search(text) and not human_here \
+                and not cs.NON_UNIT_ORACLE.search(pooled):
             return (f"{cs.clean(row.get('ID',''))} is user-visible but this unit's oracles "
                     "are unit-only — needs a browser / i18n / mobile / human oracle")
     return ""
