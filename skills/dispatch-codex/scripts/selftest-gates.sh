@@ -246,6 +246,13 @@ rm -rf "$TMP/fix-vis"; cp -r "$FIX" "$TMP/fix-vis"
 sed -i 's/| R-001 | 签名 token/| R-001 | 文案与移动端可读：签名 token/' \
   "$TMP/fix-vis/docs/specs/live-relay/contract.md"
 check "pack-refuses-visible-unit-only" 2 python3 "$PACKBIN" "$TMP/fix-vis" live-relay S1
+# The shipped tests.md template says to write `manual-only`, not `human`. If the throat
+# refuses the template's own vocabulary, that is this gate's bug: 3 live oracles say it.
+mkfix "$TMP/fix-manual" '`manual-only`'
+check "pack-accepts-manual-only" 0 python3 "$PACKBIN" "$TMP/fix-manual" live-relay S1
+python3 "$PACKBIN" "$TMP/fix-manual" live-relay S1 >"$TMP/pack-manual.txt" 2>/dev/null || true
+check "pack-manual-only-out-of-replay-set" 0 grep -q '人工判定' "$TMP/pack-manual.txt"
+
 mkfix "$TMP/fix-human" '`human`'
 if python3 "$PACKBIN" "$TMP/fix-human" live-relay S1 >"$TMP/pack-human.txt" 2>/dev/null; then
   check "pack-human-emits" 0 grep -q '人工判定' "$TMP/pack-human.txt"

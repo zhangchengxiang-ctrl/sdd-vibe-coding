@@ -225,7 +225,7 @@ def classify_oracles(sdd: Path, spec_id: str, t_ids: list[str]) -> list[dict[str
         bare = raw.strip("`").strip()
         if not bare:
             kind, why = "invalid", "no 自动化 `命令：` line"
-        elif bare in {"human", "人工"}:
+        elif bare.lower() in cs.HUMAN_ORACLE:   # one definition, in check_spec
             kind, why = "human", ""
         elif cs.NOOP_CMD.match(bare):
             kind, why = "invalid", f"no-op command {bare!r}"

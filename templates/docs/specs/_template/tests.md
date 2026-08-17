@@ -50,7 +50,12 @@
 
 ### 自动化
 
-- 命令或测试路径：`…` | `manual-only` + 原因
+- 命令：`<runner 能原样执行的一条命令>` | `manual-only` + 原因
+  - 一条**可执行命令**，不是测试路径、不是散文。runner 会先在改动前的 tree 上跑它
+    （必须红），改动后必须绿；基线就绿的命令在功能缺席时也过，等于没量。
+  - `tests/x.test.ts` ✗ → `npx vitest run tests/x.test.ts` ✓；
+    「同 T-001」「backend gate」「压测脚本两速率」✗（实测 93% 的历史 Oracle 属这类）。
+  - `manual-only` 只能单独写：它不进 runner 的 replay 集，由验收包结案。
 - 预期 Evidence Kind：`api-diff | network-har | browser-job | unit | …`
 - 红灯条件 / 证伪命令：
 
@@ -82,6 +87,11 @@
 
 ### 自动化
 
-- 命令或测试路径：`…` | `manual-only` + 原因
+- 命令：`<runner 能原样执行的一条命令>` | `manual-only` + 原因
+  - 一条**可执行命令**，不是测试路径、不是散文。runner 会先在改动前的 tree 上跑它
+    （必须红），改动后必须绿；基线就绿的命令在功能缺席时也过，等于没量。
+  - `tests/x.test.ts` ✗ → `npx vitest run tests/x.test.ts` ✓；
+    「同 T-001」「backend gate」「压测脚本两速率」✗（实测 93% 的历史 Oracle 属这类）。
+  - `manual-only` 只能单独写：它不进 runner 的 replay 集，由验收包结案。
 - 预期 Evidence Kind：`browser-job | …`
 - 红灯条件 / 证伪命令：

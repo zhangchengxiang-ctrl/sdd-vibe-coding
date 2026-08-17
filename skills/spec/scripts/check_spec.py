@@ -542,6 +542,11 @@ RUNNABLE_HEAD = re.compile(
     r"playwright|go|cargo|dotnet|mvn|gradle|docker|curl|psql|\./|/)",
 )
 NOOP_CMD = re.compile(r"^(?:true|:|exit\s+0|echo|/(?:usr/)?bin/true)\s*;?$")
+# The one definition of "a person judges this". `manual-only` is what the shipped
+# tests.md template tells authors to write, and 3 live oracles say exactly that —
+# refusing the template's own vocabulary would be this gate's bug, not theirs.
+# Prose that merely mentions it (32 cases) is NOT a clean declaration and stays refused.
+HUMAN_ORACLE = {"human", "人工", "manual-only", "manual only", "manual"}
 LEADING_ENV = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=\S*\s+")
 # Requirement text that promises something a person can see. A unit test cannot
 # close these: sol skipped an entire user-visible requirement and still passed 11/11.
@@ -604,7 +609,7 @@ def check_p0_oracle_commands(
             )
             continue
         bare = cmd.strip().strip("`").strip()
-        if bare in {"human", "人工"}:
+        if bare.lower() in HUMAN_ORACLE:
             continue  # human-judged: closes via the acceptance pack, not the runner
         if NOOP_CMD.match(bare):
             report.fail(

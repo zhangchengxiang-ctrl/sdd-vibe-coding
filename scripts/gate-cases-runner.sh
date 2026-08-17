@@ -165,6 +165,16 @@ note(oracle_errs("- 命令：`true`")[0] >= 1, "oracle-noop-command",
      "命令 `true` stays green with the feature deleted, so it is rejected")
 note(oracle_errs("- 命令：`PYTHONPATH=. python3 -m pytest tests -q`")[0] == 0,
      "oracle-real-command-passes", "a real command with leading env vars is accepted")
+_mo = "- 命令：`manual-only` + 原因：需要真人看排版"
+note(oracle_errs(_mo)[1] >= 1 and oracle_errs(_mo, closing=True)[0] >= 1,
+     "oracle-manual-only-with-prose-rejected",
+     "manual-only buried in prose warns at Build and blocks close (32 live oracles do this)")
+note(oracle_errs("- 命令或测试路径：`manual-only`", closing=True)[0] == 0,
+     "oracle-manual-only-accepted",
+     "the template's own human marker must not be refused by this gate")
+note(oracle_errs("- 命令：`tests/backend/x.test.ts`", closing=True)[0] >= 1,
+     "oracle-bare-test-path-rejected",
+     "a test path is not a command — the runner cannot exec it (write npx vitest run …)")
 note(oracle_errs("- 命令：同 T-002。")[0] == 0
      and oracle_errs("- 命令：同 T-002。")[1] >= 1,
      "oracle-referential-warns", "referential oracle warns during Build")
