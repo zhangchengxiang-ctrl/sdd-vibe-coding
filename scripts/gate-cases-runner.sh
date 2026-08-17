@@ -202,6 +202,17 @@ note(oracle_errs("- 命令：`manual-only`", req_extra="；上传确认弹窗展
                  closing=True)[0] == 0,
      "oracle-modal-closed-by-human",
      "manual-only is the one-line escape hatch for a visible requirement")
+# Attacked: a unit test whose FILENAME contains browser/e2e/i18n/mobile used to satisfy
+# the non-unit bar. All 7 real requirements this tightening flips had no 命令 line at all
+# and passed on requirement prose leaking into the test body.
+note(oracle_errs("- 命令：`npx vitest run tests/browser-utils.test.ts`",
+                 req_extra="；文案与移动端可读", closing=True)[0] >= 1,
+     "oracle-vitest-cannot-fake-browser",
+     "a unit test named browser-* does not satisfy a user-visible requirement")
+note(oracle_errs("- 命令：`npx vitest run a.test.ts`\n- 预期 Evidence Kind：`browser-job`",
+                 req_extra="；文案与移动端可读", closing=True)[0] == 0,
+     "oracle-declared-browser-kind-passes",
+     "a declared browser-job Evidence Kind satisfies the bar")
 
 # --- catalog accounting: every problem row names a probe or an open reason ---
 rows = list(csv.DictReader((root / "scripts/fixtures/gate-cases.tsv").open(encoding="utf-8"),
@@ -263,6 +274,27 @@ fi
 rm -f "$probe"
 echo "OK    unwired-selfnaming-toplevel — a self-naming script in scripts/ cannot fake wiring"
 
+# Attacked and confirmed: matching the STEM let a script whose stem is a substring of
+# other text pass — any short stem is. The check matches the file name with its
+# extension, which is what a real invocation writes.
+# The fixture name must be random and must not appear literally in this file, or this
+# probe would wire its own fixture through the corpus it is testing.
+sub_probe="$(mktemp "$ROOT/scripts/XXXXXXXX.sh")"
+sub_stem="$(basename "$sub_probe" .sh)"
+printf '#!/usr/bin/env bash\necho hi\n' >"$sub_probe"
+# The decoy mentions the stem only inside a longer token. It must be a .md, not a .sh:
+# a second unwired script would fail --strict on its own and make this probe trivially
+# true no matter what the matching rule is.
+sub_decoy="$ROOT/scripts/${sub_stem}-notes.md"
+printf 'see %s-meter.sh for the wave-2 probes\n' "$sub_stem" >"$sub_decoy"
+if bash "$ROOT/scripts/orphan-refs.sh" --strict >/dev/null 2>&1; then
+  rm -f "$sub_probe" "$sub_decoy"
+  echo "HOLE  unwired-substring-stem — a stem embedded in a longer token faked wiring" >&2
+  exit 1
+fi
+rm -f "$sub_probe" "$sub_decoy"
+echo "OK    unwired-substring-stem — a stem that is a substring of other text cannot fake wiring"
+
 # i18n key existence. The plugin repo has no locales, so `make i18n-keys HOST=.` only
 # ever prints SKIP — a reachable script with nothing to assert is still not a gate.
 # These fixtures carry the assertion: the exact shape that shipped hardcoded English
@@ -305,6 +337,32 @@ i18n_note "$((rc == 0 ? 0 : 1))" "i18n-partial-locale-warns-by-default" \
 i18n_run --strict && rc=0 || rc=1
 i18n_note "$((rc == 1 ? 0 : 1))" "i18n-partial-locale-strict-red" \
   "the same partial locale is rejected under --strict"
+
+# Found by attacking this script: the `ns:key` colon form was skipped entirely, and
+# agentdeck uses it in 24 live call sites — one of them with a defaultValue, the exact
+# shape this check exists to catch. A JSON file name IS the namespace.
+printf '{"panel":{"title":"Title"}}\n' >"$i18n_fx/src/i18n/locales/en/common.json"
+printf '{"panel":{"title":"标题"}}\n'   >"$i18n_fx/src/i18n/locales/zh-CN/common.json"
+printf "const a = t('common:panel.gone', { defaultValue: 'X' });\n" >"$i18n_src"
+i18n_run && rc=0 || rc=1
+i18n_note "$((rc == 1 ? 0 : 1))" "i18n-ns-key-masked-red" \
+  "t('ns:key') masked by defaultValue is caught, not skipped for having a namespace"
+
+printf "const a = t('common:panel.title');\n" >"$i18n_src"
+i18n_run && rc=0 || rc=1
+i18n_note "$((rc == 0 ? 0 : 1))" "i18n-ns-key-resolves" \
+  "t('ns:key') resolves inside that namespace's own JSON file"
+
+printf "const a = t('settings:panel.title');\n" >"$i18n_src"
+i18n_run && rc=0 || rc=1
+i18n_note "$((rc == 0 ? 0 : 1))" "i18n-wrong-ns-warns-not-fails" \
+  "right key in the wrong namespace warns; only defaultValue masking fails"
+
+printf 'const a = <Trans i18nKey="panel.gone" defaults="X" />;\nconst b = <TranscriptX />;\n' >"$i18n_src"
+i18n_out="$(bash "$ROOT/scripts/check-i18n-keys.sh" --cwd "$i18n_fx" 2>&1)"
+i18n_note "$(grep -q 'unanalyzed=1' <<<"$i18n_out" && echo 0 || echo 1)" \
+  "i18n-unanalyzed-is-reported" \
+  "a call shape this script cannot parse is counted, not silently skipped (<TranscriptX is not one)"
 rm -rf "$i18n_fx"; trap - EXIT
 
 # The discipline gate must fail closed when it cannot find a base to diff.

@@ -233,7 +233,16 @@ def classify_oracles(sdd: Path, spec_id: str, t_ids: list[str]) -> list[dict[str
             kind, why = "invalid", f"referential, not executable: {bare[:60]!r}"
         else:
             kind, why = "machine", ""
-        out.append({"id": tid, "cmd": raw, "then": then, "kind": kind, "why": why})
+        # The 自动化 block's declared Evidence Kind / Channel is part of the non-unit
+        # signal at closing time, so it has to travel with the Oracle — otherwise this
+        # throat refuses a Spec that `check_spec --closing` would accept, and a legitimate
+        # browser-job declaration blocks the dispatch.
+        decl = " ".join(
+            m.group(0) for m in re.finditer(
+                r"(?im)^\s*-\s*(?:预期\s*Evidence\s*Kind|Channel)\s*[：:][^\n]*", body)
+        )
+        out.append({"id": tid, "cmd": raw, "then": then, "kind": kind, "why": why,
+                    "decl": decl})
     return out
 
 
@@ -251,7 +260,7 @@ def user_visible_gap(host: Path, sdd: Path, spec_id: str,
         return ""
     _, rows = cs.parse_md_table_after(contract, "Requirements")
     ids = {o["id"] for o in oracles}
-    pooled = "\n".join(f"{o['cmd']} {o['then']}" for o in oracles)
+    pooled = "\n".join(f"{o['cmd']} {o['then']}\n{o.get('decl','')}" for o in oracles)
     for row in rows:
         if cs.clean(row.get("优先级", "")).upper() != "P0":
             continue

@@ -558,11 +558,28 @@ LEADING_ENV = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=\S*\s+")
 # all. Word boundaries on the ASCII tokens (identical match set on the corpus, free
 # insurance against `copytree`/`mobilenet`) plus the vocabulary a person actually reads
 # in these Specs: 62 → 73 matched, −8 false positives, +19 real visible requirements.
+#
+# Known and measured limit: a prose keyword list cannot enumerate what a person can see.
+# 8 of 8 realistic phrasings walk straight past it (空态提示可关 / 错误横幅 / 图标改实心 /
+# 暗色对比度 / 高亮当前项 / 悬停浮层 / 骨架屏不闪 / 用户能看到额度), and adding those exact
+# terms matched 0 additional rows in the real corpus — speculation, not coverage. This is
+# why the draft tier is a WARN and why `manual-only` has to stay a one-line escape: the
+# gate catches the common wording, and a person still owns the judgement.
 USER_VISIBLE = re.compile(r"(?i)(\bUI\b|文案|\bcopy\b|i18n|locale|双语|翻译|移动端|\bmobile\b|"
                           r"响应式|页面|界面|视觉|可读|可访问|\baria\b|截图|screenshot|"
                           r"弹窗|\bmodal\b|\btoast\b|按钮|\bbutton\b|展示|显示|渲染|进度条)")
-NON_UNIT_ORACLE = re.compile(r"(?i)(playwright|browser|浏览器|e2e|截图|screenshot|"
-                             r"i18n|locale|移动端|mobile|\b390|human|人工)")
+# What counts as "not just a unit test". Attacked and rewritten: matching these words
+# anywhere in the test body let `npx vitest run tests/browser-utils.test.ts` pass, and —
+# worse — let requirement prose leaking into the body pass with no command at all. All 7
+# real requirements that this tightening flips were exactly that: visible copy (button
+# labels, department chips, a preview with no address bar) whose T-ids had NO 命令 line,
+# passing only on the word 'i18n' or '浏览器' appearing somewhere nearby.
+# So the signal must sit in the runner position, or be a declared kind, or be a human.
+NON_UNIT_ORACLE = re.compile(
+    r"(?i)((?:^|[\s;&|`])(?:npx\s+|pnpm\s+|yarn\s+|bunx\s+)?(?:playwright|cypress|puppeteer)\b"
+    r"|预期\s*Evidence\s*Kind[^\n]*(?:browser-job|network-har)"
+    r"|Channel[^\n]*browser"
+    r"|\b390\b|human|人工|manual-only)")
 
 
 def automation_command(body: str) -> str | None:

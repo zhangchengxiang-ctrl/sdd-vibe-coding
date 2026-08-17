@@ -118,6 +118,39 @@ implement "$H3b"
 check "ship-missing-module-fails" 1 bash "$SHIP" --host "$H3b" --spec s1 --slice S1 --base "$BASE3b"
 saw "ship-names-missing-module" 'red for the wrong reason'
 
+# --- the judge must predate the work (maker != grader) -----------------------
+# Attack: point the Oracle at a test file that does not exist yet. Baseline is red only
+# because there is no test, so the implementer can satisfy red→green by writing its own
+# fixture. Measured on 108 real machine Oracles: 11 path tokens resolve to nothing, all
+# of them in already-closed Specs.
+H7="$TMP/h7"
+mk_host "$H7" 'bash -c "test -f tests/new.test.sh && bash tests/new.test.sh"'
+BASE7="$(git -C "$H7" rev-parse HEAD)"
+mkdir -p "$H7/tests"
+printf '#!/usr/bin/env bash\nexit 0\n' >"$H7/tests/new.test.sh"
+git -C "$H7" add -A
+git -C "$H7" commit -qm "implementer writes its own judge"
+check "ship-missing-judge-fails" 1 bash "$SHIP" --host "$H7" --spec s1 --slice S1 --base "$BASE7"
+saw "ship-names-maker-grader" 'judge does not exist yet|maker'
+
+# No false positive: the same command when the test predates the change.
+H8="$TMP/h8"
+mk_host "$H8" 'bash -c "grep -q IMPLEMENTED src/feature.txt && bash tests/pre.test.sh"'
+mkdir -p "$H8/tests"
+printf '#!/usr/bin/env bash\nexit 0\n' >"$H8/tests/pre.test.sh"
+git -C "$H8" add -A
+git -C "$H8" commit -qm "judge exists at baseline"
+BASE8="$(git -C "$H8" rev-parse HEAD)"
+implement "$H8"
+check "ship-existing-judge-passes" 0 bash "$SHIP" --host "$H8" --spec s1 --slice S1 --base "$BASE8"
+
+# An output path is not a judge: `--out dist/report.json` must not trip the check.
+H9="$TMP/h9"
+mk_host "$H9" 'bash -c "mkdir -p dist && grep -q IMPLEMENTED src/feature.txt && printf ok > dist/report.json"'
+BASE9="$(git -C "$H9" rev-parse HEAD)"
+implement "$H9"
+check "ship-output-path-is-not-a-judge" 0 bash "$SHIP" --host "$H9" --spec s1 --slice S1 --base "$BASE9"
+
 # --- refusals ---------------------------------------------------------------
 check "ship-refuses-without-base" 2 bash "$SHIP" --host "$H" --spec s1 --slice S1
 saw "ship-explains-base-refusal" 'guessing which tree predates the change'

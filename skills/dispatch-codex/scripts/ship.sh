@@ -139,6 +139,36 @@ classify_fail() {   # $1 exit, $2 log path → red | inconclusive
   echo red
 }
 
+# The judge must predate the work. An Oracle naming a test file that does not exist on the
+# baseline tree is red only because there is no test yet — so the implementer supplies both
+# the code and the thing that grades it, and red→green is satisfied by its own fixture.
+# That is the maker ≠ grader rule, and it is the one this whole script rests on.
+# Measured on 108 real machine Oracles: 59 path tokens resolve, 11 do not — every one of
+# those 11 in an already-closed Spec. Only judge-shaped tokens are checked (test/spec
+# files, .sh/.py runners), so an output path like `--out dist/report.json` is not one.
+missing_judge() {   # $1 tree root, $2 command → prints the first missing path, if any
+  local root="$1" cmd="$2" tok base
+  for tok in $(printf '%s' "$cmd" | tr -s ' \t"'"'" '\n\n\n\n'); do
+    tok="${tok%%::*}"
+    case "$tok" in
+      -*|*'*'*|*'?'*|*'$'*) continue ;;
+      */*) ;;
+      *) continue ;;
+    esac
+    base="${tok##*/}"
+    case "$base" in
+      *.*) ;;
+      *) continue ;;
+    esac
+    case "$base" in
+      *test*|*spec*|*.sh|*.py) ;;
+      *) continue ;;
+    esac
+    if [[ ! -e "$root/$tok" ]]; then printf '%s' "$tok"; return 0; fi
+  done
+  return 1
+}
+
 already() {   # $1 id, $2 phase, $3 tree — resume skips work already witnessed on this tree
   [[ "$RESUME" == "1" && -f "$EVIDENCE" ]] || return 1
   python3 - "$EVIDENCE" "$1" "$2" "$3" <<'PY'
@@ -224,7 +254,12 @@ $dirty"
 so it measures nothing: $ocmd" >&2
     else
       verdict="$(classify_fail "$rc" "$log")"
-      if [[ "$verdict" == "inconclusive" ]]; then
+      if mj="$(missing_judge "$WT" "$ocmd")"; then
+        verdict=inconclusive
+        echo "FAIL  $oid baseline red only because its judge does not exist yet: $mj is \
+absent on $BASE — the implementer would write both the code and the test that grades it \
+(maker ≠ grader). Freeze the Oracle against a test that predates the work." >&2
+      elif [[ "$verdict" == "inconclusive" ]]; then
         echo "FAIL  $oid baseline red for the wrong reason (exit $rc, missing dependency \
 or binary) — link deps with --link or fix the environment; see $log" >&2
       else

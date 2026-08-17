@@ -252,6 +252,14 @@ mkfix "$TMP/fix-vis-h" '`manual-only`'
 sed -i 's/| R-001 | 签名 token/| R-001 | 文案与移动端可读：签名 token/' \
   "$TMP/fix-vis-h/docs/specs/live-relay/contract.md"
 check "pack-visible-closed-by-manual-only" 0 python3 "$PACKBIN" "$TMP/fix-vis-h" live-relay S1
+# …and so does a declared browser-job Evidence Kind: the throat must not refuse a Spec
+# that `check_spec --closing` accepts, or a legitimate declaration blocks the dispatch.
+mkfix "$TMP/fix-vis-k" '`npx vitest run a.test.ts`'
+sed -i 's/| R-001 | 签名 token/| R-001 | 文案与移动端可读：签名 token/' \
+  "$TMP/fix-vis-k/docs/specs/live-relay/contract.md"
+sed -i 's/预期 Evidence Kind：`unit`/预期 Evidence Kind：`browser-job`/g' \
+  "$TMP/fix-vis-k/docs/specs/live-relay/tests.md"
+check "pack-visible-closed-by-declared-kind" 0 python3 "$PACKBIN" "$TMP/fix-vis-k" live-relay S1
 # The shipped tests.md template says to write `manual-only`, not `human`. If the throat
 # refuses the template's own vocabulary, that is this gate's bug: 3 live oracles say it.
 mkfix "$TMP/fix-manual" '`manual-only`'

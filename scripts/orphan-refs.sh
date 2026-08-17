@@ -93,7 +93,13 @@ for f in sorted(Path("skills").rglob("*.md")):
 
 unwired = []
 corpus = []   # (resolved path, text) — the path is needed to exclude a candidate's own text
-for f in list(Path("skills").rglob("*.md")) + list(Path("scripts").rglob("*")) \
+# skills/**/scripts/* belongs in the corpus too: one skill selftest invokes another by
+# full path, and leaving skill scripts out made that invocation invisible — the check
+# would have called a wired script unwired. Deliberately no filename here: a comment
+# naming the file with its extension would satisfy this very check, which is how the
+# first draft of this comment hid the bug it was describing.
+for f in list(Path("skills").rglob("*.md")) + list(Path("skills").glob("*/scripts/*")) \
+        + list(Path("scripts").rglob("*")) \
         + [Path("Makefile"), Path("ARCHITECTURE.md"), Path("README.md")]:
     if f.is_file() and not skip_path(str(f)):
         try:
@@ -123,8 +129,12 @@ for f in candidates:
     s = str(f).replace("\\", "/")
     if not f.is_file() or skip_path(s) or f.suffix == ".pyc":
         continue
-    stem, own = f.stem, f.resolve()
-    if not any(stem in text for path, text in corpus if path != own):
+    # Match the file NAME, not the stem. Attacked and confirmed: a script named rot.sh
+    # passed on the "rot" inside rot-meter and `make rot`, and any short stem is a
+    # substring of something. A real invocation always writes the extension.
+    # (Still fooled by a bare mention in a comment — mention-vs-use is not solved here.)
+    name, own = f.name, f.resolve()
+    if not any(name in text for path, text in corpus if path != own):
         unwired.append(s)
 
 total = len(orphans) + len(broken) + len(unwired)

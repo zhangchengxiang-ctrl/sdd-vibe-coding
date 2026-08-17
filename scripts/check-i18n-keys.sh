@@ -44,24 +44,51 @@ def flatten(obj, prefix=""):
         out.add(prefix[:-1])
     return out
 
+# Per namespace, not just per locale: a JSON file name IS the i18next namespace, and
+# `t('settings:connections.openTerminal')` must resolve inside settings.json specifically.
+# agentdeck uses that colon form in 24 live call sites — one of them with defaultValue,
+# the exact shape this script exists to catch — and merging namespaces made it invisible.
+per_ns: dict[str, dict[str, set[str]]] = {}
 per_locale: dict[str, set[str]] = {}
 for d in locale_dirs:
     keys: set[str] = set()
+    ns_map: dict[str, set[str]] = {}
     for f in sorted(d.glob("*.json")):
         try:
-            keys |= flatten(json.loads(f.read_text(encoding="utf-8")))
+            ks = flatten(json.loads(f.read_text(encoding="utf-8")))
         except Exception as e:
             print(f"WARN: cannot parse {f.relative_to(root)}: {e}", file=sys.stderr)
+            continue
+        ns_map[f.stem] = ks
+        keys |= ks
+    per_ns[d.name] = ns_map
     per_locale[d.name] = keys
 known = set().union(*per_locale.values()) if per_locale else set()
 
+
+def resolves(raw: str) -> bool:
+    """A call-site key, with or without an `ns:` prefix, exists in at least one locale."""
+    if ":" in raw:
+        ns, _, key = raw.partition(":")
+        return any(key in nsmap.get(ns, ()) for nsmap in per_ns.values())
+    return raw in known
+
 # t('a.b') / t("a.b") / i18n.t(`a.b`) — dotted keys only; bare words are too noisy.
-CALL = re.compile(r"""\bt\(\s*['"`]([A-Za-z_][\w-]*(?:\.[\w-]+)+)['"`]""")
-DEFAULTED = re.compile(r"""\bt\(\s*['"`]([A-Za-z_][\w-]*(?:\.[\w-]+)+)['"`][^)]{0,400}?defaultValue""",
-                       re.S)
+KEY = r"""(?:[A-Za-z_][\w-]*:)?[A-Za-z_][\w-]*(?:\.[\w-]+)+"""
+CALL = re.compile(r"""\bt\(\s*['"`](""" + KEY + r""")['"`]""")
+DEFAULTED = re.compile(r"""\bt\(\s*['"`](""" + KEY + r""")['"`][^)]{0,400}?defaultValue""", re.S)
+
+# Call shapes this script still cannot resolve. Found by attacking it: `t('ns:key')` was
+# missed too, but that one is real — 24 live call sites on agentdeck, one carrying a
+# defaultValue — so it got a parser above instead of a warning. These two remain unused
+# by every host here, so they get no parser, but they must not be skipped in silence:
+# a gate whose quiet means "did not look" is the thing this file exists to prevent.
+UNANALYZED = re.compile(r"""<Trans[\s/>]|i18nKey\s*=|useTranslation\([^)]*keyPrefix""")
 
 missing_defaulted: dict[str, str] = {}
 missing_plain: dict[str, str] = {}
+unanalyzed: dict[str, int] = {}
+defaulted_keys: dict[str, str] = {}
 for src in root.rglob("*"):
     if src.suffix not in {".ts", ".tsx", ".js", ".jsx", ".vue", ".svelte"}:
         continue
@@ -72,9 +99,15 @@ for src in root.rglob("*"):
         text = src.read_text(encoding="utf-8", errors="replace")
     except Exception:
         continue
+    # Count call sites, not pattern hits: `<Trans i18nKey=…>` matches twice on one line.
+    n_un = sum(1 for line in text.splitlines() if UNANALYZED.search(line))
+    if n_un:
+        unanalyzed[str(src.relative_to(root))] = n_un
     defaulted = set(DEFAULTED.findall(text))
+    for key in defaulted:
+        defaulted_keys.setdefault(key, str(src.relative_to(root)))
     for key in set(CALL.findall(text)):
-        if key in known:
+        if resolves(key):
             continue
         rel = str(src.relative_to(root))
         (missing_defaulted if key in defaulted else missing_plain)[key] = rel
@@ -85,6 +118,20 @@ for key, where in sorted(missing_defaulted.items()):
     print(f"FAIL: {where}: t('{key}') exists in no locale and is masked by defaultValue "
           "— users of every other language see the hardcoded fallback", file=sys.stderr)
     fail = 1
+
+# Masked *and* partially translated is worse than a plain missing translation: the user
+# sees the wrong language instead of a visible gap a translator would notice. Measured on
+# agentdeck: 592 of 666 defaultValue-carrying keys. That is a translation backlog, not a
+# defect this change introduced, so it is counted and not failed — `--strict` is the switch
+# for a team that wants to enforce it.
+masked_partial = 0
+if len(per_locale) > 1:
+    for key, where in sorted(defaulted_keys.items()):
+        ns, _, k = key.partition(":") if ":" in key else ("", None, key)
+        present = [loc for loc, nm in per_ns.items()
+                   if (k in nm.get(ns, ()) if ns else any(k in ks for ks in nm.values()))]
+        if present and len(present) < len(per_ns):
+            masked_partial += 1
 
 incomplete = 0
 if len(per_locale) > 1:
@@ -102,8 +149,13 @@ for key, where in sorted(missing_plain.items())[:10]:
     print(f"WARN: {where}: t('{key}') not found in any locale "
           "(may be namespaced at the call site)", file=sys.stderr)
 
+for where, n in sorted(unanalyzed.items())[:5]:
+    print(f"WARN: {where}: {n} i18n call(s) this script cannot resolve "
+          "(<Trans i18nKey> / useTranslation keyPrefix) — not checked, not proof of absence",
+          file=sys.stderr)
+
 print(f"--- check-i18n-keys: locales={','.join(sorted(per_locale))} keys={len(known)} "
       f"defaultValue-masked={len(missing_defaulted)} unresolved={len(missing_plain)} "
-      f"incomplete={incomplete} fail={fail} ---")
+      f"incomplete={incomplete} masked-partial={masked_partial} unanalyzed={sum(unanalyzed.values())} fail={fail} ---")
 sys.exit(fail)
 PY
