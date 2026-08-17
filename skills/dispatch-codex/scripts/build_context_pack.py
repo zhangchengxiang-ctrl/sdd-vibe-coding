@@ -186,37 +186,87 @@ def rel_spec_files(sdd_root: Path, host: Path, spec_id: str) -> list[str]:
 
 
 
-def load_oracles(sdd: Path, spec_id: str, t_ids: list[str]) -> list[dict[str, str]]:
-    """The executable Oracle for each T-id in this unit, read from tests.md.
+def _load_check_spec():
+    """The single definition of "is this command executable" lives in check_spec."""
+    import importlib.util
+    cs_path = Path(__file__).resolve().parents[2] / "spec" / "scripts" / "check_spec.py"
+    spec = importlib.util.spec_from_file_location("cs_pack", cs_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
 
-    Reuses check_spec's parser so "how a test names its command" has one definition.
-    Before this the payload carried `Oracle ids: T-001, T-002` and the sentence
-    "Run the unit-relevant checks/tests" — i.e. the implementer picked its own judge.
+
+def classify_oracles(sdd: Path, spec_id: str, t_ids: list[str]) -> list[dict[str, str]]:
+    """Each T-id's Oracle, classified machine | human | invalid.
+
+    The dispatch payload used to carry `Oracle ids: T-001, T-002` and let the
+    implementer pick its own judge. Rendering a referential command ("同 T-001") into a
+    block labelled "frozen Oracle, the runner replays this" would be a second lie of
+    the same kind, so invalid ones stop the pack instead.
     """
     tests_path = sdd / "specs" / spec_id / "tests.md"
     if not tests_path.is_file() or not t_ids:
         return []
     try:
-        import importlib.util
-        cs_path = Path(__file__).resolve().parents[2] / "spec" / "scripts" / "check_spec.py"
-        spec = importlib.util.spec_from_file_location("cs_pack", cs_path)
-        cs = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(cs)
+        cs = _load_check_spec()
     except Exception:
         return []
-    text = tests_path.read_text(encoding="utf-8")
-    bodies = cs.extract_test_bodies(text)
+    bodies = cs.extract_test_bodies(tests_path.read_text(encoding="utf-8"))
     out = []
     for tid in t_ids:
         body = bodies.get(tid)
         if body is None:
-            out.append({"id": tid, "cmd": "", "then": "(no ## %s body in tests.md)" % tid})
+            out.append({"id": tid, "cmd": "", "then": "", "kind": "invalid",
+                        "why": f"no ## {tid} body in tests.md"})
             continue
-        cmd = cs.automation_command(body) or ""
         m = re.search(r"(?ms)^\s*#{2,4}\s+Then[^\n]*\n(.*?)(?=^\s*#{2,4}\s+|\Z)", body)
         then = " ".join((m.group(1) if m else "").split())[:260]
-        out.append({"id": tid, "cmd": cmd.strip(), "then": then})
+        raw = (cs.automation_command(body) or "").strip()
+        bare = raw.strip("`").strip()
+        if not bare:
+            kind, why = "invalid", "no 自动化 `命令：` line"
+        elif bare in {"human", "人工"}:
+            kind, why = "human", ""
+        elif cs.NOOP_CMD.match(bare):
+            kind, why = "invalid", f"no-op command {bare!r}"
+        elif not cs.RUNNABLE_HEAD.match(cs.LEADING_ENV.sub("", bare)):
+            kind, why = "invalid", f"referential, not executable: {bare[:60]!r}"
+        else:
+            kind, why = "machine", ""
+        out.append({"id": tid, "cmd": raw, "then": then, "kind": kind, "why": why})
     return out
+
+
+def user_visible_gap(host: Path, sdd: Path, spec_id: str,
+                     oracles: list[dict[str, str]]) -> str:
+    """Non-empty when this unit owes a user-visible requirement only unit tests."""
+    if not oracles:
+        return ""
+    try:
+        cs = _load_check_spec()
+    except Exception:
+        return ""
+    contract = read_text_maybe(sdd / "specs" / spec_id / "contract.md")
+    if not contract:
+        return ""
+    _, rows = cs.parse_md_table_after(contract, "Requirements")
+    ids = {o["id"] for o in oracles}
+    pooled = "\n".join(f"{o['cmd']} {o['then']}" for o in oracles)
+    for row in rows:
+        if cs.clean(row.get("优先级", "")).upper() != "P0":
+            continue
+        mapped = set(re.findall(r"T-\d+", cs.clean(row.get("Tests", ""))))
+        if not (mapped & ids):
+            continue
+        text = " ".join(cs.clean(v) for v in row.values())
+        if cs.USER_VISIBLE.search(text) and not cs.NON_UNIT_ORACLE.search(pooled):
+            return (f"{cs.clean(row.get('ID',''))} is user-visible but this unit's oracles "
+                    "are unit-only — needs a browser / i18n / mobile / human oracle")
+    return ""
+
+
+def read_text_maybe(p: Path) -> str:
+    return p.read_text(encoding="utf-8") if p.is_file() else ""
 
 
 def build_pack(
@@ -265,7 +315,9 @@ def build_pack(
         "goal": goal,
         "entry": " | ".join(entries),
         "t_ids": t_ids,
-        "oracles": load_oracles(sdd, spec_id, t_ids),
+        "oracles": classify_oracles(sdd, spec_id, t_ids),
+        "visible_gap": user_visible_gap(host, sdd, spec_id,
+                                       classify_oracles(sdd, spec_id, t_ids)),
         "paths": paths,
         "pointers": pointers,
         "deps": "; ".join(deps),
@@ -285,14 +337,22 @@ def render_prompt(pack: dict, docs_hint: str) -> str:
         paths = "  - (MISSING allowlist — conductor must not dispatch)"
         allow_note = "ALLOWLIST missing: refuse to wander the repo; fail if conductor still sent this."
     pointers = "\n".join(f"  - {p}" for p in pack["pointers"]) if pack["pointers"] else f"  - {docs_hint}/specs/{pack['spec_id']}/"
-    if pack.get("oracles"):
-        parts = []
-        for o in pack["oracles"]:
-            cmd = o["cmd"] or "(MISSING — conductor must not dispatch without an executable 命令)"
-            parts.append(f"  {o['id']}  cmd:  {cmd}\n        then: {o['then'] or '(no Then body)'}")
-        oracle_block = "\n".join(parts)
+    machine = [o for o in pack.get("oracles", []) if o.get("kind") == "machine"]
+    human = [o for o in pack.get("oracles", []) if o.get("kind") == "human"]
+    if machine:
+        oracle_block = "\n".join(
+            f"  {o['id']}  cmd:  {o['cmd']}\n        then: {o['then'] or '(no Then body)'}"
+            for o in machine
+        )
     else:
-        oracle_block = f"  (MISSING — no executable Oracle for {t_ids}; fix tests.md before dispatch)"
+        oracle_block = "  (none — this unit has no machine-checked Oracle)"
+    if human:
+        human_block = "\n\n## 人工判定（**不进 replay 集**；关版走验收包，runner 不断言这些）\n" + "\n".join(
+            f"  {o['id']}  then: {o['then'] or '(no Then body)'}" for o in human
+        )
+    else:
+        human_block = ""
+    replay_ids = ", ".join(o["id"] for o in machine) or "(none)"
     only = "只做本派发单元内的切片；禁止顺手做单元外切片或重构无关模块。"
     if len(slice_ids) > 1:
         only = f"本 exec 一次做完切片 {slice_csv}（同一派发单元）。禁止再开新会话/压缩后续做剩下的片。"
@@ -313,8 +373,8 @@ Allowlist / write-set for this dispatch unit:
 {paths}
 Deps: {pack['deps'] or 'n/a'}
 
-## Oracle（冻结 · 由 runner 逐条 replay，不由你自选，也不要改 tests.md）
-{oracle_block}
+## Oracle（冻结 · runner 逐条 replay，不由你自选，也不要改 tests.md）
+{oracle_block}{human_block}
 
 ## Constraints
 - Follow host AGENTS.md and vibe-coding quality bars **except** mid-flow human approval: this Pack is already authorized via CLI (`approval_policy=never`). Do NOT wait for 批准 / ask clarifying questions / use doc-coauthoring.
@@ -327,7 +387,7 @@ Deps: {pack['deps'] or 'n/a'}
 - Final message: short status + evidence only — zero questions.
 
 ## Done when
-- Every `cmd` above passes when the **runner** replays it, and the runner has already
+- {replay_ids} pass when the **runner** replays them, and the runner has already
   confirmed each one FAILS on the pre-change tree. Green-only is not evidence.
 - `run.md` records the T-xxx results with `oracle-freeze: intact`.
 - Short report only: what shipped, evidence paths, next dispatch unit — no "可交付".
@@ -393,6 +453,19 @@ def main() -> None:
             "build_context_pack: WARN no T-xxx in 完成定义 — pack still emitted",
             file=sys.stderr,
         )
+
+    bad = [o for o in pack.get("oracles", []) if o.get("kind") == "invalid"]
+    if bad:
+        for o in bad:
+            die_msg = f"{o['id']}: {o['why']}"
+            print(f"build_context_pack: REFUSED — {die_msg}", file=sys.stderr)
+        print("build_context_pack: a dispatch payload may not claim the runner will replay "
+              "an Oracle it cannot execute. Fix tests.md 自动化 命令 (or mark it `human`).",
+              file=sys.stderr)
+        sys.exit(2)
+    if pack.get("visible_gap"):
+        print(f"build_context_pack: REFUSED — {pack['visible_gap']}", file=sys.stderr)
+        sys.exit(2)
 
     if args.json:
         print(json.dumps(pack, ensure_ascii=False, indent=2))

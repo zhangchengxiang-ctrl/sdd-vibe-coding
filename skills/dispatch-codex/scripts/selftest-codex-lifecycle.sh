@@ -156,9 +156,23 @@ fill_spec() {
   local spec_dir="$1"
   mkdir -p "$spec_dir"
   local f
-  for f in VERSION.md contract.md tests.md run.md; do
+  for f in VERSION.md contract.md run.md; do
     printf '# %s\n\nSubstantial placeholder content for isolated lifecycle (%s).\n' "$f" "$f" >"$spec_dir/$f"
   done
+  # A tests.md with no T-xxx bodies carries no Oracle, and the dispatch throat refuses
+  # that — correctly. Derive the ids from plan.md so every fixture gets real ones.
+  local ids
+  ids="$(grep -oE 'T-[0-9]{3}' "$spec_dir/plan.md" 2>/dev/null | sort -u | tr '\n' ' ')"
+  [[ -n "$ids" ]] || ids="T-001"
+  {
+    printf '# Tests\n\n## 索引\n\n| ID | R |\n|---|---|\n'
+    for t in $ids; do printf '| %s | R-001 |\n' "$t"; done
+    for t in $ids; do
+      printf '\n## %s · fixture\n\n### Given\n\n- fixture state\n\n### When\n\n1. run it\n\n' "$t"
+      printf '### Then（Oracle）\n\n- offset=0 与 offset=1000 首行 id 不同\n\n'
+      printf '### 自动化\n\n- 命令：`bash -c true`\n- 预期 Evidence Kind：`unit`\n'
+    done
+  } >"$spec_dir/tests.md"
 }
 
 # --- T1: run-id-file exists before exec; decoy meta cannot steal id ---

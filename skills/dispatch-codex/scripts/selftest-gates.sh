@@ -95,6 +95,24 @@ check "record-falsify-fail-cmd" 1 \
   bash "$RECORD" --log-dir "$LOG" --run-id rec2 --slice S1 -- false
 check "require-after-record-fail" 1 bash "$REQUIRE" --log-dir "$LOG" --run-id rec2
 
+fill_spec() {   # real Oracles derived from plan.md — a bodyless tests.md has none
+  local spec_dir="$1" ids t
+  for t in VERSION.md contract.md run.md; do
+    printf '# %s\n\nenough content for placeholder gates.\n' "$t" >"$spec_dir/$t"
+  done
+  ids="$(grep -oE 'T-[0-9]{3}' "$spec_dir/plan.md" 2>/dev/null | sort -u | tr '\n' ' ')"
+  [[ -n "$ids" ]] || ids="T-001"
+  {
+    printf '# Tests\n\n## 索引\n\n| ID | R |\n|---|---|\n'
+    for t in $ids; do printf '| %s | R-001 |\n' "$t"; done
+    for t in $ids; do
+      printf '\n## %s · probe\n\n### Given\n\n- fixture\n\n### When\n\n1. run\n\n' "$t"
+      printf '### Then（Oracle）\n\n- offset=0 与 offset=1000 首行 id 不同\n\n'
+      printf '### 自动化\n\n- 命令：`bash -c true`\n- 预期 Evidence Kind：`unit`\n'
+    done
+  } >"$spec_dir/tests.md"
+}
+
 # --- wish-orchestrate: status + flock smoke (no codex) ---
 HOST="$TMP/wishhost"
 mkdir -p "$HOST/docs/specs/w1"
@@ -103,9 +121,7 @@ cat >"$HOST/docs/specs/w1/plan.md" <<'EOF'
 | S1 | Web：a | T-001 | src/a.ts | | |
 | S2 | Web：b | T-002 | src/b.ts | S1 | |
 EOF
-for f in VERSION.md contract.md tests.md run.md; do
-  printf '# %s\n\nenough content for placeholder gates.\n' "$f" >"$HOST/docs/specs/w1/$f"
-done
+fill_spec "$HOST/docs/specs/w1"
 check "wish-status" 0 bash "$WISH" --cwd "$HOST" --spec w1 --status
 check "wish-list" 0 bash "$WISH" --cwd "$HOST" --spec w1 --list
 check "wish-pack-only" 0 bash "$WISH" --cwd "$HOST" --spec w1 --pack-only --slice S1
@@ -136,9 +152,7 @@ cat >"$HOSTM/docs/specs/m1/plan.md" <<'EOF'
 | S2 | b | T-002 | src/foo.ts | S1 | oracle:unit |
 | S3 | c | T-003 | src/foo.ts | S1 | oracle:unit |
 EOF
-for f in VERSION.md contract.md tests.md run.md; do
-  printf '# %s\n\nenough content for placeholder gates.\n' "$f" >"$HOSTM/docs/specs/m1/$f"
-done
+fill_spec "$HOSTM/docs/specs/m1"
 assert_merge() {
   python3 "$PACK_UNITS" "$HOSTM" m1 --json | python3 -c 'import json,sys; g=json.load(sys.stdin); assert len(g["units"])==1, g; assert g["units"][0]["slices"]==["S1","S2","S3"], g'
 }
@@ -154,9 +168,7 @@ cat >"$HOSTP/docs/specs/p1/plan.md" <<'EOF'
 | S1 | coll | T-001 | modules/track/collection/vrl/sa.vrl | | oracle:unit |
 | S2 | pg | T-002 | infra/postgres/init/01.sql | | oracle:unit |
 EOF
-for f in VERSION.md contract.md tests.md run.md; do
-  printf '# %s\n\nenough content for placeholder gates.\n' "$f" >"$HOSTP/docs/specs/p1/$f"
-done
+fill_spec "$HOSTP/docs/specs/p1"
 assert_parallel() {
   python3 "$SCHEDULE" --host "$HOSTP" --spec p1 --edit-parallel 2 | python3 -c 'import json,sys; w=json.load(sys.stdin); assert set(w["edit_waves"][0])=={"D1","D2"}, w'
 }
@@ -171,9 +183,7 @@ cat >"$HOSTL/docs/specs/l1/plan.md" <<'EOF'
 | S1 | a | T-001 | src/a/x.ts | | oracle:lab claims:kind-datagate |
 | S2 | b | T-002 | src/b/y.ts | | oracle:lab claims:kind-datagate |
 EOF
-for f in VERSION.md contract.md tests.md run.md; do
-  printf '# %s\n\nenough content for placeholder gates.\n' "$f" >"$HOSTL/docs/specs/l1/$f"
-done
+fill_spec "$HOSTL/docs/specs/l1"
 assert_lab_serial() {
   python3 "$SCHEDULE" --host "$HOSTL" --spec l1 --edit-parallel 2 | python3 -c 'import json,sys; w=json.load(sys.stdin); assert all(len(v)==1 for v in w["verify_waves"]), w'
 }
@@ -207,9 +217,41 @@ if python3 "$ROOT/skills/dispatch-codex/scripts/build_context_pack.py" "$FIX" li
   check "pack-drops-oracle-ids-only" 1 grep -q -- '^Oracle ids:' "$PACKOUT"
   check "pack-drops-self-chosen-tests" 1 grep -q -- 'Run the unit-relevant checks/tests' "$PACKOUT"
   check "pack-drops-na-escape-hatch" 1 grep -qF -- 'or N/A · reason' "$PACKOUT"
-  check "pack-demands-runner-replay" 0 grep -q -- 'runner\*\* replays it' "$PACKOUT"
+  check "pack-demands-runner-replay" 0 grep -q -- 'replays them' "$PACKOUT"
 else
   echo "FAIL pack-carries-command — build_context_pack.py failed on the fixture" >&2
+  fail=$((fail + 1))
+fi
+
+# --- the dispatch throat refuses an Oracle the runner cannot execute -----------
+# Rendering "同 T-001" into a block labelled "frozen Oracle, the runner replays this"
+# would be the same lie as the old `Oracle ids:` payload, one layer down.
+mkfix() {  # mkfix <dir> <sed-expr-on-T-001-command>
+  rm -rf "$1"; cp -r "$FIX" "$1"
+  python3 - "$1/docs/specs/live-relay/tests.md" "$2" <<'PYX'
+import re, sys
+p, repl = sys.argv[1], sys.argv[2]
+t = open(p, encoding="utf-8").read()
+i, j = t.index("## T-001"), t.index("## T-002")
+open(p, "w", encoding="utf-8").write(
+    t[:i] + re.sub(r"(?m)^(\s*-\s*命令[：:]).*$", r"\1 " + repl, t[i:j], count=1) + t[j:])
+PYX
+}
+PACKBIN="$ROOT/skills/dispatch-codex/scripts/build_context_pack.py"
+mkfix "$TMP/fix-ref" "同 T-002。"
+check "pack-refuses-referential" 2 python3 "$PACKBIN" "$TMP/fix-ref" live-relay S1
+mkfix "$TMP/fix-noop" '`true`'
+check "pack-refuses-noop" 2 python3 "$PACKBIN" "$TMP/fix-noop" live-relay S1
+rm -rf "$TMP/fix-vis"; cp -r "$FIX" "$TMP/fix-vis"
+sed -i 's/| R-001 | 签名 token/| R-001 | 文案与移动端可读：签名 token/' \
+  "$TMP/fix-vis/docs/specs/live-relay/contract.md"
+check "pack-refuses-visible-unit-only" 2 python3 "$PACKBIN" "$TMP/fix-vis" live-relay S1
+mkfix "$TMP/fix-human" '`human`'
+if python3 "$PACKBIN" "$TMP/fix-human" live-relay S1 >"$TMP/pack-human.txt" 2>/dev/null; then
+  check "pack-human-emits" 0 grep -q '人工判定' "$TMP/pack-human.txt"
+  check "pack-human-out-of-replay-set" 1 grep -q 'T-001, T-002 pass when' "$TMP/pack-human.txt"
+else
+  echo "FAIL pack-human-emits — a human oracle must still produce a pack" >&2
   fail=$((fail + 1))
 fi
 
