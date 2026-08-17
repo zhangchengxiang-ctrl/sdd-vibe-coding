@@ -534,6 +534,104 @@ def check_requirements_unverified(spec_dir: Path, contract: str, report: Report,
     return real
 
 
+RUNNABLE_HEAD = re.compile(
+    r"^(?:npx|npm|pnpm|yarn|bun|make|bash|sh|zsh|python3?|pytest|vitest|playwright|"
+    r"go|cargo|dotnet|mvn|gradle|docker|curl|psql|\./|/)",
+)
+NOOP_CMD = re.compile(r"^(?:true|:|exit\s+0|echo|/(?:usr/)?bin/true)\s*;?$")
+LEADING_ENV = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=\S*\s+")
+# Requirement text that promises something a person can see. A unit test cannot
+# close these: sol skipped an entire user-visible requirement and still passed 11/11.
+USER_VISIBLE = re.compile(r"(?i)(UI|文案|copy|i18n|locale|双语|翻译|移动端|mobile|响应式|"
+                          r"页面|界面|视觉|可读|可访问|aria|截图|screenshot)")
+NON_UNIT_ORACLE = re.compile(r"(?i)(playwright|browser|浏览器|e2e|截图|screenshot|"
+                             r"i18n|locale|移动端|mobile|\b390|human|人工)")
+
+
+def automation_command(body: str) -> str | None:
+    """The `命令：` / `命令或测试路径：` line inside a test's 自动化 block, if any."""
+    block = re.search(
+        r"(?ms)^\s*#{2,4}\s+自动化[^\n]*\n(.*?)(?=^\s*#{2,4}\s+|\Z)", body
+    )
+    if not block:
+        return None
+    m = re.search(r"(?m)^\s*-\s*命令(?:或测试路径)?\s*[：:]\s*(.+?)\s*$", block.group(1))
+    return m.group(1) if m else None
+
+
+def check_p0_oracle_commands(
+    spec_dir: Path,
+    tests: str,
+    req_rows: list[dict[str, str]],
+    report: Report,
+    *,
+    closing: bool = False,
+) -> None:
+    """A P0 Oracle must be a command the runner can execute, and must be able to fail.
+
+    Measured holes this closes: check_spec used to accept a P0 test with no command at
+    all and one whose command was `true`; and Codex writes referential oracles ("同
+    T-001", "S0 确定的 tests") at a rate escalating effort does not fix (3/8 at high vs
+    3/6 at medium) — a runner cannot execute those.
+    """
+    bodies = extract_test_bodies(tests)
+    p0: dict[str, str] = {}          # tid -> requirement text that mapped it
+    for row in req_rows:
+        if clean(row.get("优先级", "")).upper() != "P0":
+            continue
+        text = " ".join(clean(v) for v in row.values())
+        for tid in re.findall(r"T-\d+", clean(row.get("Tests", ""))):
+            p0.setdefault(tid, text)
+    if not p0:
+        return
+
+    visible_reqs: dict[str, list[str]] = {}
+    for tid, req_text in sorted(p0.items()):
+        body = bodies.get(tid)
+        if body is None:
+            continue  # the index/body structure check already reports this
+        if USER_VISIBLE.search(req_text):
+            visible_reqs.setdefault(req_text[:60], []).append(tid)
+
+        cmd = automation_command(body)
+        if not cmd:
+            report.fail(
+                f"{spec_dir.name}/tests.md: P0-mapped {tid} has no 自动化 `命令：` — "
+                "the runner has nothing to execute"
+            )
+            continue
+        bare = cmd.strip().strip("`").strip()
+        if bare in {"human", "人工"}:
+            continue  # human-judged: closes via the acceptance pack, not the runner
+        if NOOP_CMD.match(bare):
+            report.fail(
+                f"{spec_dir.name}/tests.md: P0-mapped {tid} 命令 is a no-op ({bare!r}) — "
+                "it stays green with the feature deleted"
+            )
+            continue
+        head = LEADING_ENV.sub("", bare)
+        if not RUNNABLE_HEAD.match(head):
+            # Measured: 0 of 4 sampled archived Specs and 0 of 14 T-ids in a live Spec
+            # would pass this. Blocking Build on it would stop all in-flight work, so it
+            # bites where the claim is made instead: you may Build with a referential
+            # oracle, you may not close on one.
+            (report.fail if closing else report.warn)(
+                f"{spec_dir.name}/tests.md: P0-mapped {tid} 命令 is referential, not "
+                f"executable ({bare[:60]!r}) — the runner cannot run 「同 T-xxx」/"
+                "「S0 确定的…」/「按 xx skill 运行」"
+            )
+
+    for req_text, tids in visible_reqs.items():
+        pooled = "\n".join(bodies.get(t, "") for t in tids)
+        if not NON_UNIT_ORACLE.search(pooled):
+            (report.fail if closing else report.warn)(
+                f"{spec_dir.name}/tests.md: user-visible requirement ({req_text.strip()[:48]}…) "
+                f"is gated only by unit tests via {', '.join(tids)} — needs a browser / i18n / "
+                "mobile / human oracle"
+            )
+    report.ok(f"{spec_dir.name}: P0 oracle commands checked ({len(p0)} ids)")
+
+
 def extract_test_bodies(tests: str) -> dict[str, str]:
     bodies: dict[str, str] = {}
     parts = re.split(r"(?m)^## (T-\d+)\b", tests)
@@ -554,6 +652,7 @@ def check_tests(
     structure_only: bool,
     contract: str = "",
     plan: str = "",
+    closing: bool = False,
 ) -> None:
     if not has_h3(tests, "Given") or not has_h3(tests, "When"):
         report.fail(f"{spec_dir.name}/tests.md: missing Given/When headings")
@@ -564,6 +663,8 @@ def check_tests(
     report.ok(f"{spec_dir.name}: tests.md has Given/When/Then markers")
     if structure_only:
         return
+
+    check_p0_oracle_commands(spec_dir, tests, req_rows, report, closing=closing)
 
     _, index_rows = parse_md_table_after(tests, "索引")
     index_ids = {
@@ -1293,6 +1394,7 @@ def check_spec_dir(
         structure_only=structure_only,
         contract=contract,
         plan=plan,
+        closing=closing,
     )
     has_ui = detect_has_ui(contract, plan, tests)
     check_ui_surface(

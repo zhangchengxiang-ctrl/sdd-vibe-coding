@@ -195,6 +195,24 @@ check "wish-units-list" 0 bash "$WISH" --cwd "$HOSTM" --spec m1 --units
 check "wish-dry-merged-unit" 0 bash "$WISH" --cwd "$HOSTM" --spec m1 --dry-run
 check "wish-dry-parallel-wave" 0 bash "$WISH" --cwd "$HOSTP" --spec p1 --dry-run --parallel 2
 
+# --- the dispatch payload must carry the Oracle body, not its id ---------------
+# Before: `Oracle ids: T-001, T-002` plus "Run the unit-relevant checks/tests"
+# (implementer picks its own judge) and "or N/A · reason" (a written-in escape hatch).
+FIX="$ROOT/skills/dispatch-codex/fixtures/live-relay"
+PACKOUT="$TMP/pack-oracle.txt"
+if python3 "$ROOT/skills/dispatch-codex/scripts/build_context_pack.py" "$FIX" live-relay S1 \
+    >"$PACKOUT" 2>/dev/null; then
+  check "pack-carries-command" 0 grep -qF -- 'python3 -m pytest tests/test_token.py' "$PACKOUT"
+  check "pack-carries-then" 0 grep -q -- 'then:' "$PACKOUT"
+  check "pack-drops-oracle-ids-only" 1 grep -q -- '^Oracle ids:' "$PACKOUT"
+  check "pack-drops-self-chosen-tests" 1 grep -q -- 'Run the unit-relevant checks/tests' "$PACKOUT"
+  check "pack-drops-na-escape-hatch" 1 grep -qF -- 'or N/A · reason' "$PACKOUT"
+  check "pack-demands-runner-replay" 0 grep -q -- 'runner\*\* replays it' "$PACKOUT"
+else
+  echo "FAIL pack-carries-command — build_context_pack.py failed on the fixture" >&2
+  fail=$((fail + 1))
+fi
+
 # --- auth block present in dispatcher ---
 check "auth-block-in-dispatch" 0 \
   grep -q "CLI dispatch authorization" "$ROOT/skills/dispatch-codex/scripts/codex-dispatch.sh"

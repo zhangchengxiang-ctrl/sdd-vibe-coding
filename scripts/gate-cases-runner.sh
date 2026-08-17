@@ -142,6 +142,42 @@ with tempfile.TemporaryDirectory() as td:
         "dispatch-run-id: run-b\ndispatch-run-id: run-missing\n", sd)
     note(not ok2, "all-run-ids-checked", "a second cited run-id is validated too")
 
+# --- P0 Oracle must be executable, and must be able to fail ------------------
+# Measured holes: check_spec accepted a P0 test with no command at all and one whose
+# command was `true`; and referential oracles ("同 T-001", "S0 确定的 tests") appear at a
+# rate escalating effort does not fix, which no runner can replay.
+def oracle_errs(cmd_line, req_extra="", closing=False):
+    tests = (
+        "## 索引\n\n| ID | R |\n|---|---|\n| T-001 | R-001 |\n\n"
+        "## T-001 · probe\n\n### Given\n\n- x\n\n### When\n\n1. y\n\n"
+        "### Then（Oracle）\n\n- offset=0 与 offset=1000 首行 id 不同\n\n"
+        "### 自动化\n\n" + cmd_line + "\n"
+    )
+    rows = [{"ID": "R-001", "优先级": "P0", "证据级": "Verified",
+             "需求": "签名 token 校验" + req_extra, "Tests": "T-001"}]
+    r = cs.Report()
+    quiet(cs.check_p0_oracle_commands, Path("atk"), tests, rows, r, closing=closing)
+    return r.errors, r.warnings
+
+note(oracle_errs("- 预期 Evidence Kind：`unit`")[0] >= 1, "oracle-no-command",
+     "a P0 test with no 命令 line is rejected")
+note(oracle_errs("- 命令：`true`")[0] >= 1, "oracle-noop-command",
+     "命令 `true` stays green with the feature deleted, so it is rejected")
+note(oracle_errs("- 命令：`PYTHONPATH=. python3 -m pytest tests -q`")[0] == 0,
+     "oracle-real-command-passes", "a real command with leading env vars is accepted")
+note(oracle_errs("- 命令：同 T-002。")[0] == 0
+     and oracle_errs("- 命令：同 T-002。")[1] >= 1,
+     "oracle-referential-warns", "referential oracle warns during Build")
+note(oracle_errs("- 命令：同 T-002。", closing=True)[0] >= 1,
+     "oracle-referential-blocks-close", "referential oracle cannot close a Spec")
+note(oracle_errs("- 命令：`npx vitest run a.test.ts`", req_extra="；文案与移动端可读",
+                 closing=True)[0] >= 1,
+     "oracle-visible-needs-nonunit",
+     "a user-visible requirement gated only by unit tests cannot close")
+note(oracle_errs("- 命令：`npx playwright test a.spec.ts`", req_extra="；文案与移动端可读",
+                 closing=True)[0] == 0,
+     "oracle-visible-browser-passes", "a browser oracle satisfies the user-visible bar")
+
 # --- catalog accounting: every problem row names a probe or an open reason ---
 rows = list(csv.DictReader((root / "scripts/fixtures/gate-cases.tsv").open(encoding="utf-8"),
                            delimiter="\t"))
