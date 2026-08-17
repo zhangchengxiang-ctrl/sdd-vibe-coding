@@ -24,8 +24,11 @@ Required:
   --unit plan|build|goal Completion unit (sets timeout/sandbox/effort defaults)
 
 Options:
-  --effort medium|high   Reasoning effort (default: medium; goal→high)
-  --model NAME           Model (default: gpt-5.6-sol; terra/luna rejected)
+  --effort LEVEL         minimal|low|medium|high|xhigh|max (default: medium; goal→high)
+  --model NAME           gpt-5.6-sol|terra|luna
+                         (default: build/audit→terra, else sol — tier is a quota lever)
+  --profile NAME         Codex config profile (-p NAME); tier presets live in
+                         $CODEX_HOME/<name>.config.toml, not in this script
   --sandbox MODE         read-only|workspace-write|danger-full-access
   --timeout SEC          Wall clock limit (kills process on expiry)
   --spec ID              Spec id under SDD docs/specs (required for build/goal unless SKIP)
@@ -54,7 +57,10 @@ die() { echo "codex-dispatch: $*" >&2; exit 2; }
 CWD=""
 UNIT=""
 EFFORT=""
-MODEL="${CODEX_DISPATCH_MODEL:-gpt-5.6-sol}"
+MODEL="${CODEX_DISPATCH_MODEL:-}"   # empty → resolved per unit after arg parsing
+PROFILE="${CODEX_DISPATCH_PROFILE:-}"
+MODEL_EXPLICIT=""
+EFFORT_EXPLICIT=""
 SANDBOX=""
 TIMEOUT_SEC=""
 SPEC_ID="${CODEX_DISPATCH_SPEC:-}"
@@ -69,8 +75,9 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --cwd) CWD="${2:-}"; shift 2 ;;
     --unit) UNIT="${2:-}"; shift 2 ;;
-    --effort) EFFORT="${2:-}"; shift 2 ;;
-    --model) MODEL="${2:-}"; shift 2 ;;
+    --effort) EFFORT="${2:-}"; EFFORT_EXPLICIT=1; shift 2 ;;
+    --model) MODEL="${2:-}"; MODEL_EXPLICIT=1; shift 2 ;;
+    --profile) PROFILE="${2:-}"; shift 2 ;;
     --sandbox) SANDBOX="${2:-}"; shift 2 ;;
     --timeout) TIMEOUT_SEC="${2:-}"; shift 2 ;;
     --spec) SPEC_ID="${2:-}"; shift 2 ;;
@@ -78,7 +85,7 @@ while [[ $# -gt 0 ]]; do
     --dispatch-id) DISPATCH_ID="${2:-}"; shift 2 ;;
     --run-id-file) RUN_ID_FILE="${2:-}"; shift 2 ;;
     --json) JSON=1; shift ;;
-    --no-json) JSON=0; shift ;;
+    --no-json) JSON=0; shift ;;   # gated below: dispatch units require the event stream
     --log-dir) LOG_DIR="${2:-}"; shift 2 ;;
     -h|--help) usage; exit 0 ;;
     --) shift; PROMPT_ARGS=("$@"); break ;;
@@ -101,16 +108,19 @@ case "$UNIT" in
   *) die "--unit must be plan|build|goal (got: $UNIT)" ;;
 esac
 
+# Tier is a subscription-quota lever, not a quality lever. Rejecting the cheaper
+# tiers here is what pinned all 75 real dispatches to Sol and burned the credit
+# window (6 of them died on `usage limit` before reaching the model at all).
+if [[ -z "$MODEL" ]]; then
+  case "$UNIT" in
+    build|audit) MODEL="gpt-5.6-terra" ;;
+    *)           MODEL="gpt-5.6-sol" ;;
+  esac
+fi
 case "$MODEL" in
-  gpt-5.6-sol) ;;
-  gpt-5.6-terra|gpt-5.6-luna|*"terra"*|*"luna"*)
-    die "model must be gpt-5.6-sol (got '$MODEL')"
-    ;;
+  gpt-5.6-sol|gpt-5.6-terra|gpt-5.6-luna) ;;
   *)
-    if [[ "$MODEL" == *terra* || "$MODEL" == *luna* ]]; then
-      die "model must be gpt-5.6-sol (got '$MODEL')"
-    fi
-    echo "codex-dispatch: warning: non-default model '$MODEL' (expected gpt-5.6-sol)" >&2
+    echo "codex-dispatch: warning: non-default model '$MODEL' (known tiers: gpt-5.6-sol|terra|luna)" >&2
     ;;
 esac
 
@@ -122,12 +132,9 @@ if [[ -z "$EFFORT" ]]; then
   fi
 fi
 case "$EFFORT" in
-  medium|high) ;;
-  low)
-    die "effort must be medium or high (got low)"
-    ;;
+  minimal|low|medium|high|xhigh|max) ;;
   *)
-    die "effort must be medium|high (got: $EFFORT)"
+    die "effort must be minimal|low|medium|high|xhigh|max (got: $EFFORT)"
     ;;
 esac
 
@@ -239,6 +246,17 @@ if [[ "$UNIT" == "build" ]]; then
   fi
   [[ -n "$SLICE_ID" || -n "$DISPATCH_ID" ]] \
     || die "build requires --slice / SLICE_IDS / DISPATCH_ID (one dispatch unit)"
+  # Hard, structural version of the "no unbounded multi-slice" rule. The prose-and-regex
+  # version above never fired: a real dispatch went out with slices=S2,S4,S3,S5 and
+  # timed out at the 20-minute wall (p90 of all 75 dispatches == the timeout ceiling).
+  for tok in $(printf '%s' "$SLICE_ID" | tr ',' ' '); do
+    [[ "$tok" =~ ^[A-Za-z][A-Za-z0-9_.-]*$ ]] \
+      || die "malformed slice token '$tok' in --slice '$SLICE_ID'"
+  done
+  slice_n="$(printf '%s' "$SLICE_ID" | tr ',' '\n' | grep -c '[^[:space:]]' || true)"
+  if [[ "${slice_n:-0}" -gt 1 && -z "$DISPATCH_ID" ]]; then
+    die "multi-slice dispatch ($SLICE_ID) needs an explicit --dispatch-id from packing; refuse to send $slice_n slices as one unbounded unit"
+  fi
   if [[ -n "$SLICE_ID" ]] && ! echo "$PROMPT" | grep -Eqi "SLICE_ID[[:space:]]*=|SLICE_IDS[[:space:]]*=|${SLICE_ID%%,*}"; then
     PROMPT="SLICE_ID=${SLICE_ID}
 ${PROMPT}"
@@ -262,6 +280,12 @@ if [[ "$UNIT" == "build" || "$UNIT" == "goal" ]]; then
       die "check_spec failed for '$SPEC_ID' — refuse Codex $UNIT (fix Spec or SKIP_SPEC_CHECK=1)"
     fi
   fi
+fi
+
+# Completion is decided by turn.completed, so the event stream is not optional for
+# units whose success we assert mechanically.
+if [[ "$JSON" != "1" && "${SKIP_TURN_CHECK:-0}" != "1" ]]; then
+  die "--no-json disables the turn.completed check; dispatch units need it (SKIP_TURN_CHECK=1 to override)"
 fi
 
 command -v codex >/dev/null 2>&1 || die "codex CLI not found on PATH"
@@ -300,6 +324,10 @@ echo "codex-dispatch: RUN_ID=$RUN_ID" >&2
   [[ -n "$DISPATCH_ID" ]] && echo "dispatch_id=$DISPATCH_ID"
   echo "last_message=$LAST_MSG_FILE"
   echo "falsify_log=$LOG_DIR/${RUN_ID}_falsify.log"
+  # Written before the run so a killed dispatch leaves an unambiguous marker instead
+  # of a missing field: 9 of 75 real dispatches had no exit_status at all and the
+  # conductor could not tell success from a crash.
+  echo "run_state=started"
 } >"$META_FILE"
 
 echo "codex-dispatch: unit=$UNIT model=$MODEL effort=$EFFORT sandbox=$SANDBOX timeout=${TIMEOUT_SEC}s" >&2
@@ -312,11 +340,17 @@ CMD=(
   codex exec
   -C "$CWD"
   -s "$SANDBOX"
-  -m "$MODEL"
-  -c "model_reasoning_effort=\"${EFFORT}\""
   -c 'approval_policy="never"'
   --skip-git-repo-check
 )
+# A profile only wins if we do NOT also pass -m/-c effort: CLI flags outrank profiles.
+if [[ -n "$PROFILE" ]]; then
+  CMD+=(-p "$PROFILE")
+  if [[ -n "$MODEL_EXPLICIT" ]]; then CMD+=(-m "$MODEL"); fi
+  if [[ -n "$EFFORT_EXPLICIT" ]]; then CMD+=(-c "model_reasoning_effort=\"${EFFORT}\""); fi
+else
+  CMD+=(-m "$MODEL" -c "model_reasoning_effort=\"${EFFORT}\"")
+fi
 
 if [[ "$JSON" == "1" ]]; then
   CMD+=(--json)
@@ -337,7 +371,33 @@ wait 2>/dev/null || true
 {
   echo "finished_at=$(date -u +%Y%m%dT%H%M%SZ)"
   echo "exit_status=$STATUS"
+  echo "run_state=finished"
 } >>"$META_FILE"
+
+# Quota exhaustion is not an implementation failure. 6 of 75 real dispatches died
+# here and were indistinguishable from "Codex could not do the work".
+# Scoped to error / turn.failed events only. Scanning the whole jsonl misfires the
+# moment a run reads a file that merely mentions quotas — including this script.
+QUOTA_LINES=""
+if [[ -f "$LOG_FILE" ]]; then
+  QUOTA_LINES="$(grep -E '"type"[[:space:]]*:[[:space:]]*"(error|turn\.failed)"' "$LOG_FILE" \
+    | grep -iE 'hit your usage limit|usage limit reached' || true)"
+fi
+# The real CLI may report the quota only on stderr, with no error event in the jsonl.
+if [[ -z "$QUOTA_LINES" && $STATUS -ne 0 && -f "$STDERR_FILE" ]]; then
+  QUOTA_LINES="$(grep -iE 'hit your usage limit|usage limit reached' "$STDERR_FILE" || true)"
+fi
+if [[ -n "$QUOTA_LINES" ]]; then
+  RETRY="$(printf '%s' "$QUOTA_LINES" | grep -oiE 'try again at [^"\\]{0,40}' | head -1)"
+  {
+    echo "failure_class=quota"
+    [[ -n "$RETRY" ]] && echo "quota_retry_hint=$RETRY"
+  } >>"$META_FILE"
+  echo "codex-dispatch: QUOTA EXHAUSTED — subscription window, not an implementation failure." >&2
+  [[ -n "$RETRY" ]] && echo "codex-dispatch: $RETRY" >&2
+  echo "codex-dispatch: lower the tier (--model gpt-5.6-terra|luna) or wait; meta=$META_FILE" >&2
+  exit 75   # EX_TEMPFAIL: retryable, distinct from a real dispatch failure
+fi
 
 if [[ $STATUS -eq 124 || $STATUS -eq 137 ]]; then
   echo "codex-dispatch: TIMED OUT after ${TIMEOUT_SEC}s (exit $STATUS)" >&2
@@ -368,7 +428,9 @@ if [[ "$UNIT" == "plan" ]]; then
 fi
 
 DETECT_COMPACT="$PLUGIN_ROOT/skills/dispatch-codex/scripts/detect_compact.py"
-if [[ "$UNIT" == "build" || "$UNIT" == "goal" ]] && [[ "$JSON" == "1" ]] \
+# Completion signal is turn.completed — never the process exit code.
+# Applies to every unit: a Plan that died mid-write is a failure too.
+if [[ "$JSON" == "1" ]] \
   && [[ -f "$DETECT_COMPACT" ]] && [[ -f "$LOG_FILE" ]]; then
   set +e
   python3 "$DETECT_COMPACT" --require-turn "$LOG_FILE"

@@ -329,6 +329,21 @@ install_codex() {
   codex plugin marketplace add "$stage"
   codex plugin add "${PLUGIN_NAME}@${MARKETPLACE_LOCAL}" 2>/dev/null || \
     codex plugin add "$PLUGIN_NAME" --marketplace "$MARKETPLACE_LOCAL" 2>/dev/null || true
+  # Tier presets: keep model/effort out of the dispatcher and in Codex's own config layer.
+  local prof_src="$ROOT/templates/codex-profiles"
+  local codex_home="${CODEX_HOME:-$HOME/.codex}"
+  if [[ -d "$prof_src" ]]; then
+    local n=0
+    for f in "$prof_src"/sdd-*.config.toml; do
+      [[ -f "$f" ]] || continue
+      if [[ -e "$codex_home/$(basename "$f")" ]]; then
+        echo "  SKIP profile $(basename "$f") (already present)"
+      else
+        cp "$f" "$codex_home/$(basename "$f")" && n=$((n+1))
+      fi
+    done
+    [[ "$n" -gt 0 ]] && echo "  installed $n tier profile(s) → $codex_home/sdd-*.config.toml"
+  fi
   echo "OK Codex: marketplace → $stage (v$version)"
   echo "  Next: restart Codex / new task；Plugins 确认 ${PLUGIN_NAME}"
 }

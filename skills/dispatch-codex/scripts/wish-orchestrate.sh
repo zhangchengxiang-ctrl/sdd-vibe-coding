@@ -400,6 +400,54 @@ for uid in "${TARGET_UNITS[@]}"; do
   fi
 done
 
+# --- Parallel isolation: one git worktree per unit, pinned to one SHA ---------
+# Multiple `codex exec` processes must never share one working tree. Before this,
+# every parallel arm got --cwd "$CWD"; the per-unit flock only stopped the same
+# unit being dispatched twice and isolated nothing between different units.
+declare -A UNIT_CWD=()
+WT_ROOT=""
+if [[ "$DRY_RUN" != "1" && "${#TARGET_UNITS[@]}" -gt 1 ]]; then
+  git -C "$CWD" rev-parse --git-dir >/dev/null 2>&1 \
+    || die "parallel dispatch requires a git repo at $CWD (worktree isolation)"
+  BASE_SHA="$(git -C "$CWD" rev-parse HEAD)"
+  # Include a hash of the absolute path: two repos with the same basename must not
+  # share a worktree root (and must never reuse each other's trees).
+  CWD_TAG="$(printf '%s' "$CWD" | cksum | cut -d' ' -f1)"
+  WT_ROOT="${WISH_WORKTREE_ROOT:-${TMPDIR:-/tmp}/sdd-wish-wt}/$(basename "$CWD")-${CWD_TAG}-${SPEC_ID}"
+  mkdir -p "$WT_ROOT"
+  for uid in "${TARGET_UNITS[@]}"; do
+    wt="$WT_ROOT/$uid"
+    if [[ -e "$wt/.git" ]]; then
+      # Reuse only a clean tree. A leftover dirty worktree means the previous wave was
+      # never merged; silently building on top of it would hide that.
+      # Ignore the dep symlinks this script created itself; everything else is real work.
+      wt_dirty="$(git -C "$wt" status --porcelain 2>/dev/null || true)"
+      read -r -a _links <<<"${WISH_WORKTREE_LINK:-node_modules}"
+      for link in "${_links[@]}"; do
+        wt_dirty="$(printf '%s\n' "$wt_dirty" | grep -vF -- "$link" || true)"
+      done
+      if [[ -n "$(printf '%s' "$wt_dirty" | tr -d '[:space:]')" ]]; then
+        die "worktree $wt still holds unmerged changes from an earlier wave — merge it, or: git -C $CWD worktree remove --force $wt"
+      fi
+      git -C "$wt" checkout -q --detach "$BASE_SHA" 2>/dev/null \
+        || die "cannot reset worktree $wt to $BASE_SHA"
+    else
+      rm -rf "$wt"
+      git -C "$CWD" worktree add -q --detach "$wt" "$BASE_SHA" \
+        || die "git worktree add failed for unit $uid"
+      # Uninstalled deps make a fresh worktree untestable; link them read-only.
+      # Split on whitespace only — never glob.
+      read -r -a _links <<<"${WISH_WORKTREE_LINK:-node_modules}"
+      for link in "${_links[@]}"; do
+        if [[ -e "$CWD/$link" && ! -e "$wt/$link" ]]; then ln -s "$CWD/$link" "$wt/$link"; fi
+      done
+    fi
+    UNIT_CWD["$uid"]="$wt"
+  done
+  echo "wish-orchestrate: ${#TARGET_UNITS[@]} units → isolated worktrees at ${BASE_SHA:0:12} under $WT_ROOT" >&2
+  echo "wish-orchestrate: nothing is auto-merged — the conductor merges." >&2
+fi
+
 if [[ "$DRY_RUN" != "1" ]]; then
   pids=()
   uid_by_pid=()
@@ -414,7 +462,8 @@ if [[ "$DRY_RUN" != "1" ]]; then
       exec 8>"$UNIT_LOCK"
       flock -n 8 || { echo "wish-orchestrate: unit lock held: $SPEC_ID/$uid" >&2; exit 2; }
       bash "$DISPATCH" \
-        --cwd "$CWD" \
+        --cwd "${UNIT_CWD[$uid]:-$CWD}" \
+        --log-dir "$LOG_DIR" \
         --unit build \
         --effort "$EFFORT" \
         --spec "$SPEC_ID" \
@@ -433,6 +482,17 @@ if [[ "$DRY_RUN" != "1" ]]; then
       fail=1
     fi
   done
+  # Report isolated trees before failing, so a partial wave is still diagnosable.
+  if [[ -n "$WT_ROOT" ]]; then
+    echo "wish-orchestrate: isolated results (merge these yourself):" >&2
+    for uid in "${TARGET_UNITS[@]}"; do
+      wt="${UNIT_CWD[$uid]:-}"
+      [[ -n "$wt" ]] || continue
+      stat="$(git -C "$wt" --no-pager diff --shortstat 2>/dev/null | sed 's/^ *//')"
+      echo "  $uid  ${stat:-(no change)}  $wt" >&2
+    done
+    echo "wish-orchestrate: cleanup → git -C $CWD worktree remove --force <path> (then worktree prune)" >&2
+  fi
   [[ "$fail" == "0" ]] || die "one or more edit-wave dispatches failed"
   for uid in "${TARGET_UNITS[@]}"; do
     rid_file="$LOG_DIR/wish-run-${SPEC_ID}-${uid}.run_id"

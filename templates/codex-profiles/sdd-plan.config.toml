@@ -1,0 +1,6 @@
+# SDD Plan tier. Low frequency, high leverage — worth the flagship.
+# Measured: all three tiers passed the repo's own Plan gate with 0 errors and zero
+# fact-map fabrication, so this is a deliberate quality margin, not a necessity.
+model = "gpt-5.6-sol"
+model_reasoning_effort = "high"
+approval_policy = "never"

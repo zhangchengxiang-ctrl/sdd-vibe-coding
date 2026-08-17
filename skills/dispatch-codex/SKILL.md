@@ -1,7 +1,7 @@
 ---
 name: dispatch-codex
 description: >-
-  Cursor/Claude 指挥侧把完成单元派给 Codex CLI（gpt-5.6-sol × medium/high）。
+  Cursor/Claude 指挥侧把完成单元派给 Codex CLI（Build 默认 gpt-5.6-terra × medium）。
   vibe-coding Build/Repair 轨一律经本 Skill 派发——许愿「确认方案」与经典
   「开始做 / 实现 / Build S1」同样命中；用户明示「派 Codex」亦触发。
   须 Context Pack；一次一个 D（272K 打包，可含多个 A）。
@@ -24,7 +24,8 @@ disable-model-invocation: true
 先读插件 `design-standards/LOAD-MAP.md`；勿在派单里粘贴长合同。
 
 > **档位真源：** Plan → AD-P（2026-07-27）；Build → AD-B（2026-07-28）。  
-> 选用 `gpt-5.6-sol` × medium/high。
+> **档位 = 配额杠杆，非质量杠杆**（三档均过仓内 Plan 门；75 次全钉 Sol 烧穿了配额窗）。
+> 预设在 `$CODEX_HOME/sdd-*.config.toml`，`--profile` 选。
 
 ## 何时用
 
@@ -46,12 +47,11 @@ disable-model-invocation: true
 
 | 完成单元 | 模型 | effort |
 |---|---|---|
-| Plan | `gpt-5.6-sol` | **medium**（默认） |
-| Plan（加码） | `gpt-5.6-sol` | **high**（首派失败、假 Lock 风险高、或用户要求更稳） |
-| Build 单 D | `gpt-5.6-sol` | **medium**（默认）/ high（加码） |
-| Goal | `gpt-5.6-sol` | **high**（仅该 D 已估峰 ≤180K；禁止无预算长跑） |
+| Plan | `gpt-5.6-sol` | **high**（低频高杠杆，值这个钱） |
+| Build 单 D | **`gpt-5.6-terra`** | **medium**（默认） |
+| 机械改（rename / 格式 / 文档同步） | `gpt-5.6-luna` | **low** |
 
-速度口诀：默认 **sol×medium**；翻车或真难再升 **high**。
+口诀：**Build 默认 terra×medium**，真难再升 sol。升档**不**修 Oracle 可执行性（terra×high 3/8 < medium 3/6）——靠机检门。
 
 ## 流程（一次一个 D）
 
@@ -73,29 +73,28 @@ disable-model-invocation: true
    - Build / Goal：先跑 `check_spec`（CLI 包装默认强制）；
    - Build：确认该片 T-xxx 含 success + failure/permission；
    - 缺 Oracle 或 check_spec 未过 → 先走 Plan。
-4. **选定 sol × medium|high** → **经 CLI 包装调用**（参数齐全后再跑）。
+4. **选定档位**（或 `--profile sdd-build`）→ **经 CLI 包装调用**（参数齐全后再跑）。
 5. **验收**（maker ≠ grader）→ 对照仓库 + 证伪；未过则升 effort 再派或指挥侧自做**当前 D**。
 6. **对人交付卡**：目标、结果、证据路径、要你决定（下一 edit-wave / 进 Verify / 授权）。
 
 ## 工具（正路径）
 
-**硬门：** 派发只经下方 CLI；不经 `user-codex` / `CallMcpTool`（`codex` / `codex-reply`）。模型固定 `gpt-5.6-sol`，effort 仅 medium|high。
+**硬门：** 派发只经下方 CLI；不经 `user-codex` / `CallMcpTool`（`codex` / `codex-reply`）。模型 `gpt-5.6-sol|terra|luna`，effort `minimal|low|medium|high|xhigh|max`。
 
 优先顺序：
 
 1. **CLI 包装（默认）**  
    `skills/dispatch-codex/scripts/codex-dispatch.sh`  
    （或 `make codex-dispatch`）— `approval_policy=never` + 墙钟 `timeout` + 默认 JSONL 日志
-2. **裸 `codex exec`**：仅包装脚本缺失时；参数与下方质量门一致，并自带 `timeout`
-3. 皆失败 → 状态 `blocked`，说明缺 `codex` CLI，对人如实说 Blocked
+2. 包装缺失或 `codex` 不在 PATH → 状态 `blocked`，对人如实说。**没有裸命令兜底**（见下）。
 
 ### 必传参数
 
 | 参数 | 值 |
 |---|---|
 | `cwd` / `-C` | 宿主仓根（或约定 worktree） |
-| `model` / `-m` | `gpt-5.6-sol` |
-| `model_reasoning_effort` / config | `medium` 或 `high` |
+| `model` / `-m` | `gpt-5.6-terra`（build 默认）· `gpt-5.6-sol`（plan） |
+| `model_reasoning_effort` / config | `medium`（Build 默认）；或用 `--profile` |
 | `approval-policy` | `never`（脚本写死） |
 | `sandbox` | Plan：`workspace-write`；Build/Goal：`danger-full-access`（默认） |
 
@@ -103,16 +102,26 @@ disable-model-invocation: true
 
 - [ ] 走的是 `codex-dispatch.sh` / `wish-orchestrate.sh` / `make codex-dispatch|wish-orchestrate`
 - [ ] Build：prompt 来自 `build_context_pack.py`（或字段齐全的等价 Pack）
-- [ ] `model` = `gpt-5.6-sol`；effort = medium|high
-- [ ] Build/Goal 的 `sandbox` = `danger-full-access`（或接受脚本默认）
+- [ ] 已跑 `make codex-preflight HOST=…`（trust 登记 / AGENTS 32KiB / profile）
 - [ ] Build/Goal 已过 `check_spec`（或脚本 `--spec`）
 - [ ] Plan：`--spec` + 落盘后 `assert_plan_artifacts`（脚本默认执行）
 - [ ] 片间：`require-conductor-falsify` 且日志为**结构化取证**（`COMMAND`+`EXIT_CODE: 0`+`VERDICT: … PASS`；见 `falsify-attestation.md`）
-- [ ] 一次只一个 D（可含多个 A；估峰 ≤180K）
+- [ ] 多切片必带 `--dispatch-id`（脚本硬拒无界多切片）
 - [ ] prompt **无**合同大段 / tests 全文
 - [ ] 调用勿用会吞失败码的管道（若 `| tee`，须 `set -o pipefail`）
 
 任一项未满足 → 先改参数再调用。
+
+### 失败分类（别把配额当能力）
+
+| meta 字段 / exit | 含义 | 该怎么办 |
+|---|---|---|
+| `failure_class=quota` · exit **75** | 订阅窗口烧穿，**没连上模型**。附 `quota_retry_hint=` | 降档（`--model gpt-5.6-terra\|luna`）或等重置；**不是实现失败，不要改代码** |
+| exit `124`/`137` | 墙钟到点 | 对照仓库产物验收 |
+| `run_state=started` 但无 `run_state=finished` | 进程被杀/崩溃 | 判失败重派；**不得当成功** |
+| jsonl 无 `turn.completed` | 未收尾 | 判失败（所有 unit 通用） |
+
+派发前先跑 `make codex-preflight HOST=<repo>`：查 trust 登记、AGENTS 链 32 KiB 上限、档位 profile。
 
 ### 超时与验收
 
@@ -124,7 +133,7 @@ disable-model-invocation: true
 ### CLI 包装用法
 
 ```bash
-# Plan（默认 15min / workspace-write / medium；必须 --spec；成功后验五件套落盘）
+# Plan（默认 15min / workspace-write / sol×high；必须 --spec；成功后验五件套落盘）
 bash skills/dispatch-codex/scripts/codex-dispatch.sh \
   --cwd <HOST_ROOT> --unit plan --spec <SPEC_ID> -- <<'EOF'
 <薄派单正文>
@@ -163,19 +172,12 @@ EOF
   （见 [`falsify-attestation.md`](./references/falsify-attestation.md)）
 - **wish-orchestrate：** per-spec flock + per-D 锁；edit-wave 内可并行；`PASSED_SLICES`/`PASSED_UNITS` 幂等跳过；`--force-slice` 才重派
 - 墙钟到点会 `SIGTERM`/`SIGKILL` 并 exit `124`——之后对照仓库验收
-- 默认 `--json`：事件写入 `<cwd>/.codex-dispatch-logs/<unit>_<ts>_<pid>.jsonl`（可 `--log-dir` / `--no-json`）
+- `--json` 是**必需**（完成信号=`turn.completed`）；`--no-json` 被拒，除非 `SKIP_TURN_CHECK=1`。日志目录可 `--log-dir`
 - Make：`make codex-dispatch HOST=… UNIT=plan|build|goal PROMPT_FILE=…`（Plan/Build/Goal 传 `SPEC=`；Build 传 `SLICE=`）
 - 离线门闩自检：`bash skills/dispatch-codex/scripts/selftest-gates.sh`
 
-裸 `codex exec` 兜底（仅包装缺失时）：
-
-```bash
-timeout 20m codex exec -C <HOST_ROOT> -s danger-full-access -m gpt-5.6-sol \
-  -c model_reasoning_effort=\"medium\" -c approval_policy=\"never\" \
-  --skip-git-repo-check --json "<薄派单正文>"
-```
-
-记录：model、effort、approval-policy、sandbox、派单时间、单元 ID、dispatch log / meta 路径 → 可选「技术详情」。
+**无裸 `codex exec` 兜底。** 手搓命令会丢掉配额分类、`run_state`、`turn.completed` 判定
+与 worktree 隔离（四个已修失效一次复原）。包装缺失 → `blocked`。
 
 ## 薄派单模板
 
@@ -184,7 +186,7 @@ timeout 20m codex exec -C <HOST_ROOT> -s danger-full-access -m gpt-5.6-sol \
 ```text
 cwd: <HOST_ROOT>
 model: gpt-5.6-sol
-effort: medium
+effort: high
 approval-policy: never
 sandbox: workspace-write
 --spec <SPEC_ID>   # required: postflight assert_plan_artifacts
@@ -235,42 +237,31 @@ DISPATCH_ID=<D1> SLICE_IDS=S1,S2
 每片完成条件=对应 T-xxx 行为证据写入 run.md；遵守 Out of Scope；真阻塞或生产授权则 pause。
 ```
 
-## 验收清单
+## 验收清单（只列派发特有项）
 
-### Plan 通过
+**共有的 Build/Verify 关版判据不在本文件** —— owner 是
+[`rails.md`](../vibe-coding/references/rails.md)（钉 1/2、`oracle-freeze`、红绿证据、
+`verify-deliver`、关版分叉）与 [`verification-loop.md`](../vibe-coding/references/verification-loop.md)（钉 3）。
 
-- [ ] 存在 `docs/specs/<id>/{VERSION,contract,tests,plan,run}.md`（或等价扩展名）
-- [ ] 有 `contract.md`；骨架为上述五件套
-- [ ] `contract.md` 有入口事实映射与 Verified/Unverified
-- [ ] `plan.md` 纵向切片，完成定义链 T-xxx
-- [ ] `tests.md` 每 P0 有完整 Given/When/Then（含 permission）
+### Plan 派发通过
+
+- [ ] 五件套落盘（脚本 postflight `assert_plan_artifacts` 已强制）
 - [ ] 本轮仅 docs/handoff 改动
-- [ ] 落盘后给出能否进入 Build 的批准卡（含新对话 Build 提示词）
+- [ ] 硬门：无 `contract.md` 或仅旧骨架 → 升 effort 重派或指挥侧自做
 
-**硬门（打回）：** 无 `contract.md`，或仅有 context/requirements/tasks/validation/scenario-spec 旧骨架 → 经 CLI 升 `effort=high` 重派或指挥侧自做。
+### Build 派发通过
 
-### Build 通过
+- [ ] diff 落在该 D 的 allowlist（Pack 必填；空 allowlist 不得派）
+- [ ] 多切片必带 `--dispatch-id`；无打包的「整份 Spec」→ 脚本硬拒
+- [ ] jsonl 有 `turn.completed`，meta 有 `run_state=finished`
+- [ ] `failure_class=quota` → 降档或等重置，**不当实现失败处理**
+- [ ] 并行波次：各 unit 落在独立 worktree，主树未被写
 
-- [ ] diff 落在该 D allowlist
-- [ ] **diff 不含** Spec `tests.md`、产品包 `06-acceptance-matrix` 等验收矩阵（钉 2；改 Oracle 须回 Plan）
-- [ ] `run.md` 有 `oracle-freeze: intact` + 红绿证据（或 `N/A · polish|trivial|无自动化`）
-- [ ] `run.md` 记录该片批次；T-xxx 有结果（Evidence 含 `kind=`；禁仅 smoke）
-- [ ] 完成定义以该片行为证据收口（非整份 Spec done，除非 Goal 真做完且证据齐）
-- [ ] **指挥侧证伪**：亲自跑 ≥1 条 falsify（分页两 offset / 排序参数 / 合同 Then）；未跑不算验收通过
-- [ ] 证伪输出经 `record-conductor-falsify`（或等价字段）写入
-      `.codex-dispatch-logs/<run-id>_falsify.log`，且
-      `make require-falsify LOG_DIR=<cwd>/.codex-dispatch-logs RUN_ID=<run-id>` 通过
-- [ ] 未向用户宣称「可交付」（除非已走 Verify + `make verify-deliver` exit 0）
+### Verify 禁派（钉 3 · 收窄）
 
-**Build 派单：** `--slice S1` 或 `S1,S2` / `DISPATCH_ID` / `SLICE_IDS=`。无打包的「整份 Spec」→ 拒绝，禁止 Goal 硬撑。
-
-未过 → 经 CLI 打回派单（具体缺陷一句）或指挥侧自做；对人只报真实验收结论。
-
-### Verify 禁派（钉 3）
-
-- [ ] 未把「验收 / 验到可交付 / 系列 Version Acceptance」派给 Codex 做主验收
+- [ ] Codex **可**做 diff 对冻结 Oracle 的机检与对抗审计（`codex exec -s read-only`）
+- [ ] **关版授权仍只属指挥侧/人**；不得把「验到可交付」整体派出
 - [ ] 若仅派窄命令：墙钟 ≤20min、完成条件=指定命令 stdout；超时=失败
-- [ ] 关版前指挥侧亲自 ≥1 条证伪；可交付前 `make verify-deliver`
 
 ## 对人前台
 

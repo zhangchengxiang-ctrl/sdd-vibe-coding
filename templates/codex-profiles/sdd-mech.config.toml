@@ -1,0 +1,4 @@
+# SDD mechanical tier: renames, formatting, doc sync. Nothing to reason about.
+model = "gpt-5.6-luna"
+model_reasoning_effort = "low"
+approval_policy = "never"

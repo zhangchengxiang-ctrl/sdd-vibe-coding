@@ -1,0 +1,7 @@
+# SDD Build tier. Layered onto the user config with `codex exec -p sdd-build`.
+# Terra, not Sol: tier is a subscription-quota lever. Pinning every dispatch to Sol
+# is what exhausted the credit window (6 of 75 real dispatches died on `usage limit`
+# before reaching the model). Capability was never the constraint.
+model = "gpt-5.6-terra"
+model_reasoning_effort = "medium"
+approval_policy = "never"
