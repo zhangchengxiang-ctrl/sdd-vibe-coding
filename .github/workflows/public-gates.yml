@@ -12,3 +12,13 @@ jobs:
       - uses: actions/checkout@v4
       - name: Public gates (no private evals)
         run: make public-gates
+
+  # Separate job on purpose: adversarial-rot-verify.sh runs public-gates itself, so it
+  # cannot be nested inside the gates job without recursing. A Makefile target only makes
+  # a script reachable — this is what makes it run. 16 attacks, ~20s.
+  adversarial:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Adversarial rot capability tests
+        run: make adversarial-rot

@@ -7,7 +7,7 @@
 	dispatch-live-lifecycle dispatch-live-scenario \
 	phase3-negative eval-live eval-skill-load wish-journey \
 	rot corrections host-drift single-definition orphan-refs gate-cases \
-	i18n-keys adversarial-rot
+	i18n-keys adversarial-rot ship ship-selftest
 
 HOST ?= .
 PROFILE ?= detect
@@ -188,6 +188,17 @@ record-falsify:
 # Offline hard-gate selftest (no Codex): Plan artifacts + structured falsify + wish status.
 dispatch-gates-selftest:
 	bash skills/dispatch-codex/scripts/selftest-gates.sh
+
+# Red-green replay of the frozen Oracles. --from-meta reads the baseline SHA the dispatch
+# recorded, so nobody has to remember which tree predates the change.
+#   make ship HOST=~/code/agentdeck SPEC=my-spec SLICE=S1 BASE=<sha>
+ship:
+	bash skills/dispatch-codex/scripts/ship.sh --host $(HOST) --spec $(SPEC) \
+	  $(if $(SLICE),--slice $(SLICE),) $(if $(BASE),--base $(BASE),) \
+	  $(if $(META),--from-meta $(META),) $(if $(PHASE),--phase $(PHASE),)
+
+ship-selftest:
+	bash skills/dispatch-codex/scripts/selftest-ship.sh
 
 # LIVE selftests: real `codex exec` in an isolated /tmp host. Burn real tokens,
 # need `codex` on PATH + auth, and are the only end-to-end check of dispatch.

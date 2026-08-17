@@ -534,9 +534,12 @@ def check_requirements_unverified(spec_dir: Path, contract: str, report: Report,
     return real
 
 
+# Measured on the real hosts: only `npx` (6, agentdeck) and `python3` (9, here) actually
+# occur, so this list is not speculative coverage — it is the runner's PATH assumption.
+# `node`/`deno` sit here because they are the same runtime as `npx`/`npm`, which do.
 RUNNABLE_HEAD = re.compile(
-    r"^(?:npx|npm|pnpm|yarn|bun|make|bash|sh|zsh|python3?|pytest|vitest|playwright|"
-    r"go|cargo|dotnet|mvn|gradle|docker|curl|psql|\./|/)",
+    r"^(?:npx|npm|pnpm|yarn|bun|node|deno|make|bash|sh|zsh|python3?|pytest|vitest|"
+    r"playwright|go|cargo|dotnet|mvn|gradle|docker|curl|psql|\./|/)",
 )
 NOOP_CMD = re.compile(r"^(?:true|:|exit\s+0|echo|/(?:usr/)?bin/true)\s*;?$")
 LEADING_ENV = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*=\S*\s+")
@@ -616,9 +619,11 @@ def check_p0_oracle_commands(
             # bites where the claim is made instead: you may Build with a referential
             # oracle, you may not close on one.
             (report.fail if closing else report.warn)(
-                f"{spec_dir.name}/tests.md: P0-mapped {tid} 命令 is referential, not "
-                f"executable ({bare[:60]!r}) — the runner cannot run 「同 T-xxx」/"
-                "「S0 确定的…」/「按 xx skill 运行」"
+                f"{spec_dir.name}/tests.md: P0-mapped {tid} 命令 does not start with a "
+                f"runner-executable head ({bare[:60]!r}) — either it is prose the runner "
+                "cannot run (「同 T-xxx」/「S0 确定的…」/「按 xx skill 运行」), or its "
+                "interpreter is missing from RUNNABLE_HEAD in check_spec.py; add the head "
+                "there rather than rewording the Oracle"
             )
 
     for req_text, tids in visible_reqs.items():

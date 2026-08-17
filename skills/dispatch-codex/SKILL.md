@@ -121,14 +121,26 @@ disable-model-invocation: true
 | `run_state=started` 但无 `run_state=finished` | 进程被杀/崩溃 | 判失败重派；**不得当成功** |
 | jsonl 无 `turn.completed` | 未收尾 | 判失败（所有 unit 通用） |
 
-派发前先跑 `make codex-preflight HOST=<repo>`：查 trust 登记、AGENTS 链 32 KiB 上限、档位 profile。
+### 红绿 replay（`ship.sh`）
+
+派发回来后，**由指挥侧**逐条 replay 冻结 Oracle，而不是读 Codex 写的台账：
+
+```bash
+bash skills/dispatch-codex/scripts/ship.sh --host <HOST> --spec <ID> --slice <S1> \
+  --from-meta <LOG_DIR>/<RUN_ID>.meta.txt          # 基线 SHA 由派发时写入 meta
+```
+
+- **先红后绿**：基线就绿 → `nondiscriminating`（功能缺席时也过 ⇒ 什么都没量），且不跑 verify；
+  因缺依赖/二进制而红 → `inconclusive`，不算证据（`--link` 挂依赖重跑）。
+- `人工` Oracle 报 `OWED`：不进 replay 集，不由退出码结案。
+- 取证 `<HOST>/.sdd-evidence/<spec>-<unit>.jsonl`（phase/tree/exit/sha256），`--resume` 续跑。
+  exit 0 全绿 · 1 有判据未过 · 2 拒绝执行。
 
 ### 超时与验收
 
 1. 脚本默认墙钟：Plan **900s** / Build **1200s** / Goal **3600s**（可用 `--timeout` 覆盖）。
 2. exit `124`/`137` → 立刻对照仓库产物验收（diff / Spec / `run.md`）。
 3. 若产物已达完成定义 → 对人结案，注明「派发超时中断，已按仓库验收」。
-4. 进度以仓库变化为准。
 
 ### CLI 包装用法
 
@@ -224,19 +236,6 @@ SPEC_ID=<SPEC_ID>
 各片 T-xxx 行为证据写入 run.md；oracle-freeze: intact；短报告下一 edit-wave。
 ```
 
-### Goal（仅已估峰 ≤180K 的同一 D · 可选）
-
-```text
-cwd: <HOST_ROOT>
-model: gpt-5.6-sol
-effort: high
-approval-policy: never
-sandbox: danger-full-access
-DISPATCH_ID=<D1> SLICE_IDS=S1,S2
-对已打包的 D 做完（估峰 ≤180K）。禁止无预算「剩余切片全做」。
-每片完成条件=对应 T-xxx 行为证据写入 run.md；遵守 Out of Scope；真阻塞或生产授权则 pause。
-```
-
 ## 验收清单（只列派发特有项）
 
 **共有的 Build/Verify 关版判据不在本文件** —— owner 是
@@ -252,10 +251,6 @@ DISPATCH_ID=<D1> SLICE_IDS=S1,S2
 ### Build 派发通过
 
 - [ ] diff 落在该 D 的 allowlist（Pack 必填；空 allowlist 不得派）
-- [ ] 多切片必带 `--dispatch-id`；无打包的「整份 Spec」→ 脚本硬拒
-- [ ] jsonl 有 `turn.completed`，meta 有 `run_state=finished`
-- [ ] `failure_class=quota` → 降档或等重置，**不当实现失败处理**
-- [ ] 并行波次：各 unit 落在独立 worktree，主树未被写
 
 ### Verify 禁派（钉 3 · 收窄）
 

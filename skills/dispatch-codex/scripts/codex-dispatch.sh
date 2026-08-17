@@ -324,6 +324,11 @@ echo "codex-dispatch: RUN_ID=$RUN_ID" >&2
   [[ -n "$DISPATCH_ID" ]] && echo "dispatch_id=$DISPATCH_ID"
   echo "last_message=$LAST_MSG_FILE"
   echo "falsify_log=$LOG_DIR/${RUN_ID}_falsify.log"
+  # HEAD at dispatch time IS the baseline tree: ship.sh needs it to prove each Oracle
+  # RED before the implementation exists. Recording it here keeps the operator out of
+  # the loop — a remembered SHA is not evidence.
+  bsha="$(git -C "$CWD" rev-parse HEAD 2>/dev/null || true)"
+  [[ -n "$bsha" ]] && echo "base_sha=$bsha"
   # Written before the run so a killed dispatch leaves an unambiguous marker instead
   # of a missing field: 9 of 75 real dispatches had no exit_status at all and the
   # conductor could not tell success from a crash.
