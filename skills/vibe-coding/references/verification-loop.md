@@ -49,7 +49,11 @@ Polish / trivial / 无自动化 → `红绿证据: N/A · polish|trivial|无自�
 ### 3. Maker ≠ grader（验收不派 Codex）
 
 - Verify / 系列验收 / 「验到可交付」→ **Cursor/指挥侧**执行；**禁止**派 Codex 做主验收。
-- Codex 最多：矩阵/剧本**草稿**；或 ≤15–20min、完成条件=**指定命令 stdout** 的窄派单；超时=失败。
+- Codex **可以**做机检与对抗审计:`codex exec -s read-only`（＋ `--output-schema` 要结构化结论）
+  拿 diff 对**冻结的** Oracle 核对、找洞。要的是进程隔离，不是换厂商 —— 它只是不能当自己的判官。
+  注意 `codex exec review` **没有** `-s`，别拿它当只读。
+- Codex **不可以**:关版授权、把自己的实现判成 Pass、决定 `可交付`。这些只属指挥侧 / 人。
+- 窄派单仍可用:≤15–20min、完成条件=**指定命令 stdout**；超时=失败。
 - 结案前 **runner 逐条 replay 冻结的 Oracle**：`make verify-deliver HOST=… SPEC=…`。每条 P0 机检
   Oracle 都要有「基线红 + 改后绿」两半;只有绿的那半 → 不过闸。手写取证已删除——它证明的只是有人写了它。
 - `人工`/`manual-only` Oracle runner 关不了：run.md 需 `人工验收：T-xxx · <谁看到了什么>`。

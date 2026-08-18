@@ -4,7 +4,7 @@ description: >-
   Cursor/Claude 指挥侧把完成单元派给 Codex CLI（Build 默认 gpt-5.6-terra × medium）。
   vibe-coding Build/Repair 轨一律经本 Skill 派发——许愿「确认方案」与经典
   「开始做 / 实现 / Build S1」同样命中；用户明示「派 Codex」亦触发。
-  须 Context Pack；一次一个 D（272K 打包，可含多个 A）。
+  须 Context Pack；一次一个切片（A == D）。
   禁止因改文档 / check_spec / 非 SDD 日常请求加载。通道：codex-dispatch.sh / wish-orchestrate.sh。
 disable-model-invocation: true
 ---
@@ -13,7 +13,6 @@ disable-model-invocation: true
 
 本 Skill 只跑在 **Cursor / Claude Code** 指挥侧。先读宿主 `AGENTS.md` 与
 [`gates.md`](../vibe-coding/references/gates.md)（施工通道）、
-[`dispatch-units.md`](./references/dispatch-units.md)、
 [`context-pack.md`](./references/context-pack.md)、
 [`cli-authorization.md`](./references/cli-authorization.md)。
 
@@ -59,18 +58,18 @@ disable-model-invocation: true
    - Plan：产品包 / 已确认方案 → 整份 Spec 落盘；
    - Build：已批准 Spec → `pack_dispatch_units.py` 得到 D（默认第一个未完成 D）；
    - 多 Spec / 多 D：先出 DAG+波次；一聊一个 edit-wave。
-2. **Build 必做打包 + Context Pack**（见 [`dispatch-units.md`](./references/dispatch-units.md)、[`context-pack.md`](./references/context-pack.md)）
+2. **Build 必带 Context Pack**（见 [`context-pack.md`](./references/context-pack.md)）;一个切片 = 一次 exec，不再打包
    ```bash
    python3 skills/dispatch-codex/scripts/pack_dispatch_units.py <HOST> <SPEC_ID> --list
-   python3 skills/dispatch-codex/scripts/build_context_pack.py <HOST> <SPEC_ID> S1,S2 \
+   python3 skills/dispatch-codex/scripts/build_context_pack.py <HOST> <SPEC_ID> S1 \
      > /tmp/pack.txt
    bash skills/dispatch-codex/scripts/wish-orchestrate.sh --cwd <HOST> --spec <SPEC_ID>
    bash skills/dispatch-codex/scripts/wish-orchestrate.sh --cwd <HOST> --spec <SPEC_ID> --slice S1
    ```
-   Pack 含 DISPATCH_ID / SLICE_IDS / allowlist / T-xxx / Done when。  
+   Pack 含 SLICE_ID / allowlist / T-xxx / 冻结 Oracle / Done when。  
    **禁止**手写超长 prompt 替代 Pack；**禁止**空 allowlist。
 3. **预检**
-   - Build / Goal：先跑 `check_spec`（CLI 包装默认强制）；
+   - Build：先跑 `check_spec`（CLI 包装默认强制）；
    - Build：确认该片 T-xxx 含 success + failure/permission；
    - 缺 Oracle 或 check_spec 未过 → 先走 Plan。
 4. **选定档位**（或 `--profile sdd-build`）→ **经 CLI 包装调用**（参数齐全后再跑）。
@@ -96,14 +95,14 @@ disable-model-invocation: true
 | `model` / `-m` | `gpt-5.6-terra`（build 默认）· `gpt-5.6-sol`（plan） |
 | `model_reasoning_effort` / config | `medium`（Build 默认）；或用 `--profile` |
 | `approval-policy` | `never`（脚本写死） |
-| `sandbox` | Plan：`workspace-write`；Build/Goal：`danger-full-access`（默认） |
+| `sandbox` | Plan：`workspace-write`；Build：`danger-full-access`（默认） |
 
 ### CLI 调用前自检
 
 - [ ] 走的是 `codex-dispatch.sh` / `wish-orchestrate.sh` / `make codex-dispatch|wish-orchestrate`
 - [ ] Build：prompt 来自 `build_context_pack.py`（或字段齐全的等价 Pack）
 - [ ] 已跑 `make codex-preflight HOST=…`（trust 登记 / AGENTS 32KiB / profile）
-- [ ] Build/Goal 已过 `check_spec`（或脚本 `--spec`）
+- [ ] Build 已过 `check_spec`（或脚本 `--spec`）
 - [ ] Plan：`--spec` + 落盘后 `assert_plan_artifacts`（脚本默认执行）
 - [ ] 片间：`ship.sh --from-meta <run>.meta.txt` 红绿 replay 过（基线红→改后绿;基线也绿即无效 Oracle）
 - [ ] 多切片必带 `--dispatch-id`（脚本硬拒无界多切片）
@@ -138,7 +137,7 @@ bash skills/dispatch-codex/scripts/ship.sh --host <HOST> --spec <ID> --slice <S1
 
 ### 超时与验收
 
-1. 脚本默认墙钟：Plan **900s** / Build **1200s** / Goal **3600s**（可用 `--timeout` 覆盖）。
+1. 脚本默认墙钟：Plan **900s** / Build **1200s**（可用 `--timeout` 覆盖）。
 2. exit `124`/`137` → 立刻对照仓库产物验收（diff / Spec / `run.md`）。
 3. 若产物已达完成定义 → 对人结案，注明「派发超时中断，已按仓库验收」。
 
@@ -151,14 +150,14 @@ bash skills/dispatch-codex/scripts/codex-dispatch.sh \
 <薄派单正文>
 EOF
 
-# Build 单 D（默认 20min / danger-full-access / medium；可含多个 A）
+# Build 单切片（默认 20min / danger-full-access / medium）
 bash skills/dispatch-codex/scripts/codex-dispatch.sh \
   --cwd <HOST_ROOT> --unit build --effort medium --spec <SPEC_ID> \
-  --slice S1,S2 --dispatch-id D1 -- <<'EOF'
+  --slice S1 -- <<'EOF'
 <薄派单正文 / Context Pack>
 EOF
 
-# Wish edit-wave：一波 D（可并行 1–4）后 exit 3，红绿 replay 过再派下一波。
+# Wish edit-wave：一波切片（可并行 1–4）后 exit 3，红绿 replay 过再派下一波。
 # 下一次调用会自己先跑 replay 门,不需要手动记账。
 bash skills/dispatch-codex/scripts/wish-orchestrate.sh \
   --cwd <HOST_ROOT> --spec <SPEC_ID> --parallel 2
@@ -166,11 +165,6 @@ bash skills/dispatch-codex/scripts/wish-orchestrate.sh \
   --cwd <HOST_ROOT> --spec <SPEC_ID>
 # 状态：wish-orchestrate … --status / --units
 
-# Goal（默认 60min / danger-full-access / high）
-bash skills/dispatch-codex/scripts/codex-dispatch.sh \
-  --cwd <HOST_ROOT> --unit goal --spec <SPEC_ID> -- <<'EOF'
-<薄派单正文>
-EOF
 ```
 
 要点：
@@ -180,10 +174,11 @@ EOF
 - **许愿 Plan：禁止中途「待批准」**；Codex exit 0 但未落盘五件套 → 派发失败（exit 2）
 - **验收靠 replay 不靠手写取证**：`ship.sh --from-meta <meta>` 逐条跑冻结的 Oracle，先证它在该派发
   的 `base_sha` 上是**红**的，改后必须绿。基线也绿 → 判 `nondiscriminating`（该 Oracle 什么都没测）
-- **wish-orchestrate：** per-spec flock + per-D 锁；edit-wave 内可并行；`PASSED_SLICES`/`PASSED_UNITS` 幂等跳过；`--force-slice` 才重派
+- **wish-orchestrate：** per-spec flock + per-切片锁；波次内可并行（依赖 + 编辑锁决定，不再按估峰打包）；`PASSED_SLICES` 幂等跳过；`--force-slice` 才重派
+- **动作计数不是估峰**：meta 记 `actions=`，≥150 警告。实测悬崖 200（≤50 → 3%、51–200 → 64%、200+ → 100% 被压缩）
 - 墙钟到点会 `SIGTERM`/`SIGKILL` 并 exit `124`——之后对照仓库验收
 - `--json` 是**必需**（完成信号=`turn.completed`）；`--no-json` 被拒，除非 `SKIP_TURN_CHECK=1`。日志目录可 `--log-dir`
-- Make：`make codex-dispatch HOST=… UNIT=plan|build|goal PROMPT_FILE=…`（Plan/Build/Goal 传 `SPEC=`；Build 传 `SLICE=`）
+- Make：`make codex-dispatch HOST=… UNIT=plan|build PROMPT_FILE=…`（都传 `SPEC=`；Build 传 `SLICE=`）
 - 离线门闩自检：`bash skills/dispatch-codex/scripts/selftest-gates.sh`
 
 **无裸 `codex exec` 兜底。** 手搓命令会丢掉配额分类、`run_state`、`turn.completed` 判定
@@ -208,23 +203,22 @@ sandbox: workspace-write
 齐套后指挥侧跑 check_spec；许愿路径直接进 Build 编排（经典路径才出批准卡）。
 ```
 
-### Build（单 D · 可含多个 A · **必须用 Context Pack**）
+### Build（一个切片 · **必须用 Context Pack**）
 
 ```bash
-python3 skills/dispatch-codex/scripts/build_context_pack.py <HOST> <SPEC_ID> S1,S2 \
+python3 skills/dispatch-codex/scripts/build_context_pack.py <HOST> <SPEC_ID> S1 \
   | bash skills/dispatch-codex/scripts/codex-dispatch.sh \
-      --cwd <HOST> --unit build --spec <SPEC_ID> --slice S1,S2 --dispatch-id D1 --effort medium
+      --cwd <HOST> --unit build --spec <SPEC_ID> --slice S1 --effort medium
 ```
 
-Pack 已含 DISPATCH_ID / SLICE_IDS / Goal / Context / Constraints / Done when。勿再粘贴 tests 全文。  
-手写兜底（仅 Pack 脚本不可用时）须仍含 `DISPATCH_ID=`、`SLICE_IDS=`、Spec 路径指针、T-xxx、Done when：
+Pack 已含 SLICE_ID / Goal / Context / Constraints / 冻结 Oracle / Done when。勿再粘贴 tests 全文。  
+手写兜底（仅 Pack 脚本不可用时）须仍含 `SLICE_ID=`、Spec 路径指针、T-xxx、Done when：
 
 ```text
-DISPATCH_ID=<D1>
-SLICE_IDS=S1,S2
+SLICE_ID=S1
 SPEC_ID=<SPEC_ID>
 ## Goal
-完成派发单元 <D1>（切片 S1,S2）：<入口一句话>（Oracle：<T-ids>）
+完成切片 S1：<入口一句话>（Oracle：<T-ids>）
 ## Context
 - docs/specs/<SPEC_ID>/{contract,tests,plan,run}.md
 - paths: <3-8 paths>

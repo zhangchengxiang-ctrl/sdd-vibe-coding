@@ -2,7 +2,7 @@
 
 > 写码授权 · 人闸 · 施工通道 · 许愿自动编排。**唯一常驻合同。**  
 > 状态词 → [`states.md`](./states.md)；Build/Verify/Repair 清单 → [`rails.md`](./rails.md)。  
-> A = 纵向切片（Skill `spec`）；D = 一次 Codex exec（[`dispatch-units.md`](../../dispatch-codex/references/dispatch-units.md)）。禁止把 A 焊成 D。
+> A == D:一个纵向切片（Skill `spec`）= 一次 Codex exec。依赖与编辑锁决定波次，不再按估算的 token 峰值打包。
 
 ## 人闸（质量两钉 + 生产另钉）
 
@@ -31,12 +31,12 @@
 
 | 宿主 | 施工方式 |
 |---|---|
-| Cursor / Claude（指挥侧） | **派发**：打包 D → `codex-dispatch.sh` / `wish-orchestrate.sh`；一聊一个 edit-wave |
-| Codex 会话 | 自己实现当前 D；一次 exec = 一个 D（估峰 >180K → 拆 D；禁止 compact 续跑） |
+| Cursor / Claude（指挥侧） | **派发**：`codex-dispatch.sh` / `wish-orchestrate.sh`；一聊一个 edit-wave |
+| Codex 会话 | 实现当前切片；**一次 exec = 一个切片**（A == D；禁止 compact 续跑） |
+| **禁用** | Codex Desktop 交互长会话做交付（实测 >200 动作场次 100% 被压缩;exec 派单 0 场） |
 
 指挥侧例外（仅）：① Polish/trivial (c)；② Repair 小缺口（≤2 文件、不新增行为面）；③ 用户明文「你自己写 / 不用 Codex」。  
-改文档 / `check_spec` / 锁决策 / 验收 → 指挥侧自做。Verify 主验收禁派（[`verification-loop`](./verification-loop.md) 钉 3）。  
-无 `codex` → `blocked`。  
+改文档 / `check_spec` / 锁决策 / 验收 → 指挥侧自做;无 `codex` → `blocked`。Verify 主验收禁派（[`verification-loop`](./verification-loop.md) 钉 3）。  
 **声明派生（机检）：** 「实现完成」→ `dispatch-run-id:` 已完成 jsonl，或 `override: 用户要求自写` / `polish · 用户本轮明示`（裸 polish 无效）
 
 ## 方案确认后的自动编排

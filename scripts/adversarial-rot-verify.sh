@@ -185,7 +185,7 @@ bash skills/dispatch-codex/scripts/codex-dispatch.sh --cwd "$ROOT" --unit build 
 e2=$?
 set -e
 if [[ $e1 -eq 2 && $e2 -eq 2 ]] \
-  && grep -q 'unbounded multi-slice' "$b5log/a.log" \
+  && grep -q 'several slices in one exec' "$b5log/a.log" \
   && grep -q 'build requires --slice' "$b5log/b.log"; then
   ok "B5-dispatch-rejects-unbounded"
 else

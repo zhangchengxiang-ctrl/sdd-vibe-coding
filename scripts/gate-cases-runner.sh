@@ -76,6 +76,16 @@ note(not any((root / p).exists() for p in (
      "falsify-attestation-gone", "no hand-written attestation can stand in for a replay")
 note("record-falsify" not in (root / "Makefile").read_text(encoding="utf-8"),
      "falsify-targets-gone", "the Makefile no longer offers a way to type an attestation")
+# The peak estimator and the A/D split it served. `goal` existed to push a whole Spec through
+# one exec when the packer judged it small enough by a number that was never computable.
+note(not any((root / p).exists() for p in (
+        "skills/dispatch-codex/scripts/pack_dispatch_units.py",
+        "skills/dispatch-codex/scripts/schedule_waves.py",
+        "skills/dispatch-codex/references/dispatch-units.md")),
+     "token-estimator-gone", "no packer can group slices by an estimated token peak")
+note("compact_limit" not in (root / "skills/dispatch-codex/scripts/codex-dispatch.sh").read_text(encoding="utf-8")
+     and "GOAL_APPROVED" not in (root / "skills/dispatch-codex/scripts/codex-dispatch.sh").read_text(encoding="utf-8"),
+     "goal-unit-gone", "the dispatcher has no goal unit and no compaction budget to estimate")
 
 # --- prose claims no longer buy anything: the close action is the gate ---
 run_claim = "- 状态: `acceptance-passed`\n- 是否可以交付: `可交付`\n"

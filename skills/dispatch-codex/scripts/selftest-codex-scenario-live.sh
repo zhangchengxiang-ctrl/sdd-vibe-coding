@@ -11,8 +11,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 FIX="$ROOT/skills/dispatch-codex/fixtures/live-relay"
 CHECK="$ROOT/skills/spec/scripts/check_spec.py"
-PACK="$ROOT/skills/dispatch-codex/scripts/pack_dispatch_units.py"
-SCHED="$ROOT/skills/dispatch-codex/scripts/schedule_waves.py"
+PACK_PY="$ROOT/skills/dispatch-codex/scripts/build_context_pack.py"
 WISH="$ROOT/skills/dispatch-codex/scripts/wish-orchestrate.sh"
 DETECT="$ROOT/skills/dispatch-codex/scripts/detect_compact.py"
 SHIP="$ROOT/skills/dispatch-codex/scripts/ship.sh"
@@ -74,48 +73,24 @@ if [[ "$cs" -ne 0 ]]; then
 fi
 ok "check_spec live-relay"
 
-echo "----- 2) pack A→D + schedule waves -----"
-python3 "$PACK" "$HOST" live-relay --json | tee "$TMP/graph.json"
-python3 "$SCHED" - --edit-parallel 2 <"$TMP/graph.json" | tee "$TMP/waves.json"
+echo "----- 2) schedule slice waves (A == D) -----"
+python3 "$PACK_PY" --waves "$HOST" live-relay --parallel 2 | tee "$TMP/waves.json"
 set +e
-python3 - "$TMP/graph.json" "$TMP/waves.json" <<'PY'
+python3 - "$TMP/waves.json" <<'ASSERT_PY'
 import json, sys
-g = json.load(open(sys.argv[1]))
-w = json.load(open(sys.argv[2]))
-units = {u["id"]: u for u in g["units"]}
-assert not g.get("incomplete_allowlist"), g
-assert not g.get("too_large"), g
-assert set(units) == {"D1", "D2", "D3"}, units.keys()
-# D1 must be merged S1+S2
-d1, d2, d3 = units["D1"], units["D2"], units["D3"]
-assert set(d1["slices"]) == {"S1", "S2"}, d1
-assert d2["slices"] == ["S3"], d2
-assert d3["slices"] == ["S4"], d3
-assert set(d3.get("depends_on_units") or []) == {"D1", "D2"}, d3
-waves = w["edit_waves"]
-assert len(waves) == 2, waves
-assert set(waves[0]) == {"D1", "D2"}, waves
-assert waves[1] == ["D3"] or set(waves[1]) == {"D3"}, waves
-print("pack/schedule assertions ok", {"units": {k: v["slices"] for k,v in units.items()}, "edit_waves": waves})
-PY
-pack_st=$?
-set -e
-[[ "$pack_st" -eq 0 ]] && ok "pack D1={S1,S2} ∥ D2={S3} → D3={S4}" || bad "pack/schedule" "DAG not as designed"
-
-[[ "$fail" -eq 0 ]] || { echo "===== abort before Codex ====="; exit 1; }
-
-LOG="$HOST/.codex-dispatch-logs"
-mkdir -p "$LOG"
-cat >"$LOG/build_20000101T000000Z_1.meta.txt" <<'EOF'
-spec=live-relay
-dispatch_id=D1
-slice=S1
-slices=S1,S2
-exit_status=0
-run_id=POISON_OLD_D1
-EOF
-
-export CODEX_DISPATCH_TIMEOUT_SEC="${CODEX_DISPATCH_TIMEOUT_SEC:-900}"
+w = json.load(open(sys.argv[1]))
+assert not w.get("incomplete_allowlist"), w
+# A slice is the dispatch unit: no packer merges S1+S2 into a D1 any more. S1 and S2 are
+# independent, S3 is independent, S4 depends on both — so wave 1 is capped at --parallel 2 and
+# S4 cannot start until its deps land.
+assert w["slices"] == ["S1", "S2", "S3", "S4"], w
+waves = w["waves"]
+assert all(len(x) <= 2 for x in waves), waves
+assert "S4" not in sum(waves[:-1], []), waves
+flat = sum(waves, [])
+assert sorted(flat) == ["S1", "S2", "S3", "S4"] and len(flat) == 4, waves
+print("wave assertions ok", waves)
+ASSERT_PY
 echo "----- 3) WAVE 1 real Codex (parallel 2) timeout=${CODEX_DISPATCH_TIMEOUT_SEC}s -----"
 t0="$(date +%s)"
 set +e

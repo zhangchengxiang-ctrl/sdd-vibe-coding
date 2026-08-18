@@ -20,6 +20,8 @@
 - 红绿证据: 由 runner 写入 `.sdd-evidence/`（`make verify-deliver HOST=… SPEC=…`）;此行只做人读摘要。
   `N/A · polish|trivial|无自动化` 仅当该 Spec **没有** P0 机检 Oracle——有一条就必须有基线红+改后绿两半
 - 人工验收: `T-xxx · <谁看到了什么>`（`manual-only`/`人工` Oracle 关版必填;runner 关不了它们）
+- 进度: 给人看的叙述。**断点续跑读的是 `.sdd-evidence/` 里的 replay 行**，不是这里。实测一档
+  Codex 把 6 条 Progress 在最后一秒补齐，对续跑等于零。
 
 ## 结果
 

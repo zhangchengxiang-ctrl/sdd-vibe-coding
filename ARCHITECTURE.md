@@ -74,7 +74,7 @@
 - 事实映射门、纵向切片、测试合同门、Plan 流程、**check_spec 机检**（含 `--closing` / oracle-freeze）：只改 `skills/spec/`（含 `scripts/check_spec.py`）
 - Cursor/Claude → Codex 派单与指挥侧验收（禁 Codex 主验收）：只改 `skills/dispatch-codex/`
   （`SKILL.md`；Context Pack：`references/context-pack.md` + `scripts/build_context_pack.py`；
-  许愿波次：`scripts/wish-orchestrate.sh` + `pack_dispatch_units.py` / `schedule_waves.py`（272K D + edit/verify-wave）；
+  许愿波次：`scripts/wish-orchestrate.sh` + `build_context_pack.py --waves`（切片即单元 · 依赖 + 编辑锁）；
   红绿 replay：`scripts/ship.sh`（基线 worktree + 冻结 Oracle + `.sdd-evidence`）；`codex-dispatch.sh`；
   **禁反问授权块：** `references/cli-authorization.md`）
 - 公开 CI 门（无 evals）：`scripts/public-gates.sh` / `make public-gates`

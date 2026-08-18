@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Wish orchestration: pack A→D (272K) → edit-wave Codex Build → verify-wave Oracle replay.
+# Wish orchestration: slice waves (deps + edit lock) → edit-wave Codex Build → Oracle replay.
 #
 # Usage:
 #   bash wish-orchestrate.sh --cwd HOST --spec SPEC_ID [--slice S1] [--effort medium|high]
@@ -79,13 +79,10 @@ CWD="$(cd "$CWD" && pwd)"
 
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 PACK_PY="$PLUGIN_ROOT/skills/dispatch-codex/scripts/build_context_pack.py"
-PACK_UNITS="$PLUGIN_ROOT/skills/dispatch-codex/scripts/pack_dispatch_units.py"
-SCHEDULE="$PLUGIN_ROOT/skills/dispatch-codex/scripts/schedule_waves.py"
 DISPATCH="$PLUGIN_ROOT/skills/dispatch-codex/scripts/codex-dispatch.sh"
 DETECT="$PLUGIN_ROOT/skills/dispatch-codex/scripts/detect_compact.py"
 SHIP="$PLUGIN_ROOT/skills/dispatch-codex/scripts/ship.sh"
 [[ -f "$PACK_PY" ]] || die "missing $PACK_PY"
-[[ -f "$PACK_UNITS" ]] || die "missing $PACK_UNITS"
 [[ -f "$DISPATCH" ]] || die "missing $DISPATCH"
 [[ -f "$SHIP" ]] || die "missing $SHIP"
 
@@ -94,17 +91,21 @@ if [[ "$LIST" == "1" ]]; then
   exit 0
 fi
 
+# A == D: a slice IS the dispatch unit, so --units and --list answer the same question. The
+# flag stays because scripts and muscle memory use it.
 if [[ "$UNITS" == "1" ]]; then
-  python3 "$PACK_UNITS" "$CWD" "$SPEC_ID" --list
+  python3 "$PACK_PY" "$CWD" "$SPEC_ID" --list
   exit 0
 fi
 
 mapfile -t SLICES < <(python3 "$PACK_PY" "$CWD" "$SPEC_ID" --list)
 [[ ${#SLICES[@]} -gt 0 ]] || die "no slices in plan.md for $SPEC_ID"
 
-GRAPH_JSON="$(python3 "$PACK_UNITS" "$CWD" "$SPEC_ID" --json)" || die "pack_dispatch_units failed"
-WAVES_JSON="$(printf '%s\n' "$GRAPH_JSON" | python3 "$SCHEDULE" - --edit-parallel "$PARALLEL")" \
-  || die "schedule_waves failed"
+# Dependency order + edit-lock, over slices. What this replaced: a packer that grouped slices
+# into 272K units by an estimated token peak, and a scheduler over those units. The estimate
+# was not computable; the ordering and the lock are, and they live with the slice-table parser.
+WAVES_JSON="$(python3 "$PACK_PY" --waves "$CWD" "$SPEC_ID" --parallel "$PARALLEL")" \
+  || die "cannot schedule slices for $SPEC_ID (see above)"
 
 LOG_DIR="${CODEX_DISPATCH_LOG_DIR:-$CWD/.codex-dispatch-logs}"
 mkdir -p "$LOG_DIR"
@@ -186,53 +187,26 @@ unit_already_passed() {
   esac
 }
 
-unit_slices() {
-  local uid="$1"
-  python3 - "$GRAPH_JSON" "$uid" <<'PY'
+# A == D, so a unit's slice list is the unit itself. Kept as a function because the call sites
+# read as "the slices in this unit", which is still the right question — the answer is just one.
+unit_slices() { printf '%s\n' "$1"; }
+
+waves_field() {   # $1 = top-level key in the waves JSON
+  python3 - "$WAVES_JSON" "$1" <<'PY'
 import json, sys
-g = json.loads(sys.argv[1])
-uid = sys.argv[2]
-for u in g["units"]:
-    if u["id"] == uid:
-        print(" ".join(u["slices"]))
-        break
+w = json.loads(sys.argv[1])
+v = w.get(sys.argv[2]) or []
+print(" ".join(v if all(isinstance(x, str) for x in v) else []))
 PY
 }
 
-unit_field() {
-  local uid="$1" field="$2"
-  python3 - "$GRAPH_JSON" "$uid" "$field" <<'PY'
-import json, sys
-g = json.loads(sys.argv[1])
-uid, field = sys.argv[2], sys.argv[3]
-for u in g["units"]:
-    if u["id"] == uid:
-        v = u.get(field)
-        if isinstance(v, list):
-            print(",".join(str(x) for x in v))
-        elif v is True:
-            print("1")
-        elif v is False or v is None:
-            print("")
-        else:
-            print(v)
-        break
-PY
-}
-
-all_unit_ids() {
-  python3 - "$GRAPH_JSON" <<'PY'
-import json, sys
-g = json.loads(sys.argv[1])
-print(" ".join(u["id"] for u in g["units"]))
-PY
-}
+all_unit_ids() { waves_field slices; }
 
 edit_waves() {
   python3 - "$WAVES_JSON" <<'PY'
 import json, sys
 w = json.loads(sys.argv[1])
-for wave in w.get("edit_waves") or []:
+for wave in w.get("waves") or []:
     print(" ".join(wave))
 PY
 }
@@ -321,24 +295,14 @@ fi
 echo "wish-orchestrate: host=$CWD spec=$SPEC_ID correlation=$CORRELATION_ID effort=$EFFORT parallel=$PARALLEL" >&2
 echo "wish-orchestrate: units=$(all_unit_ids)" >&2
 
-incomplete="$(python3 - "$GRAPH_JSON" <<'PY'
-import json, sys
-g = json.loads(sys.argv[1])
-print(" ".join(g.get("incomplete_allowlist") or []))
-PY
-)"
-too_large="$(python3 - "$GRAPH_JSON" <<'PY'
-import json, sys
-g = json.loads(sys.argv[1])
-print(" ".join(g.get("too_large") or []))
-PY
-)"
+incomplete="$(waves_field incomplete_allowlist)"
 if [[ -n "$incomplete" && "$PACK_ONLY" != "1" && "$DRY_RUN" != "1" ]]; then
-  die "incomplete allowlist on units: $incomplete (plan.md 触及路径 required)"
+  die "incomplete allowlist on slices: $incomplete (plan.md 触及路径 required)"
 fi
-if [[ -n "$too_large" && "$PACK_ONLY" != "1" && "$DRY_RUN" != "1" ]]; then
-  die "units exceed 180K window: $too_large — split allowlist / Spec; do not Goal-hard-撑"
-fi
+# The "unit exceeds the 180K window" refusal went with the estimator that computed it. That
+# number predicted a peak nobody was measured crossing: across 342 real codex_exec sessions
+# zero passed the compaction cliff, while every Desktop session over 200 agent actions did.
+# Compaction is detected from the jsonl now, not predicted from a formula.
 
 enforce_prior_replay
 load_state
@@ -347,8 +311,9 @@ load_state
 TARGET_UNITS=()
 if [[ -n "$SLICE_ID" ]]; then
   first="$(echo "$SLICE_ID" | tr ',' ' ' | awk '{print $1}')"
-  uid="$(python3 "$PACK_UNITS" "$CWD" "$SPEC_ID" --slice "$first" | awk '{print $1}')"
-  [[ -n "$uid" ]] || die "no dispatch unit contains slice $first"
+  uid="$first"
+  grep -qx "$uid" <<<"$(printf '%s\n' "${SLICES[@]}")" \
+    || die "slice $uid is not in $SPEC_ID/plan.md (have: ${SLICES[*]})"
   TARGET_UNITS=("$uid")
 else
   while IFS= read -r wave; do
@@ -401,9 +366,8 @@ declare -A UNIT_SLICE_CSV
 for uid in "${TARGET_UNITS[@]}"; do
   members="$(unit_slices "$uid")"
   csv="$(echo "$members" | tr ' ' ',')"
-  allow="$(unit_field "$uid" writes)"
-  if [[ -z "$allow" && "$DRY_RUN" != "1" ]]; then
-    die "unit $uid has empty allowlist"
+  if [[ "$DRY_RUN" != "1" ]] && grep -qw "$uid" <<<"$(waves_field incomplete_allowlist)"; then
+    die "slice $uid has an empty 触及路径 — a pack without an allowlist lets Codex wander"
   fi
   echo "wish-orchestrate: === pack unit=$uid slices=$csv ===" >&2
   pack_file="$PACK_DIR/${SPEC_ID}_${uid}_$(date -u +%Y%m%dT%H%M%SZ).txt"

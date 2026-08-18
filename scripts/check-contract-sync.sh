@@ -34,14 +34,11 @@ for _sk in design spec testing deploy debug dispatch-codex; do
 done
 
 # --- dispatch / orchestration assets ---
-test -f "$ROOT/skills/dispatch-codex/scripts/pack_dispatch_units.py" \
-  && ok "pack-dispatch-units" || bad "pack-dispatch-units" "missing"
-test -f "$ROOT/skills/dispatch-codex/scripts/schedule_waves.py" \
-  && ok "schedule-waves" || bad "schedule-waves" "missing"
 test -f "$ROOT/skills/dispatch-codex/scripts/detect_compact.py" \
   && ok "detect-compact" || bad "detect-compact" "missing"
-test -f "$ROOT/skills/dispatch-codex/references/dispatch-units.md" \
-  && ok "dispatch-units-doc" || bad "dispatch-units-doc" "missing"
+# A == D: the slice table is the unit list, so the scheduler lives with its parser.
+python3 "$ROOT/skills/dispatch-codex/scripts/build_context_pack.py" --help 2>&1 | grep -q -- --waves \
+  && ok "slice-wave-scheduler" || bad "slice-wave-scheduler" "build_context_pack has no --waves"
 test -f "$ROOT/scripts/verify-deliver.sh" \
   && ok "close-gate-script" || bad "close-gate-script" "missing"
 test -f "$ROOT/skills/dispatch-codex/scripts/wish-orchestrate.sh" \

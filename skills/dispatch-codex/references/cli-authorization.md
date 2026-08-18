@@ -1,6 +1,6 @@
 # CLI 派发授权块
 
-> `codex-dispatch.sh` 对 **plan|build|goal** 一律把下列正文**前置**注入 prompt。  
+> `codex-dispatch.sh` 对 **plan|build** 一律把下列正文**前置**注入 prompt。  
 > 改条文时同步改 `scripts/codex-dispatch.sh` 内 `AUTH_BLOCK`。
 
 ## 为何需要

@@ -60,6 +60,7 @@ def scan(path: Path) -> dict:
 
     turn_started = False
     turn_completed = False
+    actions = 0
     usage = None
     compact_events: list[str] = []
     last_agent = ""
@@ -87,6 +88,12 @@ def scan(path: Path) -> dict:
             if raw in COMPACT_TYPES or leaf in COMPACT_TYPES:
                 compact_events.append(n)
         item = obj.get("item") if isinstance(obj.get("item"), dict) else {}
+        # Budget by what can be counted, not by a predicted token peak. Measured across 720
+        # real sessions: at <=50 agent actions 3% were compacted, at 51-200 it was 64%, and
+        # past 200 it was 100%. The estimator that this replaces predicted a peak nobody was
+        # observed crossing — 342 codex_exec sessions, zero over the cliff.
+        if obj.get("type") == "item.completed":
+            actions += 1
         if (
             obj.get("type") == "item.completed"
             and item.get("type") == "agent_message"
@@ -103,6 +110,8 @@ def scan(path: Path) -> dict:
         "turn_completed": turn_completed,
         "compact_events": compact_events,
         "usage": usage,
+        "actions": actions,
+        "action_zone": ("safe" if actions <= 50 else "risky" if actions <= 200 else "past-cliff"),
         "last_agent_chars": len(last_agent),
         "log": str(path),
     }
@@ -111,6 +120,12 @@ def scan(path: Path) -> dict:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("log")
+    ap.add_argument(
+        "--max-actions",
+        type=int,
+        default=0,
+        help="exit 3 when the run exceeded this many agent actions (0 = report only)",
+    )
     ap.add_argument(
         "--require-turn",
         action="store_true",
@@ -126,6 +141,10 @@ def main() -> None:
         raise SystemExit(1)
     if args.require_turn and not result.get("turn_completed"):
         raise SystemExit(1)
+    if args.max_actions and result.get("actions", 0) > args.max_actions:
+        # A distinct code: the turn finished, so this is not a failed dispatch — it is a unit
+        # that should have been split, and the next one must be smaller.
+        raise SystemExit(3)
     raise SystemExit(0)
 
 

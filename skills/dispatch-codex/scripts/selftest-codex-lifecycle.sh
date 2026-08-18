@@ -7,7 +7,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 DISPATCH="$ROOT/skills/dispatch-codex/scripts/codex-dispatch.sh"
 WISH="$ROOT/skills/dispatch-codex/scripts/wish-orchestrate.sh"
 DETECT="$ROOT/skills/dispatch-codex/scripts/detect_compact.py"
-PACK_UNITS="$ROOT/skills/dispatch-codex/scripts/pack_dispatch_units.py"
+PACK_PY="$ROOT/skills/dispatch-codex/scripts/build_context_pack.py"
 
 TMP="$(mktemp -d "${TMPDIR:-/tmp}/sdd-codex-life.XXXXXX")"
 cleanup() { rm -rf "$TMP"; }
@@ -259,6 +259,39 @@ if [[ -n "${rid:-}" && -f "$LOG1/${rid}.meta.txt" ]]; then
   fi
 fi
 
+# --- T1d: the dispatch records how many agent actions the run took ---------------
+# Budget by a count, not by a predicted token peak: the meta carries `actions=` so the
+# conductor can see it approached the compaction cliff and split the next unit.
+if [[ -n "${rid:-}" && -f "$LOG1/${rid}.meta.txt" ]]; then
+  # Non-zero on purpose: a counter that always reports 0 would satisfy `actions=[0-9]`.
+  if ! grep -qE '^actions=[1-9][0-9]*$' "$LOG1/${rid}.meta.txt"; then
+    FAIL "t1d-actions-recorded" "meta lacks a non-zero actions= ($(grep '^actions=' "$LOG1/${rid}.meta.txt" || echo none))"
+  else
+    PASS "t1d-actions-recorded"
+  fi
+fi
+
+# --- T1e: multi-slice is refused outright, --dispatch-id no longer buys it ------
+# One real dispatch went out as slices=S2,S4,S3,S5 and died at the wall clock. That was legal
+# then, because a --dispatch-id stood for a packed unit. A == D removed the packing, so the
+# escape went with it.
+set +e
+bash "$DISPATCH" --cwd "$HOST1" --unit build --spec cpx --slice S1,S2 --dispatch-id D9 \
+  --log-dir "$LOG1" --timeout 20 -- $'DISPATCH_ID=D9\nSLICE_IDS=S1,S2\n## Goal\ntwo at once\n' \
+  >"$TMP/t1e.out" 2>"$TMP/t1e.err"
+st_multi=$?
+bash "$DISPATCH" --cwd "$HOST1" --unit goal --spec cpx --log-dir "$LOG1" --timeout 20 -- \
+  $'## Goal\nwhole spec\n' >"$TMP/t1e2.out" 2>"$TMP/t1e2.err"
+st_goal=$?
+set -e
+if [[ "$st_multi" -ne 2 ]] || ! grep -q 'one slice per exec' "$TMP/t1e.err"; then
+  FAIL "t1e-multi-slice-refused" "exit=$st_multi $(tail -1 "$TMP/t1e.err" | head -c 90)"
+elif [[ "$st_goal" -ne 2 ]] || ! grep -q 'unit goal is gone' "$TMP/t1e2.err"; then
+  FAIL "t1e-goal-unit-gone" "exit=$st_goal $(tail -1 "$TMP/t1e2.err" | head -c 90)"
+else
+  PASS "t1e-multi-slice-and-goal-refused"
+fi
+
 # --- T2: process exit 0 without turn.completed must fail ---
 HOST2="$TMP/host-noturn"
 mkdir -p "$HOST2/docs/specs/cpx" "$HOST2/src"
@@ -383,9 +416,10 @@ cat >"$HOSTM/docs/specs/m1/plan.md" <<'EOF'
 | S3 | c | T-003 | src/foo.ts | S1 | oracle:unit |
 EOF
 fill_spec "$HOSTM/docs/specs/m1"
-units_json="$(python3 "$PACK_UNITS" "$HOSTM" m1 --json)"
-unit_n="$(printf '%s' "$units_json" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)["units"]))')"
-[[ "$unit_n" == "1" ]] || FAIL "t6-pack-merged" "units=$unit_n want=1"
+# A == D: three slices on one file are three units in three waves, not one merged unit.
+waves_json="$(python3 "$PACK_PY" --waves "$HOSTM" m1 --parallel 2 2>/dev/null)"
+wave_shape="$(printf '%s' "$waves_json" | python3 -c 'import json,sys; print([len(x) for x in json.load(sys.stdin)["waves"]])')"
+[[ "$wave_shape" == "[1, 1, 1]" ]] || FAIL "t6-edit-lock-serialises" "waves=$wave_shape want=[1, 1, 1]"
 export MOCK_CODEX_MODE=complete
 export MOCK_CODEX_SLEEP=0
 : >"$MOCK_DIR/invocations.log"
@@ -448,8 +482,9 @@ set -e
 t1="$(date +%s%N)"
 elapsed_ms=$(( (t1 - t0) / 1000000 ))
 inv_n="$(grep -c '^start_ns=' "$MOCK_DIR/invocations.log" || true)"
-r1="$HOSTP/.codex-dispatch-logs/wish-run-p1-D1.run_id"
-r2="$HOSTP/.codex-dispatch-logs/wish-run-p1-D2.run_id"
+# A == D: the per-dispatch run-id file is keyed by the slice, not by a packed unit id.
+r1="$HOSTP/.codex-dispatch-logs/wish-run-p1-S1.run_id"
+r2="$HOSTP/.codex-dispatch-logs/wish-run-p1-S2.run_id"
 state="$HOSTP/.codex-dispatch-logs/wish-state-p1.env"
 
 overlap=0

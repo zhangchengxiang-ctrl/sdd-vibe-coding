@@ -26,7 +26,7 @@ construction|skills/dispatch-codex/SKILL.md|施工通道
 human_gates||方案闸|验收闸|Deploy P4
 states||acceptance-passed|awaiting-human-acceptance|close-spec
 rails||Oracle 冻结|oracle-freeze
-dispatch_unit|skills/dispatch-codex/SKILL.md,skills/dispatch-codex/references/dispatch-units.md|派发单元|272K
+dispatch_unit|skills/dispatch-codex/SKILL.md|派发单元
 material_polish|skills/vibe-coding/references/design-standards/change-control.md|\bmaterial\b
 project_kind|templates/.cursor/rules/sdd-vibe-entry.mdc,skills/vibe-coding/references/project-kind.md|project\.kind
 evidence_kind|skills/vibe-coding/references/evidence-contract.md|Evidence Kind|Deliver Gate

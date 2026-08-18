@@ -136,8 +136,7 @@ CORRELATION_ID=w1-test
 SPEC_ID=w1
 EOF
 
-PACK_UNITS="$ROOT/skills/dispatch-codex/scripts/pack_dispatch_units.py"
-SCHEDULE="$ROOT/skills/dispatch-codex/scripts/schedule_waves.py"
+PACK_PY="$ROOT/skills/dispatch-codex/scripts/build_context_pack.py"
 DETECT="$ROOT/skills/dispatch-codex/scripts/detect_compact.py"
 
 HOSTM="$TMP/mergehost"
@@ -150,10 +149,14 @@ cat >"$HOSTM/docs/specs/m1/plan.md" <<'EOF'
 | S3 | c | T-003 | src/foo.ts | S1 | oracle:unit |
 EOF
 fill_spec "$HOSTM/docs/specs/m1"
-assert_merge() {
-  python3 "$PACK_UNITS" "$HOSTM" m1 --json | python3 -c 'import json,sys; g=json.load(sys.stdin); assert len(g["units"])==1, g; assert g["units"][0]["slices"]==["S1","S2","S3"], g'
+# Three slices, one file. The packer used to merge them into a single 272K unit; now they stay
+# three dispatch units and the edit lock puts each in its own wave — dispatching two of them in
+# parallel would have their worktrees collide on src/foo.ts at merge.
+assert_same_file_serial() {
+  python3 "$PACK_PY" --waves "$HOSTM" m1 --parallel 3 \
+    | python3 -c 'import json,sys; w=json.load(sys.stdin)["waves"]; assert [len(x) for x in w]==[1,1,1], w'
 }
-check "pack-merge-same-writes" 0 assert_merge
+check "waves-same-file-serialised" 0 assert_same_file_serial
 
 HOSTP="$TMP/parhost"
 mkdir -p "$HOSTP/docs/specs/p1"
@@ -167,9 +170,30 @@ cat >"$HOSTP/docs/specs/p1/plan.md" <<'EOF'
 EOF
 fill_spec "$HOSTP/docs/specs/p1"
 assert_parallel() {
-  python3 "$SCHEDULE" --host "$HOSTP" --spec p1 --edit-parallel 2 | python3 -c 'import json,sys; w=json.load(sys.stdin); assert set(w["edit_waves"][0])=={"D1","D2"}, w'
+  python3 "$PACK_PY" --waves "$HOSTP" p1 --parallel 2 \
+    | python3 -c 'import json,sys; w=json.load(sys.stdin); assert set(w["waves"][0])=={"S1","S2"}, w'
 }
-check "schedule-edit-parallel" 0 assert_parallel
+check "waves-independent-parallel" 0 assert_parallel
+
+# Dependency order, isolated from the edit lock. It has to be a TRANSITIVE chain: for a direct
+# dependency the lock's own "does this wave contain something I depend on" test already keeps
+# the pair apart, so a two-slice probe stays green with the readiness filter deleted. S3 -> S2
+# -> S1 on three different files is what the readiness filter alone decides.
+HOSTD="$TMP/dephost"
+mkdir -p "$HOSTD/docs/specs/d1" "$HOSTD/src"
+echo a >"$HOSTD/src/one.ts"; echo b >"$HOSTD/src/two.ts"; echo c >"$HOSTD/src/three.ts"
+cat >"$HOSTD/docs/specs/d1/plan.md" <<'EOF'
+| 切片 ID | 入口 | 完成定义（链 T-xxx） | 触及路径 | 依赖 | 备注 |
+| S1 | a | T-001 | src/one.ts | | oracle:unit |
+| S2 | b | T-002 | src/two.ts | S1 | oracle:unit |
+| S3 | c | T-003 | src/three.ts | S2 | oracle:unit |
+EOF
+fill_spec "$HOSTD/docs/specs/d1"
+assert_dep_order() {
+  python3 "$PACK_PY" --waves "$HOSTD" d1 --parallel 3 \
+    | python3 -c 'import json,sys; w=json.load(sys.stdin)["waves"]; assert w==[["S1"],["S2"],["S3"]], w'
+}
+check "waves-transitive-dependency-order" 0 assert_dep_order
 
 HOSTL="$TMP/labhost"
 mkdir -p "$HOSTL/docs/specs/l1" "$HOSTL/src/a" "$HOSTL/src/b"
@@ -181,10 +205,38 @@ cat >"$HOSTL/docs/specs/l1/plan.md" <<'EOF'
 | S2 | b | T-002 | src/b/y.ts | | oracle:lab claims:kind-datagate |
 EOF
 fill_spec "$HOSTL/docs/specs/l1"
-assert_lab_serial() {
-  python3 "$SCHEDULE" --host "$HOSTL" --spec l1 --edit-parallel 2 | python3 -c 'import json,sys; w=json.load(sys.stdin); assert all(len(v)==1 for v in w["verify_waves"]), w'
+# The verify_waves half of the old scheduler, which serialised slices sharing a `claims:` lab
+# resource, is gone rather than ported: grep found exactly one consumer — this probe. It was
+# computed on every run and no dispatch path ever read it, so it scheduled nothing. If lab
+# contention needs serialising, it needs a dispatch path first.
+
+# --- action counting replaces the token peak estimate --------------------------
+# 720 real sessions: <=50 agent actions -> 3% compacted, 51-200 -> 64%, 200+ -> 100%. The
+# estimator this replaces predicted a peak that 342 codex_exec sessions never crossed.
+mk_actions() {   # $1 = count, $2 = out path
+  python3 - "$1" "$2" <<'ACT_PY'
+import json, sys
+n, out = int(sys.argv[1]), sys.argv[2]
+rows = ['{"type":"turn.started"}']
+rows += [json.dumps({"type": "item.completed", "item": {"type": "command_execution"}})
+         for _ in range(n)]
+rows.append('{"type":"turn.completed"}')
+open(out, "w", encoding="utf-8").write("\n".join(rows) + "\n")
+ACT_PY
 }
-check "schedule-verify-serial-lab" 0 assert_lab_serial
+mk_actions 160 "$TMP/acts-160.jsonl"
+mk_actions 10 "$TMP/acts-10.jsonl"
+count_is() { python3 "$DETECT" --require-turn "$2" | grep -q "\"actions\": $1,"; }
+check "detect-counts-actions" 0 count_is 160 "$TMP/acts-160.jsonl"
+zone_is() { python3 "$DETECT" --require-turn "$2" | grep -q "\"action_zone\": \"$1\""; }
+check "detect-action-zone-safe" 0 zone_is safe "$TMP/acts-10.jsonl"
+check "detect-action-zone-risky" 0 zone_is risky "$TMP/acts-160.jsonl"
+# exit 3, not 1: the turn finished, so this is a unit that should have been split rather than
+# a failed dispatch, and the two must not be reported as the same thing.
+check "detect-action-budget-exit3" 3 \
+  python3 "$DETECT" --require-turn --max-actions 150 "$TMP/acts-160.jsonl"
+check "detect-action-budget-under" 0 \
+  python3 "$DETECT" --require-turn --max-actions 150 "$TMP/acts-10.jsonl"
 
 echo '{"type":"item","item":{"type":"agent_message","text":"ok"}}' >"$TMP/clean.jsonl"
 check "detect-compact-clean" 0 python3 "$DETECT" "$TMP/clean.jsonl"

@@ -5,7 +5,7 @@
 
 ## 何时出哪种包
 
-先读宿主 `AGENTS.md` 的 `Default UI surface` / `用户可见页面验收`，再读本 Spec `oracle_kind`（见 [`dispatch-units.md`](../../dispatch-codex/references/dispatch-units.md)）。
+先读宿主 `AGENTS.md` 的 `Default UI surface` / `用户可见页面验收`，再读本 Spec 切片行的 `oracle:` 备注。
 
 | 条件 | 产出 | 关版 |
 |---|---|---|

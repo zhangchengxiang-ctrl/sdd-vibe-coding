@@ -20,7 +20,7 @@ Cursor 另经 `make install-cursor` 投影 **`~/.cursor/rules/sdd-*.mdc`** 作�
 | 你这样说 | 体系做什么 | 不会做什么 |
 |----------|------------|------------|
 | 「我希望…」「我想要…」 | **产品方案**：澄清并请你确认 | 不改业务代码 |
-| 「就按这个做」「确认方案」 | **半自动研发**：拆 Spec、272K 打包 D、edit-wave Codex、证伪、走查 | 无 UI 不把你当 CI；不上生产 |
+| 「就按这个做」「确认方案」 | **半自动研发**：拆 Spec、按依赖分波、edit-wave Codex、红绿 replay、走查 | 无 UI 不把你当 CI；不上生产 |
 | 「按这个方向拆解」「准备实施」 | **Plan**（经典）：整份 Spec 执行合同 | 不在规划对话编码 |
 | 「开始做」「实施这个 Spec」 | **Build**：按完成单元实现 | 不静默扩大 Scope、不宣称可交付 |
 | 「polish」「按 refinement 修」 | **Polish**：非 material 前端小改 | 不改导航/权限/主路径 |
@@ -66,7 +66,7 @@ make install         # 推荐：有 CLI 的端都装；缺则 SKIP
 | `make check-spec HOST=/path/to/repo SPEC=id` | Spec 静态门（事实映射 / tests / 架构节 / run 诚实性） | Plan 齐套后、派 Build 前 |
 | `make verify-deliver HOST=/path SPEC=id` | Verify 关版门（`check_spec --closing`） | 宣称可交付 / prod-smoke 通过前 |
 | `make preflight-rail HOST=/path` | Shape 写码闸（业务 dirty 无授权则失败） | 讨论/设计会话自检 |
-| `make codex-dispatch HOST=/path UNIT=plan\|build\|goal PROMPT_FILE=…` | 派 Codex（never + 墙钟；Build 需 `SPEC=`+`SLICE=`；Goal 需 `GOAL_APPROVED=1`） | 指挥侧外包有界单元 |
+| `make codex-dispatch HOST=/path UNIT=plan\|build PROMPT_FILE=…` | 派 Codex（never + 墙钟；Build 需 `SPEC=`+`SLICE=`;一次一个切片） | 指挥侧外包有界单元 |
 | `make ship HOST=… SPEC=… META=…` | 红绿 replay：冻结 Oracle 在派发基线上必红、改后必绿 | Codex Build 返回后、下一片前 |
 | `make wish-journey HOST=. SPEC=id …` | 磁盘旅程相位 | 许愿半自动可恢复 |
 | `make gate-cases` | 91 例门强度回测目录 + live 探针 | 改门后回归 |

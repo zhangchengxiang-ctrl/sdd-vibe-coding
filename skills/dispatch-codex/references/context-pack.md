@@ -1,7 +1,7 @@
 # Context Pack（Codex Build 上下文包）
 
-> 给 **272K 窗口** Codex 的 Outcome-first 派单载荷。真源：OpenAI Codex Best practices  
-> （Goal · Context · Constraints · Done when）+ [`dispatch-units.md`](./dispatch-units.md)。  
+> 给 Codex 的 Outcome-first 派单载荷。真源：OpenAI Codex Best practices  
+> （Goal · Context · Constraints · Done when）。一个切片 = 一个派发单元。  
 > 生成：`skills/dispatch-codex/scripts/build_context_pack.py`（可一次多 A）。  
 > 打包：`pack_dispatch_units.py`。派发：`codex-dispatch.sh --unit build` / `wish-orchestrate.sh`。
 
@@ -28,7 +28,7 @@ Codex 有效窗约 258K，过线会 **auto-compact**（有损）。指挥侧不�
 
 1. **Build 派 Codex 必须带 Pack**（由 `build_context_pack.py` 生成或等价字段齐全）。  
 2. Pack **禁止**内嵌：`tests.md` 全文、design-standards 长文、无关模块源码。  
-3. 一次 Pack = **一个 D**（可含多个 `SLICE_IDS`）。无 `DISPATCH_ID`/`SLICE_IDS` 的「整份 Spec / 全部切片」→ 拒绝。Goal 仅当该 D 估峰 ≤180K。  
+3. 一次 Pack = **一个切片**（A == D）。多切片一次 exec → 拒绝;整份 Spec 交给 wish-orchestrate 分波。  
 4. **allowlist 必填**；空触及路径 = 不合格 Pack，不得派。  
 5. 指挥侧验收：对照仓库 + verify-wave **红绿 replay**（钉 3）：`ship.sh --from-meta <run>.meta.txt`。  
    replay 不得挡住下一个编辑锁不冲突的 edit-wave。  

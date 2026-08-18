@@ -4,34 +4,34 @@
 #
 # Usage:
 #   bash skills/dispatch-codex/scripts/codex-dispatch.sh \
-#     --cwd /path/to/host --unit plan|build|goal -- [prompt...]
+#     --cwd /path/to/host --unit plan|build -- [prompt...]
 #   echo "$PROMPT" | bash …/codex-dispatch.sh --cwd … --unit build
 #
 # Env overrides:
-#   CODEX_DISPATCH_TIMEOUT_SEC   default: plan=900, build=1200, goal=3600
+#   CODEX_DISPATCH_TIMEOUT_SEC   default: plan=900, build=1200
 #   CODEX_DISPATCH_MODEL         default: gpt-5.6-sol
-#   CODEX_DISPATCH_EFFORT        default: medium (goal→high)
+#   CODEX_DISPATCH_EFFORT        default: medium
 #   CODEX_DISPATCH_SANDBOX       default: plan=workspace-write, else danger-full-access
 #   CODEX_DISPATCH_LOG_DIR       default: <cwd>/.codex-dispatch-logs
 set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: codex-dispatch.sh --cwd DIR --unit plan|build|goal [options] [-- PROMPT]
+Usage: codex-dispatch.sh --cwd DIR --unit plan|build [options] [-- PROMPT]
 
 Required:
   --cwd DIR              Host repo root (Codex -C)
-  --unit plan|build|goal Completion unit (sets timeout/sandbox/effort defaults)
+  --unit plan|build      Completion unit (sets timeout/sandbox/effort defaults)
 
 Options:
-  --effort LEVEL         minimal|low|medium|high|xhigh|max (default: medium; goal→high)
+  --effort LEVEL         minimal|low|medium|high|xhigh|max (default: medium)
   --model NAME           gpt-5.6-sol|terra|luna
                          (default: build/audit→terra, else sol — tier is a quota lever)
   --profile NAME         Codex config profile (-p NAME); tier presets live in
                          $CODEX_HOME/<name>.config.toml, not in this script
   --sandbox MODE         read-only|workspace-write|danger-full-access
   --timeout SEC          Wall clock limit (kills process on expiry)
-  --spec ID              Spec id under SDD docs/specs (required for build/goal unless SKIP)
+  --spec ID              Spec id under SDD docs/specs (required for build unless SKIP)
   --slice ID             Build: slice or comma list S1,S2 (one dispatch unit)
   --dispatch-id ID       Optional D id (also accept DISPATCH_ID= in prompt)
   --run-id-file PATH     Write RUN_ID here as soon as it is assigned (no log scan)
@@ -44,10 +44,9 @@ Prompt: remaining args after --, or stdin if no args.
 Always sets approval_policy=never (cannot be overridden).
 Plan: injects wish-path hard gates (no mid-flow 待批准); requires --spec;
   after Codex ok runs assert_plan_artifacts.py (SKIP_PLAN_ARTIFACT_CHECK=1 bypass).
-Build/Goal runs skills/spec/scripts/check_spec.py first (SKIP_SPEC_CHECK=1 to bypass).
-Build: one dispatch unit (may contain multiple A slices packed under 272K).
-Unbounded "整份 Spec" without DISPATCH_ID/SLICE_IDS → fail (do not Goal-hard-撑).
-Goal: requires env GOAL_APPROVED=1.
+Build runs skills/spec/scripts/check_spec.py first (SKIP_SPEC_CHECK=1 to bypass).
+Build: one dispatch unit == one plan.md slice (A == D).
+Several slices in one exec → fail. A == D: one slice per exec.
 After Build ok: the conductor replays the frozen Oracles (ship.sh --from-meta <meta>).
 EOF
 }
@@ -102,10 +101,14 @@ done
 [[ -d "$CWD" ]] || die "cwd is not a directory: $CWD"
 CWD="$(cd "$CWD" && pwd)"
 
-[[ -n "$UNIT" ]] || die "--unit plan|build|goal is required"
+[[ -n "$UNIT" ]] || die "--unit plan|build is required"
 case "$UNIT" in
-  plan|build|goal) ;;
-  *) die "--unit must be plan|build|goal (got: $UNIT)" ;;
+  plan|build) ;;
+  # `goal` is gone: it existed so a whole Spec could be pushed through one exec when the
+  # packer judged it small enough by an estimated token peak. A == D now — one slice, one
+  # exec — and the estimate was never computable in the first place.
+  goal) die "--unit goal is gone (A == D): dispatch one slice per exec with --unit build --slice S<n>" ;;
+  *) die "--unit must be plan|build (got: $UNIT)" ;;
 esac
 
 # Tier is a subscription-quota lever, not a quality lever. Rejecting the cheaper
@@ -124,12 +127,10 @@ case "$MODEL" in
     ;;
 esac
 
+# One default tier for every unit: the `goal` unit that wanted `high` is gone, and escalating
+# effort was measured to make Oracle executability worse (3/6 at medium vs 3/8 at high).
 if [[ -z "$EFFORT" ]]; then
-  if [[ "$UNIT" == "goal" ]]; then
-    EFFORT="${CODEX_DISPATCH_EFFORT:-high}"
-  else
-    EFFORT="${CODEX_DISPATCH_EFFORT:-medium}"
-  fi
+  EFFORT="${CODEX_DISPATCH_EFFORT:-medium}"
 fi
 case "$EFFORT" in
   minimal|low|medium|high|xhigh|max) ;;
@@ -159,7 +160,6 @@ if [[ -z "$TIMEOUT_SEC" ]]; then
     case "$UNIT" in
       plan) TIMEOUT_SEC=900 ;;
       build) TIMEOUT_SEC=1200 ;;
-      goal) TIMEOUT_SEC=3600 ;;
     esac
   fi
 fi
@@ -211,10 +211,6 @@ ${PLAN_PREAMBLE}"
 fi
 
 # --- Unit / slice gates ---
-if [[ "$UNIT" == "goal" && "${GOAL_APPROVED:-0}" != "1" ]]; then
-  die "goal requires GOAL_APPROVED=1 (user asked for continuous multi-slice / full Spec Goal)"
-fi
-
 if [[ "$UNIT" == "plan" ]]; then
   if [[ -z "$SPEC_ID" && "${SKIP_PLAN_ARTIFACT_CHECK:-0}" != "1" ]]; then
     die "plan requires --spec <id> so post-dispatch artifact check can run (or SKIP_PLAN_ARTIFACT_CHECK=1)"
@@ -235,7 +231,8 @@ if [[ "$UNIT" == "build" ]]; then
   fi
   if [[ "$packed" != "1" ]] && echo "$PROMPT" | grep -Eiq \
     '剩余切片|all[[:space:]]+slices|全部切片|整份[[:space:]]*Spec[[:space:]]*(做完|完成)|multiple[[:space:]]+slices|多片连做|S1[[:space:]]*[|｜,/][[:space:]]*S2|S2[[:space:]]*[~～-][[:space:]]*S[0-9]'; then
-    die "unbounded multi-slice without DISPATCH_ID/SLICE_IDS — pack into a 272K dispatch unit first (do not Goal-hard-撑)"
+    die "this prompt asks for several slices in one exec — A == D: dispatch one slice per \
+exec with --slice S<n>, and let wish-orchestrate wave them"
   fi
   if [[ -z "$SLICE_ID" ]]; then
     if echo "$PROMPT" | grep -Eqi 'SLICE_ID[[:space:]]*=[[:space:]]*[[:alnum:]_.-]+'; then
@@ -254,8 +251,12 @@ if [[ "$UNIT" == "build" ]]; then
       || die "malformed slice token '$tok' in --slice '$SLICE_ID'"
   done
   slice_n="$(printf '%s' "$SLICE_ID" | tr ',' '\n' | grep -c '[^[:space:]]' || true)"
-  if [[ "${slice_n:-0}" -gt 1 && -z "$DISPATCH_ID" ]]; then
-    die "multi-slice dispatch ($SLICE_ID) needs an explicit --dispatch-id from packing; refuse to send $slice_n slices as one unbounded unit"
+  # A == D, so there is no packed unit for a --dispatch-id to name any more. Multi-slice used
+  # to be allowed with one, which is how slices=S2,S4,S3,S5 went out and timed out at the wall
+  # (p90 across all 75 real dispatches equalled the timeout ceiling). One slice, one exec.
+  if [[ "${slice_n:-0}" -gt 1 ]]; then
+    die "multi-slice dispatch ($SLICE_ID) is refused: A == D means one slice per exec. Dispatch \
+them separately, or run wish-orchestrate --parallel N to wave them with the edit lock applied"
   fi
   if [[ -n "$SLICE_ID" ]] && ! echo "$PROMPT" | grep -Eqi "SLICE_ID[[:space:]]*=|SLICE_IDS[[:space:]]*=|${SLICE_ID%%,*}"; then
     PROMPT="SLICE_ID=${SLICE_ID}
@@ -264,16 +265,16 @@ ${PROMPT}"
   echo "codex-dispatch: build slice=${SLICE_ID:-?} dispatch_id=${DISPATCH_ID:-}" >&2
 fi
 
-# --- Spec static gate (Build/Goal) ---
+# --- Spec static gate (Build) ---
 PLUGIN_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 CHECK_SPEC="$PLUGIN_ROOT/skills/spec/scripts/check_spec.py"
-if [[ "$UNIT" == "build" || "$UNIT" == "goal" ]]; then
+if [[ "$UNIT" == "build" ]]; then
   if [[ "${SKIP_SPEC_CHECK:-0}" == "1" ]]; then
     echo "codex-dispatch: WARN SKIP_SPEC_CHECK=1 — maintainer-only bypass; never in user sessions" >&2
   else
     [[ -f "$CHECK_SPEC" ]] || die "check_spec.py not found at $CHECK_SPEC"
     if [[ -z "$SPEC_ID" ]]; then
-      die "build/goal requires --spec <id> (or CODEX_DISPATCH_SPEC); refuse dispatch without Spec gate"
+      die "build requires --spec <id> (or CODEX_DISPATCH_SPEC); refuse dispatch without Spec gate"
     fi
     echo "codex-dispatch: preflight check_spec ($SPEC_ID)" >&2
     if ! python3 "$CHECK_SPEC" "$CWD" "$SPEC_ID" --skip-agents; then
@@ -476,9 +477,21 @@ DETECT_COMPACT="$PLUGIN_ROOT/skills/dispatch-codex/scripts/detect_compact.py"
 if [[ "$JSON" == "1" ]] \
   && [[ -f "$DETECT_COMPACT" ]] && [[ -f "$LOG_FILE" ]]; then
   set +e
-  python3 "$DETECT_COMPACT" --require-turn "$LOG_FILE"
+  inspect_json="$(python3 "$DETECT_COMPACT" --require-turn "$LOG_FILE")"
   inspect_rc=$?
   set -e
+  printf '%s\n' "$inspect_json"
+  acts="$(printf '%s' "$inspect_json" | python3 -c 'import json,sys
+try: print(json.load(sys.stdin).get("actions", 0))
+except Exception: print(0)' 2>/dev/null || echo 0)"
+  echo "actions=$acts" >>"$META_FILE"
+  # Detection, not prediction: 720 real sessions put the compaction cliff at 200 agent
+  # actions (<=50 -> 3%, 51-200 -> 64%, 200+ -> 100%). 150 is the shoulder to stop at.
+  if [[ "$acts" =~ ^[0-9]+$ ]] && [[ "$acts" -ge 150 ]]; then
+    echo "codex-dispatch: WARN this unit took $acts agent actions; the compaction cliff is 200." >&2
+    echo "  Split the next dispatch unit — do not push a bigger one through." >&2
+    echo "action_budget=over-shoulder" >>"$META_FILE"
+  fi
   if [[ "$inspect_rc" -ne 0 ]]; then
     echo "codex-dispatch: Codex jsonl did not finish cleanly (need turn.completed, no compact event) log=$LOG_FILE" >&2
     echo "exit_status=2" >>"$META_FILE"
@@ -488,9 +501,8 @@ if [[ "$JSON" == "1" ]] \
 fi
 
 echo "codex-dispatch: ok; meta=$META_FILE" >&2
-if [[ "$UNIT" == "build" || "$UNIT" == "goal" ]]; then
+if [[ "$UNIT" == "build" ]]; then
   echo "codex-dispatch: NEXT — replay the frozen Oracles on this dispatch's baseline" >&2
-  echo "codex-dispatch: log must contain a line: VERDICT: ${SLICE_ID%%,*} PASS" >&2
   echo "codex-dispatch: then: bash skills/dispatch-codex/scripts/ship.sh --host $CWD${SPEC_ID:+ --spec $SPEC_ID}${SLICE_ID:+ --slice $SLICE_ID} --from-meta $META_FILE" >&2
 fi
 exit 0

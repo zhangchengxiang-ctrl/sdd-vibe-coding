@@ -435,6 +435,56 @@ Deps: {pack['deps'] or 'n/a'}
 """
 
 
+def slice_waves(
+    rows: list[dict[str, str]], parallel: int = 1
+) -> tuple[list[list[str]], dict[str, list[str]], list[str]]:
+    """Dependency-ordered waves of slices. Returns (waves, unknown deps, cycle members).
+
+    A slice IS the dispatch unit. What used to compute this was a 344-line packer that grouped
+    slices into 272K "units" by estimated token peak, plus a 143-line scheduler over those
+    units. The estimate was never computable — measured across 342 codex_exec sessions, not one
+    crossed the compaction cliff — but two things that scheduler decided are real and stay:
+    a slice cannot start before the slices it depends on, and two slices touching the same
+    paths cannot run in the same wave or their worktrees collide when merged back.
+    """
+    items = []
+    for r in rows:
+        deps = [d for d in re.split(r"[,\s、/;]+", r.get("deps", "") or "") if d]
+        items.append({
+            "id": r["slice_id"],
+            "paths": set(extract_paths(r.get("paths_raw", ""), r.get("note", ""))),
+            "deps": deps,
+        })
+    known = {i["id"] for i in items}
+    # A dep naming a slice that does not exist is a Plan typo. Reported, but not allowed to
+    # deadlock the wish: waiting forever on S9 that was never written is worse than starting.
+    unknown = {i["id"]: [d for d in i["deps"] if d not in known] for i in items}
+    unknown = {k: v for k, v in unknown.items() if v}
+    cap = max(1, parallel)
+    done: set[str] = set()
+    waves: list[list[str]] = []
+    while True:
+        pending = [i for i in items if i["id"] not in done]
+        if not pending:
+            return waves, unknown, []
+        ready = [i for i in pending
+                 if all(d in done for d in i["deps"] if d in known)]
+        if not ready:
+            return waves, unknown, [i["id"] for i in pending]
+        wave: list[dict] = []
+        for i in ready:
+            if len(wave) >= cap:
+                break
+            if any(i["paths"] & w["paths"] or i["id"] in w["deps"] or w["id"] in i["deps"]
+                   for w in wave):
+                continue
+            wave.append(i)
+        if not wave:                     # everything left conflicts: serialise rather than stall
+            wave = [ready[0]]
+        waves.append([i["id"] for i in wave])
+        done.update(i["id"] for i in wave)
+
+
 def refuse_invalid(oracles: list[dict[str, str]]) -> None:
     """The throat: neither a payload nor a replay may claim an Oracle it cannot execute."""
     bad = [o for o in oracles if o.get("kind") == "invalid"]
@@ -457,6 +507,10 @@ def main() -> None:
     ap.add_argument("--json", action="store_true", help="emit pack as JSON")
     ap.add_argument("--oracles-all", action="store_true",
                     help="emit every P0-mapped Oracle for the whole Spec (closing replay)")
+    ap.add_argument("--waves", action="store_true",
+                    help="emit dependency-ordered slice waves as JSON (a slice IS the unit)")
+    ap.add_argument("--parallel", type=int, default=1,
+                    help="max slices per wave for --waves (edit-lock still applies)")
     args = ap.parse_args()
 
     host = Path(args.host).resolve()
@@ -475,6 +529,21 @@ def main() -> None:
     if args.list:
         for r in rows:
             print(r["slice_id"])
+        return
+
+    if args.waves:
+        waves, unknown, cycle = slice_waves(rows, args.parallel)
+        incomplete = [r["slice_id"] for r in rows
+                      if not extract_paths(r.get("paths_raw", ""), r.get("note", ""))]
+        for sid, bad in sorted(unknown.items()):
+            print(f"build_context_pack: WARN {sid} depends on {', '.join(bad)}, which no slice "
+                  "row defines — scheduled as if unblocked; fix plan.md", file=sys.stderr)
+        if cycle:
+            die(f"slice dependencies form a cycle among {', '.join(sorted(cycle))} — "
+                "a plan that cannot be ordered cannot be dispatched", 2)
+        json.dump({"slices": [r["slice_id"] for r in rows], "waves": waves,
+                   "incomplete_allowlist": incomplete},
+                  sys.stdout, ensure_ascii=False)
         return
 
     if args.oracles_all:
