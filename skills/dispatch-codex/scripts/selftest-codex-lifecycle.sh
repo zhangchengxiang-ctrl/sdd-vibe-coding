@@ -239,6 +239,26 @@ else
   fi
 fi
 
+# --- T1c: the dispatch must freeze the Oracle text it is judging against ---------
+# tests.md stays writable for the whole dispatch, so ship.sh replaying "whatever tests.md
+# says now" lets the implementer swap in a command that is red on the baseline for an
+# unrelated reason. The freeze lives next to the meta and the digest is recorded there.
+if [[ -n "${rid:-}" && -f "$LOG1/${rid}.meta.txt" ]]; then
+  frz="$(sed -n 's/^oracles_file=//p' "$LOG1/${rid}.meta.txt" | head -1)"
+  frz_sha="$(sed -n 's/^oracles_sha256=//p' "$LOG1/${rid}.meta.txt" | head -1)"
+  if [[ -z "$frz" ]]; then
+    FAIL "t1c-oracle-frozen" "meta has no oracles_file= — ship.sh would re-read tests.md"
+  elif [[ ! -s "$frz" ]]; then
+    FAIL "t1c-oracle-freeze-exists" "oracles_file=$frz is missing or empty"
+  elif [[ "$(LC_ALL=C sort "$frz" | sha256sum | cut -d' ' -f1)" != "$frz_sha" ]]; then
+    FAIL "t1c-oracle-freeze-digest" "oracles_sha256 does not match $frz"
+  elif ! grep -qP '^T-001\tmachine\tbash -c true$' "$frz"; then
+    FAIL "t1c-oracle-freeze-content" "froze $(head -1 "$frz") — expected id/kind/cmd for T-001"
+  else
+    PASS "t1c-oracle-frozen-with-digest"
+  fi
+fi
+
 # --- T2: process exit 0 without turn.completed must fail ---
 HOST2="$TMP/host-noturn"
 mkdir -p "$HOST2/docs/specs/cpx" "$HOST2/src"

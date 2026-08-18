@@ -62,6 +62,36 @@ write_tests() {   # host cmd
     printf '### 自动化\n\n- 命令：`%s`\n- 预期 Evidence Kind：`unit`\n' "$cmd"
   } >"$h/docs/specs/s1/tests.md"
 }
+# The baseline now travels in the dispatch meta, so the fixtures must use the real path
+# rather than hand-passing --base: that is what production does, and the custody checks
+# below only exist on this route.
+mk_meta() {   # host base_sha [frozen-oracles-tsv] → prints the meta path
+  local h="$1" b="$2" frz="${3:-}" d="$1/.codex-dispatch-logs" m
+  mkdir -p "$d"
+  m="$d/run-$((++META_N)).meta.txt"
+  { printf 'run_id=r%s\nbase_sha=%s\nrun_state=finished\n' "$META_N" "$b"
+    if [[ -n "$frz" ]]; then
+      printf 'oracles_file=%s\noracles_sha256=%s\n' \
+        "$frz" "$(LC_ALL=C sort "$frz" | sha256sum | cut -d' ' -f1)"
+    fi
+  } >"$m"
+  printf '%s' "$m"
+}
+META_N=0
+freeze_of() {   # host slice → writes the frozen tsv the dispatch would have written
+  local h="$1" sl="$2" out
+  out="$h/.codex-dispatch-logs/frozen-$sl.tsv"   # separate statement: `local a=$1 b=$a`
+                                                # expands b before a is assigned
+  mkdir -p "$(dirname "$out")"
+  python3 "$ROOT/skills/dispatch-codex/scripts/build_context_pack.py" --json "$h" s1 "$sl" \
+    | python3 -c '
+import json, sys
+for o in json.load(sys.stdin).get("oracles", []):
+    print("\t".join([o.get("id",""), o.get("kind",""), o.get("cmd","").strip("`").strip()]))
+' >"$out"
+  printf '%s' "$out"
+}
+
 implement() {   # host — the change under test
   echo IMPLEMENTED >"$1/src/feature.txt"
   git -C "$1" add -A
@@ -74,7 +104,7 @@ mk_host "$H" "$GOOD_CMD"
 BASE="$(git -C "$H" rev-parse HEAD)"
 implement "$H"
 
-check "ship-red-then-green" 0 bash "$SHIP" --host "$H" --spec s1 --slice S1 --base "$BASE"
+check "ship-red-then-green" 0 bash "$SHIP" --host "$H" --spec s1 --slice S1 --from-meta "$(mk_meta "$H" "$BASE")"
 saw "ship-reports-baseline-red" 'OK +T-001 baseline RED'
 saw "ship-reports-verify-green" 'OK +T-001 verify GREEN'
 
@@ -99,7 +129,7 @@ H2="$TMP/h2"
 mk_host "$H2" 'bash -c true'
 BASE2="$(git -C "$H2" rev-parse HEAD)"
 implement "$H2"
-check "ship-nondiscriminating-fails" 1 bash "$SHIP" --host "$H2" --spec s1 --slice S1 --base "$BASE2"
+check "ship-nondiscriminating-fails" 1 bash "$SHIP" --host "$H2" --spec s1 --slice S1 --from-meta "$(mk_meta "$H2" "$BASE2")"
 saw "ship-names-nondiscriminating" 'baseline GREEN.*measures nothing'
 saw "ship-skips-verify-without-red" 'SKIP +T-001 verify'
 
@@ -108,14 +138,14 @@ H3="$TMP/h3"
 mk_host "$H3" './no-such-binary-here --run'
 BASE3="$(git -C "$H3" rev-parse HEAD)"
 implement "$H3"
-check "ship-env-red-fails" 1 bash "$SHIP" --host "$H3" --spec s1 --slice S1 --base "$BASE3"
+check "ship-env-red-fails" 1 bash "$SHIP" --host "$H3" --spec s1 --slice S1 --from-meta "$(mk_meta "$H3" "$BASE3")"
 saw "ship-names-env-red" 'red for the wrong reason'
 
 H3b="$TMP/h3b"
 mk_host "$H3b" 'node -e "require(\"nope-not-installed-anywhere\")"'
 BASE3b="$(git -C "$H3b" rev-parse HEAD)"
 implement "$H3b"
-check "ship-missing-module-fails" 1 bash "$SHIP" --host "$H3b" --spec s1 --slice S1 --base "$BASE3b"
+check "ship-missing-module-fails" 1 bash "$SHIP" --host "$H3b" --spec s1 --slice S1 --from-meta "$(mk_meta "$H3b" "$BASE3b")"
 saw "ship-names-missing-module" 'red for the wrong reason'
 
 # --- the judge must predate the work (maker != grader) -----------------------
@@ -130,7 +160,7 @@ mkdir -p "$H7/tests"
 printf '#!/usr/bin/env bash\nexit 0\n' >"$H7/tests/new.test.sh"
 git -C "$H7" add -A
 git -C "$H7" commit -qm "implementer writes its own judge"
-check "ship-missing-judge-fails" 1 bash "$SHIP" --host "$H7" --spec s1 --slice S1 --base "$BASE7"
+check "ship-missing-judge-fails" 1 bash "$SHIP" --host "$H7" --spec s1 --slice S1 --from-meta "$(mk_meta "$H7" "$BASE7")"
 saw "ship-names-maker-grader" 'judge does not exist yet|maker'
 
 # No false positive: the same command when the test predates the change.
@@ -142,14 +172,14 @@ git -C "$H8" add -A
 git -C "$H8" commit -qm "judge exists at baseline"
 BASE8="$(git -C "$H8" rev-parse HEAD)"
 implement "$H8"
-check "ship-existing-judge-passes" 0 bash "$SHIP" --host "$H8" --spec s1 --slice S1 --base "$BASE8"
+check "ship-existing-judge-passes" 0 bash "$SHIP" --host "$H8" --spec s1 --slice S1 --from-meta "$(mk_meta "$H8" "$BASE8")"
 
 # An output path is not a judge: `--out dist/report.json` must not trip the check.
 H9="$TMP/h9"
 mk_host "$H9" 'bash -c "mkdir -p dist && grep -q IMPLEMENTED src/feature.txt && printf ok > dist/report.json"'
 BASE9="$(git -C "$H9" rev-parse HEAD)"
 implement "$H9"
-check "ship-output-path-is-not-a-judge" 0 bash "$SHIP" --host "$H9" --spec s1 --slice S1 --base "$BASE9"
+check "ship-output-path-is-not-a-judge" 0 bash "$SHIP" --host "$H9" --spec s1 --slice S1 --from-meta "$(mk_meta "$H9" "$BASE9")"
 
 # --- refusals ---------------------------------------------------------------
 check "ship-refuses-without-base" 2 bash "$SHIP" --host "$H" --spec s1 --slice S1
@@ -159,18 +189,18 @@ NG="$TMP/nongit"
 mkdir -p "$NG/src"
 cp -r "$H/docs" "$NG/docs"
 echo IMPLEMENTED >"$NG/src/feature.txt"
-check "ship-refuses-non-git" 2 bash "$SHIP" --host "$NG" --spec s1 --slice S1 --base "$BASE"
+check "ship-refuses-non-git" 2 bash "$SHIP" --host "$NG" --spec s1 --slice S1 --from-meta "$(mk_meta "$NG" "$BASE")"
 
 H4="$TMP/h4"
 mk_host "$H4" '同 T-002。'
 BASE4="$(git -C "$H4" rev-parse HEAD)"
-check "ship-refuses-referential" 2 bash "$SHIP" --host "$H4" --spec s1 --slice S1 --base "$BASE4"
+check "ship-refuses-referential" 2 bash "$SHIP" --host "$H4" --spec s1 --slice S1 --from-meta "$(mk_meta "$H4" "$BASE4")"
 saw "ship-defers-to-throat" 'dispatch throat refuses|does not start with a runner-executable'
 
 H5="$TMP/h5"
 mk_host "$H5" 'human'
 BASE5="$(git -C "$H5" rev-parse HEAD)"
-check "ship-refuses-all-human" 2 bash "$SHIP" --host "$H5" --spec s1 --slice S1 --base "$BASE5"
+check "ship-refuses-all-human" 2 bash "$SHIP" --host "$H5" --spec s1 --slice S1 --from-meta "$(mk_meta "$H5" "$BASE5")"
 saw "ship-explains-all-human" 'nothing for the runner to replay'
 
 # --- verify-only must announce that it is not red-green ----------------------
@@ -178,7 +208,7 @@ check "ship-verify-only-runs" 0 bash "$SHIP" --host "$H" --spec s1 --slice S1 --
 saw "ship-verify-only-warns" 'NOT red-green evidence'
 
 # --- resume skips what the same tree already witnessed -----------------------
-check "ship-resume" 0 bash "$SHIP" --host "$H" --spec s1 --slice S1 --base "$BASE" --resume
+check "ship-resume" 0 bash "$SHIP" --host "$H" --spec s1 --slice S1 --from-meta "$(mk_meta "$H" "$BASE")" --resume
 saw "ship-resume-skips" 'SKIP +T-001 (baseline|verify) \(already witnessed'
 
 # --- a broken implementation must fail verify, not be reported green ---------
@@ -188,16 +218,156 @@ BASE6="$(git -C "$H6" rev-parse HEAD)"
 echo STILL_TODO >"$H6/src/feature.txt"
 git -C "$H6" add -A
 git -C "$H6" commit -qm "claims done, is not"
-check "ship-catches-unimplemented" 1 bash "$SHIP" --host "$H6" --spec s1 --slice S1 --base "$BASE6"
+check "ship-catches-unimplemented" 1 bash "$SHIP" --host "$H6" --spec s1 --slice S1 --from-meta "$(mk_meta "$H6" "$BASE6")"
 saw "ship-names-verify-failure" 'FAIL +T-001 verify exit'
 
 # --- --from-meta reads the baseline the dispatch recorded --------------------
-META="$TMP/dispatch.meta.txt"
-printf 'run_id=x\nbase_sha=%s\nrun_state=finished\n' "$BASE" >"$META"
+META="$(mk_meta "$H" "$BASE")"
 check "ship-from-meta" 0 bash "$SHIP" --host "$H" --spec s1 --slice S1 --from-meta "$META"
-printf 'run_id=x\nrun_state=finished\n' >"$TMP/nobase.meta.txt"
-check "ship-refuses-meta-without-base" 2 \
-  bash "$SHIP" --host "$H" --spec s1 --slice S1 --from-meta "$TMP/nobase.meta.txt"
+mkdir -p "$H/.codex-dispatch-logs"
+printf 'run_id=x\nrun_state=finished\n' >"$H/.codex-dispatch-logs/nobase.meta.txt"
+check "ship-refuses-meta-without-base" 2 bash "$SHIP" --host "$H" --spec s1 --slice S1 \
+  --from-meta "$H/.codex-dispatch-logs/nobase.meta.txt"
+
+# --- baseline custody: the judged party may not choose its own baseline -------
+# Scenario the review handed us: --base pointing at a tree that already contains the feature
+# turns red→green into a formality. A meta is also just a file, so its location must be the
+# dispatcher's log dir, and --base may not quietly overrule what the dispatch recorded.
+check "ship-refuses-bare-base" 2 bash "$SHIP" --host "$H" --spec s1 --slice S1 --base "$BASE"
+saw "ship-explains-bare-base" 'lets the judged party pick its own baseline'
+check "ship-manual-base-with-optin" 0 env SHIP_ALLOW_MANUAL_BASE=1 \
+  bash "$SHIP" --host "$H" --spec s1 --slice S1 --base "$BASE"
+prov_ok() {   # the opt-in must leave a mark, or nobody downstream can tell
+  grep -q '"base_provenance": *"manual-unverified"' "$H/.sdd-evidence/s1-S1.jsonl"
+}
+check "ship-records-manual-provenance" 0 prov_ok
+
+printf 'run_id=x\nbase_sha=%s\n' "$BASE" >"$TMP/elsewhere.meta.txt"
+check "ship-refuses-meta-outside-log-dir" 2 bash "$SHIP" --host "$H" --spec s1 --slice S1 \
+  --from-meta "$TMP/elsewhere.meta.txt"
+saw "ship-explains-meta-location" 'must live in a .codex-dispatch-logs dir'
+
+HEADSHA="$(git -C "$H" rev-parse HEAD)"
+check "ship-refuses-base-contradicting-meta" 2 bash "$SHIP" --host "$H" --spec s1 --slice S1 \
+  --from-meta "$META" --base "$HEADSHA"
+saw "ship-explains-base-conflict" "contradicts base_sha"
+
+# --- the Oracle must be the frozen one, not whatever tests.md says now --------
+# Attack from the review: after dispatch, rewrite the Oracle to `bash -c '[ -d .git ]'`.
+# A detached worktree has .git as a FILE, the host has it as a directory, so that command is
+# red on the baseline and green in the host while never touching the feature.
+HD="$TMP/hdrift"
+mk_host "$HD" "$GOOD_CMD"
+BASED="$(git -C "$HD" rev-parse HEAD)"
+FRZ="$(freeze_of "$HD" S1)"
+MD="$(mk_meta "$HD" "$BASED" "$FRZ")"
+implement "$HD"
+check "ship-frozen-oracle-passes" 0 bash "$SHIP" --host "$HD" --spec s1 --slice S1 --from-meta "$MD"
+write_tests "$HD" 'bash -c "[ -d .git ]"'
+check "ship-refuses-oracle-drift" 2 bash "$SHIP" --host "$HD" --spec s1 --slice S1 --from-meta "$MD"
+saw "ship-explains-drift" 'oracle drift'
+# Proof that the swapped Oracle really would have passed: without the freeze it does.
+check "ship-drift-would-have-passed" 0 env SHIP_ALLOW_MANUAL_BASE=1 \
+  bash "$SHIP" --host "$HD" --spec s1 --slice S1 --base "$BASED"
+saw "ship-drift-was-exploitable" 'OK +T-001 verify GREEN'
+printf 'x\n' >>"$FRZ"
+check "ship-refuses-tampered-freeze" 2 bash "$SHIP" --host "$HD" --spec s1 --slice S1 --from-meta "$MD"
+saw "ship-explains-freeze-tamper" 'does not match oracles_sha256'
+
+# --- a hand-written evidence row is not a witness ----------------------------
+# Attack from the review: append {"id":…,"phase":"baseline","verdict":"red"} and --resume
+# skips the execution outright.
+HF="$TMP/hforge"
+mk_host "$HF" "$GOOD_CMD"
+BASEF="$(git -C "$HF" rev-parse HEAD)"
+MF="$(mk_meta "$HF" "$BASEF")"
+implement "$HF"
+mkdir -p "$HF/.sdd-evidence"
+python3 - "$HF/.sdd-evidence/s1-S1.jsonl" "$BASEF" <<'PY'
+import json, sys
+ev, base = sys.argv[1:3]
+with open(ev, "w", encoding="utf-8") as fh:
+    for phase, tree, verdict in (("baseline", base, "red"), ("verify", base, "green")):
+        fh.write(json.dumps({"id": "T-001", "phase": phase, "tree": tree,
+                             "verdict": verdict, "cmd": "forged"}) + "\n")
+PY
+check "ship-ignores-forged-rows" 0 bash "$SHIP" --host "$HF" --spec s1 --slice S1 \
+  --from-meta "$MF" --resume
+saw "ship-reran-despite-forgery" 'OK +T-001 baseline RED'
+
+# The stronger forgery: the evidence file is readable, so copy a real row's oracle digest and
+# point it at a log that is gone. Only re-hashing the log it names catches this — without that
+# check the digest alone would let the row stand in for the run.
+HF2="$TMP/hforge2"
+mk_host "$HF2" "$GOOD_CMD"
+BASEF2="$(git -C "$HF2" rev-parse HEAD)"
+MF2="$(mk_meta "$HF2" "$BASEF2")"
+implement "$HF2"
+bash "$SHIP" --host "$HF2" --spec s1 --slice S1 --from-meta "$MF2" >/dev/null 2>&1
+python3 - "$HF2/.sdd-evidence/s1-S1.jsonl" <<'PY2'
+import json, sys
+ev = sys.argv[1]
+rows = [json.loads(l) for l in open(ev, encoding="utf-8") if l.strip()]
+digest = next(r["oracle_sha256"] for r in rows)
+with open(ev, "w", encoding="utf-8") as fh:
+    for r in rows:
+        fh.write(json.dumps({**r, "oracle_sha256": digest,
+                             "log": r["log"] + ".gone"}) + "\n")
+PY2
+rm -rf "$HF2/.sdd-evidence/logs"
+check "ship-ignores-rows-with-copied-digest" 0 bash "$SHIP" --host "$HF2" --spec s1 --slice S1 \
+  --from-meta "$MF2" --resume
+saw "ship-reran-despite-copied-digest" 'OK +T-001 baseline RED'
+
+# Stale-but-genuine evidence: the rows below were really produced, logs and all — for a
+# DIFFERENT Oracle. Re-freezing after an edit must not let yesterday's run stand in for a
+# command that has never executed. That is what binding each row to the Oracle digest buys.
+HR="$TMP/hrefreeze"
+mk_host "$HR" "$GOOD_CMD"
+BASER="$(git -C "$HR" rev-parse HEAD)"
+MR1="$(mk_meta "$HR" "$BASER" "$(freeze_of "$HR" S1)")"
+implement "$HR"
+bash "$SHIP" --host "$HR" --spec s1 --slice S1 --from-meta "$MR1" >/dev/null 2>&1
+write_tests "$HR" 'bash -c "grep -q IMPLEMENTED src/feature.txt && test -s src/feature.txt"'
+MR2="$(mk_meta "$HR" "$BASER" "$(freeze_of "$HR" S1)")"
+check "ship-reruns-after-refreeze" 0 bash "$SHIP" --host "$HR" --spec s1 --slice S1 \
+  --from-meta "$MR2" --resume
+saw "ship-reran-after-oracle-changed" 'OK +T-001 baseline RED'
+
+# --- verify runs the working tree, so evidence must not name a bare commit ----
+HW="$TMP/hdirty"
+mk_host "$HW" "$GOOD_CMD"
+BASEW="$(git -C "$HW" rev-parse HEAD)"
+MW="$(mk_meta "$HW" "$BASEW")"
+echo IMPLEMENTED >"$HW/src/feature.txt"    # deliberately NOT committed
+check "ship-dirty-tree-runs" 0 bash "$SHIP" --host "$HW" --spec s1 --slice S1 --from-meta "$MW"
+saw "ship-announces-dirty" 'verify tree is DIRTY'
+dirty_ok() { grep -q '"tree": *"[0-9a-f]*+dirty\.' "$HW/.sdd-evidence/s1-S1.jsonl"; }
+check "ship-evidence-marks-dirty" 0 dirty_ok
+
+# --- a hang is not a verdict -------------------------------------------------
+HT="$TMP/hang"
+mk_host "$HT" 'bash -c "[ -d .git ] && exit 0; while :; do :; done"'
+BASET="$(git -C "$HT" rev-parse HEAD)"
+MT="$(mk_meta "$HT" "$BASET")"
+implement "$HT"
+check "ship-timeout-is-not-red" 1 env SHIP_TIMEOUT_SEC=2 \
+  bash "$SHIP" --host "$HT" --spec s1 --slice S1 --from-meta "$MT"
+saw "ship-names-timeout-inconclusive" 'red for the wrong reason'
+
+# --- a linked dep dir must not smuggle the working tree into the baseline -----
+HL="$TMP/hlink"
+mk_host "$HL" "$GOOD_CMD"
+BASEL="$(git -C "$HL" rev-parse HEAD)"
+ML="$(mk_meta "$HL" "$BASEL")"
+implement "$HL"
+mkdir -p "$HL/node_modules/@app" "$HL/packages/check"
+ln -s "$HL/packages/check" "$HL/node_modules/@app/check"
+check "ship-refuses-workspace-link-escape" 2 bash "$SHIP" --host "$HL" --spec s1 --slice S1 \
+  --from-meta "$ML"
+saw "ship-explains-link-escape" 'escapes into the working tree'
+check "ship-link-escape-avoidable" 0 env SHIP_LINK= \
+  bash "$SHIP" --host "$HL" --spec s1 --slice S1 --from-meta "$ML"
 
 echo "--- selftest-ship: pass=$pass fail=$fail ---"
 [[ "$fail" -eq 0 ]]

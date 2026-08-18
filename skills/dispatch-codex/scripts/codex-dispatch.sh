@@ -306,6 +306,43 @@ if [[ -n "$RUN_ID_FILE" ]]; then
 fi
 echo "codex-dispatch: RUN_ID=$RUN_ID" >&2
 
+# Freeze the Oracle text next to the meta. ship.sh replays from this file, because tests.md
+# stays writable by the implementer for the whole dispatch: an Oracle it rewrote after the
+# fact grades whatever it likes, and the replay would still report red→green. Same parser as
+# the payload, so "what the Oracle is" keeps one definition.
+ORACLE_FREEZE=""; ORACLE_FREEZE_SHA=""
+if [[ "$UNIT" == "build" && -n "$SPEC_ID" && -n "$SLICE_ID" ]]; then
+  _pack="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/build_context_pack.py"
+  if [[ -f "$_pack" ]]; then
+    _frz="$LOG_DIR/${RUN_ID}.oracles.tsv"
+    : >"$_frz"
+    _frz_ok=1
+    for _sl in $(printf '%s' "$SLICE_ID" | tr ',' ' '); do
+      [[ -n "$_sl" ]] || continue
+      if ! python3 "$_pack" --json "$CWD" "$SPEC_ID" "$_sl" 2>/dev/null | python3 -c '
+import json, sys
+pack = json.load(sys.stdin)
+for o in pack.get("oracles", []):
+    print("\t".join([o.get("id", ""), o.get("kind", ""), o.get("cmd", "").strip("`").strip()]))
+' >>"$_frz"; then
+        _frz_ok=0; break
+      fi
+    done
+    if [[ "$_frz_ok" == "1" && -s "$_frz" ]]; then
+      # Dedupe by id the way ship.sh does, then sort: the digest must not depend on the
+      # order the slices happened to be listed in.
+      LC_ALL=C sort -u -t$'\t' -k1,1 "$_frz" -o "$_frz"
+      ORACLE_FREEZE="$_frz"
+      ORACLE_FREEZE_SHA="$(LC_ALL=C sort "$_frz" | sha256sum | cut -d' ' -f1)"
+      echo "codex-dispatch: froze $(wc -l <"$_frz" | tr -d ' ') Oracles -> $_frz" >&2
+    else
+      rm -f "$_frz"
+      echo "codex-dispatch: WARN could not freeze Oracles for $SPEC_ID/$SLICE_ID — ship.sh \
+will have to re-read tests.md, which the implementer can edit" >&2
+    fi
+  fi
+fi
+
 {
   echo "cwd=$CWD"
   echo "unit=$UNIT"
@@ -329,6 +366,8 @@ echo "codex-dispatch: RUN_ID=$RUN_ID" >&2
   # the loop — a remembered SHA is not evidence.
   bsha="$(git -C "$CWD" rev-parse HEAD 2>/dev/null || true)"
   [[ -n "$bsha" ]] && echo "base_sha=$bsha"
+  [[ -n "$ORACLE_FREEZE" ]] && echo "oracles_file=$ORACLE_FREEZE"
+  [[ -n "$ORACLE_FREEZE_SHA" ]] && echo "oracles_sha256=$ORACLE_FREEZE_SHA"
   # Written before the run so a killed dispatch leaves an unambiguous marker instead
   # of a missing field: 9 of 75 real dispatches had no exit_status at all and the
   # conductor could not tell success from a crash.
