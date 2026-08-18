@@ -101,9 +101,15 @@ expect_exit 2 "dispatch:reject-unbounded-multi-slice" \
 expect_exit 2 "dispatch:reject-no-slice" \
   bash "$DISPATCH" --cwd "$ROOT" --unit build --spec fake -- \
   "implement the feature with no slice marker"
-expect_exit 2 "dispatch:reject-goal-without-approve" \
-  env GOAL_APPROVED=0 bash "$DISPATCH" --cwd "$ROOT" --unit goal --spec fake -- \
-  "full spec please"
+goal_gone() {
+  local out
+  out="$(env GOAL_APPROVED=1 bash "$DISPATCH" --cwd "$ROOT" --unit goal --spec fake -- \
+    "full spec please" 2>&1)"
+  # GOAL_APPROVED=1 on purpose: the old gate refused only when approval was missing, so a probe
+  # run without it would stay green if that gate came back.
+  grep -q 'unit goal is gone' <<<"$out"
+}
+expect_exit 0 "dispatch:goal-unit-gone" goal_gone
 
 # --- the replay gate replaces the structured attestation ---
 # Was: five expectations against require-conductor-falsify, a conductor-typed
@@ -122,7 +128,7 @@ sys.exit(0 if cs.closing_anchor('', Path('$rdir/docs/specs/s1'), []) else 1)
 "
 mkdir -p "$rdir/.sdd-evidence/logs"
 printf 'ok\n' >"$rdir/.sdd-evidence/logs/T-001-baseline.log"
-printf '%s\n' '{"id":"T-001","phase":"baseline","verdict":"red","log":"'"$rdir"'/.sdd-evidence/logs/T-001-baseline.log"}' \
+printf '%s\n' '{"spec":"s1","id":"T-001","phase":"baseline","verdict":"red","log":"'"$rdir"'/.sdd-evidence/logs/T-001-baseline.log"}' \
   >"$rdir/.sdd-evidence/s1-all.jsonl"
 expect_exit 0 "replay:log-on-disk-anchors" \
   python3 -c "

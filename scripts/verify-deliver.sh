@@ -23,6 +23,14 @@ SHIP="$ROOT/skills/dispatch-codex/scripts/ship.sh"
 # The baseline is the tree this Spec's work started from: the oldest dispatch meta that names
 # this Spec and recorded a base_sha. Picking the newest would compare the change against
 # itself once a second dispatch had landed.
+# The baseline is the tree this Spec's work started from: the oldest dispatch meta that names
+# this Spec and recorded a base_sha. Picking the newest would compare the change against itself
+# once a second dispatch had landed.
+#
+# A meta is a text file in a tree the implementer can write, so it is not custody on its own:
+# require the run it claims to describe to have left a jsonl carrying turn.completed. Forging
+# the baseline now means forging a Codex transcript too. That is a higher wall, not a proof —
+# the honest limit is stated in ship.sh's header.
 meta=""
 for d in "$HOST/.codex-dispatch-logs"; do
   [[ -d "$d" ]] || continue
@@ -30,6 +38,12 @@ for d in "$HOST/.codex-dispatch-logs"; do
     [[ -n "$f" ]] || continue
     grep -qx "spec=$SPEC" "$f" 2>/dev/null || continue
     grep -q '^base_sha=' "$f" 2>/dev/null || continue
+    rid="$(sed -n 's/^run_id=//p' "$f" | head -1)"
+    jsonl="$d/${rid}.jsonl"
+    if [[ -z "$rid" || ! -s "$jsonl" ]] || ! grep -q 'turn\.completed' "$jsonl" 2>/dev/null; then
+      echo "verify-deliver: skipping $(basename "$f") — no completed jsonl for run_id=${rid:-?}" >&2
+      continue
+    fi
     meta="$f"; break
   done < <(ls -tr "$d"/*.meta.txt 2>/dev/null)
 done

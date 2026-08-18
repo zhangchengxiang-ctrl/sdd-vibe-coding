@@ -140,26 +140,64 @@ SLICE_LABEL="$(printf '%s' "$pj" | python3 -c 'import json,sys; print(json.load(
 # The judge may not be rewritten by the party it judges. Everything above re-parsed the
 # CURRENT tests.md, which the implementer can edit after dispatch: swapping in `bash -c
 # '[ -d .git ]'` is RED in a detached worktree (.git is a file there) and GREEN in the host,
-# so red→green passes without the feature being touched. When the dispatch froze the set,
-# that file wins and any drift is a refusal.
-LIVE_SHA="$(printf '%s\n' "${ORACLES[@]}" | LC_ALL=C sort | sha256sum | cut -d' ' -f1)"
-if [[ -n "$FREEZE" ]]; then
-  [[ -f "$FREEZE" ]] || die "meta names oracles_file=$FREEZE but it is missing — the frozen \
-Oracle set is gone; re-dispatch instead of trusting the current tests.md"
-  froze_sha="$(LC_ALL=C sort "$FREEZE" | sha256sum | cut -d' ' -f1)"
-  [[ -z "$FREEZE_SHA" || "$FREEZE_SHA" == "$froze_sha" ]] || die "oracles_file $FREEZE does \
-not match oracles_sha256 in $META — it was edited after dispatch"
-  if [[ "$froze_sha" != "$LIVE_SHA" ]]; then
-    { echo "ship: frozen at dispatch:"; LC_ALL=C sort "$FREEZE"
-      echo "ship: tests.md now yields:"; printf '%s\n' "${ORACLES[@]}" | LC_ALL=C sort; } >&2
-    die "oracle drift — tests.md changed after $(basename "$META"). Re-dispatch to refreeze; \
-a replay against a rewritten judge proves nothing"
-  fi
-  mapfile -t ORACLES < <(LC_ALL=C sort "$FREEZE")
-  ORACLE_SHA="$froze_sha"
-else
-  ORACLE_SHA="$LIVE_SHA"
+# so red→green passes without the feature being touched.
+#
+# Compared PER T-ID, not as one digest of the whole set. A digest comparison made a normal
+# multi-slice Spec impossible to close: each dispatch freezes only its own slice's Oracles, so
+# closing the whole Spec compared {T-001} against {T-001,T-002} and called it drift when
+# nothing had drifted. Every frozen row this Spec has must still match; a T-id nobody froze is
+# reported, because "never dispatched" is not the same as "verified unchanged".
+declare -A FROZEN=()
+freeze_files=()
+[[ -n "$FREEZE" ]] && freeze_files+=("$FREEZE")
+if [[ -z "$SLICE" ]]; then
+  # Whole-Spec replay: the frozen record is the union of every dispatch this Spec had.
+  while IFS= read -r m; do
+    [[ -n "$m" ]] || continue
+    grep -qx "spec=$SPEC" "$m" 2>/dev/null || continue
+    f="$(sed -n 's/^oracles_file=//p' "$m" | head -1)"
+    [[ -n "$f" && -f "$f" ]] || continue
+    freeze_files+=("$f")
+  done < <(ls -tr "$HOST/.codex-dispatch-logs"/*.meta.txt 2>/dev/null)
 fi
+for f in ${freeze_files[@]+"${freeze_files[@]}"}; do
+  while IFS= read -r line; do
+    [[ -n "$line" ]] || continue
+    FROZEN["${line%%$'\t'*}"]="$line"
+  done <"$f"
+done
+
+if [[ -n "$FREEZE" && -n "${FREEZE_SHA:-}" ]]; then
+  froze_sha="$(LC_ALL=C sort "$FREEZE" | sha256sum | cut -d' ' -f1)"
+  [[ "$FREEZE_SHA" == "$froze_sha" ]] || die "oracles_file $FREEZE does not match \
+oracles_sha256 in $META — it was edited after dispatch"
+fi
+[[ -z "$FREEZE" || -f "$FREEZE" ]] || die "meta names oracles_file=$FREEZE but it is missing \
+— the frozen Oracle set is gone; re-dispatch instead of trusting the current tests.md"
+
+drifted=(); unfrozen=()
+for i in "${!ORACLES[@]}"; do
+  oid="${ORACLES[$i]%%$'\t'*}"
+  if [[ -z "${FROZEN[$oid]:-}" ]]; then
+    unfrozen+=("$oid")
+    continue
+  fi
+  if [[ "${FROZEN[$oid]}" != "${ORACLES[$i]}" ]]; then
+    drifted+=("$oid")
+    echo "ship: $oid frozen at dispatch: ${FROZEN[$oid]}" >&2
+    echo "ship: $oid tests.md now:      ${ORACLES[$i]}" >&2
+  fi
+  ORACLES[$i]="${FROZEN[$oid]}"   # replay the frozen text, not the current one
+done
+if [[ "${#drifted[@]}" -gt 0 ]]; then
+  die "oracle drift on ${drifted[*]} — tests.md changed after the dispatch that froze them. \
+Re-dispatch to refreeze; a replay against a rewritten judge proves nothing"
+fi
+if [[ "${#unfrozen[@]}" -gt 0 ]]; then
+  echo "ship: WARN no dispatch froze ${unfrozen[*]} — replaying the current tests.md for \
+them, which the implementer could have written. Dispatch them, or judge them by hand." >&2
+fi
+ORACLE_SHA="$(printf '%s\n' "${ORACLES[@]}" | LC_ALL=C sort | sha256sum | cut -d' ' -f1)"
 
 MACHINE=(); HUMAN=()
 for row in "${ORACLES[@]}"; do

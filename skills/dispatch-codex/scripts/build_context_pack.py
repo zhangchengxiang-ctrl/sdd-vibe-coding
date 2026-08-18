@@ -435,6 +435,20 @@ Deps: {pack['deps'] or 'n/a'}
 """
 
 
+def paths_overlap(a: set[str], b: set[str]) -> bool:
+    """True when two allowlists can touch the same file.
+
+    String equality was not enough: a slice declaring `src/` and one declaring `src/a.ts` share
+    no string, so they landed in the same wave although the first may edit the second's file and
+    the two worktrees then conflict on merge.
+    """
+    for x in a:
+        for y in b:
+            if x == y or x.startswith(y + "/") or y.startswith(x + "/"):
+                return True
+    return False
+
+
 def slice_waves(
     rows: list[dict[str, str]], parallel: int = 1
 ) -> tuple[list[list[str]], dict[str, list[str]], list[str]]:
@@ -449,22 +463,32 @@ def slice_waves(
     """
     items = []
     for r in rows:
-        deps = [d for d in re.split(r"[,\s、/;]+", r.get("deps", "") or "") if d]
+        # Case-insensitive: a row `S1` with a dependent declaring `s1` used to read as an unknown
+        # dependency, which this function deliberately treats as unblocked — so the pair got
+        # scheduled together.
+        deps = [d.upper() for d in re.split(r"[,\s、;]+", r.get("deps", "") or "") if d]
         items.append({
             "id": r["slice_id"],
-            "paths": set(extract_paths(r.get("paths_raw", ""), r.get("note", ""))),
+            "key": r["slice_id"].upper(),
+            "paths": {p.rstrip("/") for p in extract_paths(r.get("paths_raw", ""), r.get("note", ""))},
             "deps": deps,
         })
-    known = {i["id"] for i in items}
+    known = {i["key"] for i in items}
     # A dep naming a slice that does not exist is a Plan typo. Reported, but not allowed to
     # deadlock the wish: waiting forever on S9 that was never written is worse than starting.
     unknown = {i["id"]: [d for d in i["deps"] if d not in known] for i in items}
     unknown = {k: v for k, v in unknown.items() if v}
     cap = max(1, parallel)
+    dupes = sorted({i["id"] for i in items if [x["key"] for x in items].count(i["key"]) > 1})
+    if dupes:
+        # Two rows with one id used to collapse through the `done` set: one wave came out and
+        # the other row's work was dropped, while dependents were scheduled as if both had run.
+        die(f"duplicate slice ids in plan.md: {', '.join(dupes)} — a slice id is the dispatch "
+            "unit's name and must be unique", 2)
     done: set[str] = set()
     waves: list[list[str]] = []
     while True:
-        pending = [i for i in items if i["id"] not in done]
+        pending = [i for i in items if i["key"] not in done]
         if not pending:
             return waves, unknown, []
         ready = [i for i in pending
@@ -475,14 +499,15 @@ def slice_waves(
         for i in ready:
             if len(wave) >= cap:
                 break
-            if any(i["paths"] & w["paths"] or i["id"] in w["deps"] or w["id"] in i["deps"]
+            if any(paths_overlap(i["paths"], w["paths"])
+                   or i["key"] in w["deps"] or w["key"] in i["deps"]
                    for w in wave):
                 continue
             wave.append(i)
         if not wave:                     # everything left conflicts: serialise rather than stall
             wave = [ready[0]]
         waves.append([i["id"] for i in wave])
-        done.update(i["id"] for i in wave)
+        done.update(i["key"] for i in wave)
 
 
 def refuse_invalid(oracles: list[dict[str, str]]) -> None:

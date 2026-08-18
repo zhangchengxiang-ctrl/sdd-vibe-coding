@@ -801,7 +801,9 @@ def check_replay_evidence(
             msg + (" [override: self-written, replay waived]" if self_written else "")
         )
     for tid in human_ids:
-        if re.search(rf"(?i)(?:人工验收|manual-accept)[^\n]*{re.escape(tid)}", run):
+        # `[^\n]*T-001` also matches "T-0010": without the boundary, an acceptance line for a
+        # machine Oracle would close a human one whose id is its prefix.
+        if re.search(rf"(?i)(?:人工验收|manual-accept)[^\n]*{re.escape(tid)}(?![0-9])", run):
             continue
         report.fail(
             f"{spec_dir.name}: {tid} is a 人工/manual-only Oracle — the runner cannot close "
@@ -1159,6 +1161,9 @@ def replay_rows(spec_dir: Path) -> dict[str, list[dict]]:
     """T-id -> ship.sh evidence rows for this Spec, nearest .sdd-evidence first."""
     out: dict[str, list[dict]] = {}
     for d in _walk_up_dirs(".sdd-evidence", spec_dir):
+        # `<name>*.jsonl` matches payroll-all.jsonl while closing `pay`, and the walk goes up
+        # to ancestors that may hold another project's evidence — so the row's own spec field
+        # decides, and the filename only narrows the search.
         for f in sorted(d.glob(f"{spec_dir.name}*.jsonl")):
             try:
                 lines = f.read_text(encoding="utf-8").splitlines()
@@ -1171,6 +1176,8 @@ def replay_rows(spec_dir: Path) -> dict[str, list[dict]]:
                 try:
                     r = json.loads(line)
                 except ValueError:
+                    continue
+                if str(r.get("spec") or "") != spec_dir.name:
                     continue
                 tid = r.get("id")
                 if tid:
@@ -1291,12 +1298,31 @@ def _matrix_evidence(row: dict) -> str:
 EVIDENCE_PATH_RE = re.compile(r"(?i)\b(?:log|path|file|artifact|report)\s*=\s*([^\s·,，、|]+)")
 
 
+def _host_root(spec_dir: Path) -> Path:
+    """The repo the Spec lives in: <host>/**/specs/<id>, so walk up past specs/."""
+    for anc in spec_dir.parents:
+        if anc.name == "specs":
+            return anc.parent.parent if anc.parent.name in {"docs", ".sdd"} else anc.parent
+    return spec_dir.parent
+
+
 def _resolve_cited(p: str, spec_dir: Path) -> Path | None:
+    """An existing path INSIDE the host. `log=/etc/hosts` used to anchor a close: any file on
+    the machine satisfied "the artifact exists", including another project's, and a symlink out
+    of the tree did too. Resolved with symlinks followed, so a link cannot smuggle the target."""
+    host = _host_root(spec_dir).resolve()
     cand = Path(p)
-    if cand.is_absolute():
-        return cand if cand.exists() else None
-    roots = [spec_dir, *spec_dir.parents[:3]]
-    return next((r / p for r in roots if (r / p).exists()), None)
+    hits = [cand] if cand.is_absolute() else [r / p for r in [spec_dir, *spec_dir.parents[:3]]]
+    for h in hits:
+        if not h.exists():
+            continue
+        try:
+            real = h.resolve()
+        except OSError:
+            continue
+        if real == host or host in real.parents:
+            return h
+    return None
 
 
 def evidence_paths(cell: str, spec_dir: Path) -> list[tuple[str, Path | None]]:

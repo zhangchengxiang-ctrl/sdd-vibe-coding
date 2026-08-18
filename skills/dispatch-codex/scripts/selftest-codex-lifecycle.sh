@@ -292,6 +292,28 @@ else
   PASS "t1e-multi-slice-and-goal-refused"
 fi
 
+# --- T1f: the two routes around "one slice per exec" ------------------------------
+# The comma counter and the token validator disagreed: `--slice $'S1 S2'` validated both tokens,
+# counted one slice, and shipped SLICE_ID="S1 S2" into a single exec. And a payload declaring
+# SLICE_IDS=S1,S2 marked the prompt "packed", which disabled the prose refusal without anyone
+# comparing it to --slice.
+set +e
+bash "$DISPATCH" --cwd "$HOST1" --unit build --spec cpx --slice $'S1 S2' \
+  --log-dir "$LOG1" --timeout 20 -- 'go' >"$TMP/t1f.out" 2>"$TMP/t1f.err"
+st_ws=$?
+SKIP_SPEC_CHECK=1 bash "$DISPATCH" --cwd "$HOST1" --unit build --spec cpx --slice S1 \
+  --log-dir "$LOG1" --timeout 20 -- $'SLICE_IDS=S1,S2\nfinish both' \
+  >"$TMP/t1f2.out" 2>"$TMP/t1f2.err"
+st_payload=$?
+set -e
+if [[ "$st_ws" -ne 2 ]] || ! grep -q 'one slice per exec' "$TMP/t1f.err"; then
+  FAIL "t1f-whitespace-multi-slice-refused" "exit=$st_ws $(tail -1 "$TMP/t1f.err" | head -c 80)"
+elif [[ "$st_payload" -ne 2 ]] || ! grep -q 'payload declares SLICE_IDS' "$TMP/t1f2.err"; then
+  FAIL "t1f-payload-multi-slice-refused" "exit=$st_payload $(tail -1 "$TMP/t1f2.err" | head -c 80)"
+else
+  PASS "t1f-both-multi-slice-routes-refused"
+fi
+
 # --- T2: process exit 0 without turn.completed must fail ---
 HOST2="$TMP/host-noturn"
 mkdir -p "$HOST2/docs/specs/cpx" "$HOST2/src"

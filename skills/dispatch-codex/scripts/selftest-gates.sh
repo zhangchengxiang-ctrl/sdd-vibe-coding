@@ -195,6 +195,44 @@ assert_dep_order() {
 }
 check "waves-transitive-dependency-order" 0 assert_dep_order
 
+# A directory allowlist overlaps every file under it. String equality said `src/` and
+# `src/a.ts` share nothing, so they went out in the same wave and the worktrees could conflict
+# on merge. Lower-case deps used to read as an unknown slice, which this scheduler treats as
+# unblocked — so the dependent was scheduled alongside what it depends on.
+HOSTX="$TMP/domainhost"
+mkdir -p "$HOSTX/docs/specs/x1" "$HOSTX/src" "$HOSTX/lib"
+echo a >"$HOSTX/src/a.ts"; echo b >"$HOSTX/lib/x.ts"
+cat >"$HOSTX/docs/specs/x1/plan.md" <<'EOF'
+| 切片 ID | 入口 | 完成定义（链 T-xxx） | 触及路径 | 依赖 | 备注 |
+| S1 | dir | T-001 | src/ | | oracle:unit |
+| S2 | file | T-002 | src/a.ts | | oracle:unit |
+| S3 | dep | T-003 | lib/x.ts | s1 | oracle:unit |
+EOF
+fill_spec "$HOSTX/docs/specs/x1"
+assert_domain() {
+  python3 "$PACK_PY" --waves "$HOSTX" x1 --parallel 3 \
+    | python3 -c 'import json,sys
+w = json.load(sys.stdin)["waves"]
+assert w[0] == ["S1"], w                       # dir vs file must not share a wave
+assert "S3" not in w[0], w                     # lower-case dep still blocks
+assert sorted(sum(w, [])) == ["S1","S2","S3"], w'
+}
+check "waves-path-domain-and-case" 0 assert_domain
+
+HOSTY="$TMP/duphost"
+mkdir -p "$HOSTY/docs/specs/y1"
+cat >"$HOSTY/docs/specs/y1/plan.md" <<'EOF'
+| 切片 ID | 入口 | 完成定义（链 T-xxx） | 触及路径 | 依赖 | 备注 |
+| S1 | a | T-001 | src/a.ts | | oracle:unit |
+| S1 | dup | T-002 | src/b.ts | | oracle:unit |
+EOF
+fill_spec "$HOSTY/docs/specs/y1"
+# Two rows with one id collapsed through the done set: one wave came out and the other row's
+# work vanished, while dependents were scheduled as if both had run.
+check "waves-duplicate-slice-id-refused" 2 \
+  python3 "$PACK_PY" --waves "$HOSTY" y1 --parallel 2
+saw_gates "waves-names-duplicate-id" 'duplicate slice ids'
+
 HOSTL="$TMP/labhost"
 mkdir -p "$HOSTL/docs/specs/l1" "$HOSTL/src/a" "$HOSTL/src/b"
 echo 'a' >"$HOSTL/src/a/x.ts"

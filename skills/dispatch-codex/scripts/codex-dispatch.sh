@@ -250,13 +250,23 @@ exec with --slice S<n>, and let wish-orchestrate wave them"
     [[ "$tok" =~ ^[A-Za-z][A-Za-z0-9_.-]*$ ]] \
       || die "malformed slice token '$tok' in --slice '$SLICE_ID'"
   done
-  slice_n="$(printf '%s' "$SLICE_ID" | tr ',' '\n' | grep -c '[^[:space:]]' || true)"
+  # Count what the tokeniser splits on, not just commas: `--slice $'S1 S2'` validated both
+  # tokens, counted one, and shipped `SLICE_ID=S1 S2` into a single exec.
+  slice_n="$(printf '%s' "$SLICE_ID" | tr ',[:space:]' '\n' | grep -c '[^[:space:]]' || true)"
   # A == D, so there is no packed unit for a --dispatch-id to name any more. Multi-slice used
   # to be allowed with one, which is how slices=S2,S4,S3,S5 went out and timed out at the wall
   # (p90 across all 75 real dispatches equalled the timeout ceiling). One slice, one exec.
   if [[ "${slice_n:-0}" -gt 1 ]]; then
     die "multi-slice dispatch ($SLICE_ID) is refused: A == D means one slice per exec. Dispatch \
 them separately, or run wish-orchestrate --parallel N to wave them with the edit lock applied"
+  fi
+  # A payload naming more than one slice is the same refusal by another route: marking the
+  # prompt "packed" used to disable the prose check without anyone comparing it to --slice.
+  payload_ids="$(printf '%s' "$PROMPT" | grep -Eio 'SLICE_IDS[[:space:]]*=[[:space:]]*[[:alnum:]_.,-]+' | head -1 | sed -E 's/.*=[[:space:]]*//')"
+  if [[ -n "$payload_ids" ]]; then
+    payload_n="$(printf '%s' "$payload_ids" | tr ',[:space:]' '\n' | grep -c '[^[:space:]]' || true)"
+    [[ "${payload_n:-0}" -le 1 ]] || die "payload declares SLICE_IDS=$payload_ids — A == D means \
+one slice per exec, whatever --slice says. Dispatch them separately."
   fi
   if [[ -n "$SLICE_ID" ]] && ! echo "$PROMPT" | grep -Eqi "SLICE_ID[[:space:]]*=|SLICE_IDS[[:space:]]*=|${SLICE_ID%%,*}"; then
     PROMPT="SLICE_ID=${SLICE_ID}

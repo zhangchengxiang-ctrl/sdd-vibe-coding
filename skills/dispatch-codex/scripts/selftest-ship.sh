@@ -69,6 +69,9 @@ mk_meta() {   # host base_sha [frozen-oracles-tsv] → prints the meta path
   local h="$1" b="$2" frz="${3:-}" d="$1/.codex-dispatch-logs" m
   mkdir -p "$d"
   m="$d/run-$((++META_N)).meta.txt"
+  # A meta is custody only if the run it names left a completed transcript, so the fixture
+  # leaves one too — otherwise these probes exercise a path production now refuses.
+  printf '%s\n' '{"type":"turn.completed","spec":"s1"}' >"$d/r${META_N}.jsonl"
   { printf 'run_id=r%s\nspec=s1\nbase_sha=%s\nrun_state=finished\n' "$META_N" "$b"
     if [[ -n "$frz" ]]; then
       printf 'oracles_file=%s\noracles_sha256=%s\n' \
@@ -441,7 +444,9 @@ implement "$HV2"
 # what matters is that the commands were replayed before any claim was read.
 bash "$VD" "$HV2" s1 >"$TMP/out.log" 2>&1 || true
 saw "verify-deliver-replays-red-then-green" 'OK +T-001 baseline RED'
-saw "verify-deliver-reaches-check-spec" 'check_spec --closing'
+# Not the banner verify-deliver echoes — check_spec's own output. With the python call
+# deleted the heading would still print, and this probe would still have passed.
+saw "verify-deliver-reaches-check-spec" '(ERROR|OK): s1'
 
 HV3="$TMP/hverify3"
 mk_host "$HV3" "$GOOD_CMD"
@@ -452,6 +457,68 @@ saw "verify-deliver-warns-without-baseline" 'no .codex-dispatch-logs meta names 
 # Wiring, not logic: the probes in gate-cases call check_replay_evidence directly, so they
 # stay green if nothing calls it. This one goes through the real CLI.
 saw "verify-deliver-close-gate-demands-replay" 'red-green replay for T-001'
+
+# A meta is a text file the implementer can write. Requiring the run it names to have left a
+# jsonl carrying turn.completed means forging the baseline also means forging a transcript.
+HV4="$TMP/hverify4"
+mk_host "$HV4" "$GOOD_CMD"
+write_contract "$HV4" "T-001"
+BASEV4="$(git -C "$HV4" rev-parse HEAD)"
+mkdir -p "$HV4/.codex-dispatch-logs"
+printf 'run_id=forged\nspec=s1\nbase_sha=%s\nrun_state=finished\n' "$BASEV4" \
+  >"$HV4/.codex-dispatch-logs/forged.meta.txt"
+implement "$HV4"
+bash "$VD" "$HV4" s1 >"$TMP/out.log" 2>&1 || true
+saw "verify-deliver-skips-meta-without-transcript" 'skipping forged.meta.txt'
+saw "verify-deliver-refuses-without-custody" 'no .codex-dispatch-logs meta names spec=s1'
+
+# --- a whole-Spec close must survive per-slice freezes -------------------------
+# The blocker the second review found: each dispatch freezes only its own slice's Oracles, so
+# comparing one digest of the whole set against S1's frozen file called it drift when nothing
+# had drifted — and no multi-slice Spec could ever close.
+HM="$TMP/hmulti"
+mk_host "$HM" "$GOOD_CMD"
+write_contract "$HM" "T-001, T-002"
+{
+  printf '# Tests\n\n## 索引\n\n| ID | R |\n|---|---|\n| T-001 | R-001 |\n| T-002 | R-001 |\n'
+  printf '\n## T-001 · a\n\n### Given\n\n- x\n\n### When\n\n1. y\n\n'
+  printf '### Then（Oracle）\n\n- feature.txt says IMPLEMENTED\n\n'
+  printf '### 自动化\n\n- 命令：`%s`\n- 预期 Evidence Kind：`unit`\n' "$GOOD_CMD"
+  printf '\n## T-002 · b\n\n### Given\n\n- x\n\n### When\n\n1. y\n\n'
+  printf '### Then（Oracle）\n\n- other.txt says ALSO\n\n'
+  printf '### 自动化\n\n- 命令：`bash -c "grep -q ALSO src/other.txt"`\n'
+  printf -- '- 预期 Evidence Kind：`unit`\n'
+} >"$HM/docs/specs/s1/tests.md"
+cat >"$HM/docs/specs/s1/plan.md" <<'EOF'
+| 切片 ID | 入口 | 完成定义（链 T-xxx） | 触及路径 | 依赖 | 备注 |
+| S1 | feature | T-001 | src/feature.txt | | oracle:unit |
+| S2 | other | T-002 | src/other.txt | S1 | oracle:unit |
+EOF
+echo TODO >"$HM/src/other.txt"
+git -C "$HM" add -A && git -C "$HM" commit -qm "two slices"
+BASEM="$(git -C "$HM" rev-parse HEAD)"
+MM="$(mk_meta "$HM" "$BASEM" "$(freeze_of "$HM" S1)")"   # only S1 frozen, as a real dispatch does
+echo IMPLEMENTED >"$HM/src/feature.txt"; echo ALSO >"$HM/src/other.txt"
+git -C "$HM" add -A && git -C "$HM" commit -qm impl
+check "ship-whole-spec-with-partial-freeze" 0 bash "$SHIP" --host "$HM" --spec s1 --from-meta "$MM"
+saw "ship-replays-both-oracles" 'OK +T-002 verify GREEN'
+saw "ship-names-unfrozen-oracle" 'no dispatch froze T-002'
+# Drift is still refused, now per T-id rather than as one digest of the set.
+write_tests "$HM" 'bash -c "[ -d .git ]"'
+python3 - "$HM" <<'PY2'
+import sys
+from pathlib import Path
+# write_tests only writes T-001; restore T-002 so the only change is T-001's command
+p = Path(sys.argv[1]) / "docs/specs/s1/tests.md"
+s = p.read_text(encoding="utf-8")
+s = s.replace("| T-001 | R-001 |", "| T-001 | R-001 |\n| T-002 | R-001 |")
+s += ('\n## T-002 · b\n\n### Given\n\n- x\n\n### When\n\n1. y\n\n'
+      '### Then（Oracle）\n\n- other.txt says ALSO\n\n'
+      '### 自动化\n\n- 命令：`bash -c "grep -q ALSO src/other.txt"`\n')
+p.write_text(s, encoding="utf-8")
+PY2
+check "ship-per-oracle-drift-refused" 2 bash "$SHIP" --host "$HM" --spec s1 --from-meta "$MM"
+saw "ship-names-the-drifted-id" 'oracle drift on T-001'
 
 echo "--- selftest-ship: pass=$pass fail=$fail ---"
 [[ "$fail" -eq 0 ]]

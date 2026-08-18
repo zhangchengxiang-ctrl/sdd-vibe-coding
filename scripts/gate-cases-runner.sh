@@ -144,6 +144,21 @@ note(honesty(ph, closing=True) >= 1, "placeholder-evidence", "template menus are
 mp = head + "| R-001 | T-001 | a.ts | kind=unit · log=nope/missing.log | Pass |\n"
 note(honesty(mp, closing=True) >= 1, "missing-artifact", "cited path must exist")
 
+# Existing was not enough: `log=/etc/hosts` exists, so it anchored a close. An artifact has to
+# be in the tree being closed — and resolved through symlinks, so a link cannot smuggle one in.
+with tempfile.TemporaryDirectory() as td:
+    h = Path(td); sd = h / "docs/specs/s1"; sd.mkdir(parents=True)
+    outside = Path(td + "-outside"); outside.mkdir()
+    (outside / "elsewhere.log").write_text("ok\n", encoding="utf-8")
+    row = head + f"| R-001 | T-001 | a.ts | kind=unit · log={outside}/elsewhere.log | Pass |\n"
+    note(honesty(row, closing=True, spec_dir=sd) >= 1, "closing-artifact-outside-host-rejected",
+         "a file that exists elsewhere on the machine is not this Spec's evidence")
+    (h / "artifacts").mkdir()
+    (h / "artifacts/link.log").symlink_to(outside / "elsewhere.log")
+    linked = head + "| R-001 | T-001 | a.ts | kind=unit · log=artifacts/link.log | Pass |\n"
+    note(honesty(linked, closing=True, spec_dir=sd) >= 1, "closing-artifact-symlink-out-rejected",
+         "a symlink pointing out of the host does not anchor either")
+
 # --- wordlists advise, they do not reject (U2 F08, U4 antipatterns) ---
 def one_test(then_body):
     return (
@@ -327,8 +342,10 @@ def close_errs(machine=("T-001",), human=(), run="", ev_rows=()):
             cs.check_replay_evidence(sd, list(machine), list(human), run, r)
         return r.errors, r.warnings, buf.getvalue()
 
-def ev(phase, verdict, tid="T-001"):
-    return {"id": tid, "phase": phase, "verdict": verdict, "cmd": "x"}
+def ev(phase, verdict, tid="T-001", spec="s1"):
+    # `spec` is part of what ship.sh writes, and the close gate now requires it: a
+    # payroll-all.jsonl must not answer for `pay`. Fixtures mirror production rows.
+    return {"id": tid, "phase": phase, "verdict": verdict, "cmd": "x", "spec": spec}
 
 note("red-green replay" in close_errs()[2], "close-requires-replay",
      "a P0 machine Oracle with no .sdd-evidence cannot close")
@@ -340,6 +357,10 @@ note("verify GREEN" in close_errs(ev_rows=[ev("baseline", "red")])[2],
      "close-rejects-baseline-only", "a red baseline alone does not close either")
 note(close_errs(ev_rows=[ev("baseline", "red"), ev("verify", "green", "T-999")])[0] >= 1,
      "close-replay-is-per-oracle", "another T-id's green does not cover this one")
+note(close_errs(ev_rows=[ev("baseline", "red", spec="s1-v2"),
+                         ev("verify", "green", spec="s1-v2")])[0] >= 1,
+     "close-replay-is-per-spec",
+     "rows written for a Spec whose name shares this one's prefix do not close it")
 
 note("人工验收" in close_errs(machine=(), human=("T-001",))[2],
      "close-manual-only-needs-acceptance",
@@ -350,6 +371,11 @@ note(close_errs(machine=(), human=("T-001",),
 note(close_errs(machine=(), human=("T-001",), run="人工验收：T-002 · 看了别的")[0] >= 1,
      "close-manual-acceptance-names-the-id",
      "an acceptance line for another id does not count")
+# T-0010 is a different Oracle, and `[^\n]*T-001` matched it: a machine id whose prefix is a
+# human id would have closed the human one.
+note(close_errs(machine=(), human=("T-001",), run="人工验收：T-0010 · bot")[0] >= 1,
+     "close-manual-acceptance-id-boundary",
+     "T-0010 does not satisfy the acceptance owed by T-001")
 
 o = close_errs(run="override: 用户要求自写\n")
 note(o[0] == 0 and o[1] >= 1 and "replay waived" in o[2],
