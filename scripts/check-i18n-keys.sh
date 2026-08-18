@@ -84,10 +84,19 @@ DEFAULTED = re.compile(r"""\bt\(\s*['"`](""" + KEY + r""")['"`][^)]{0,400}?defau
 # by every host here, so they get no parser, but they must not be skipped in silence:
 # a gate whose quiet means "did not look" is the thing this file exists to prevent.
 UNANALYZED = re.compile(r"""<Trans[\s/>]|i18nKey\s*=|useTranslation\([^)]*keyPrefix""")
+# A computed key is the same blind spot with a worse failure mode: `t(`checkout.${state}`,
+# {defaultValue: "Pay now"})` renders the English fallback for one branch of `state`, and the
+# KEY pattern above cannot match it, so the run reported unresolved=0 and exit 0. Counted by
+# shape rather than blended: measured on the three hosts, template keys are 70/0/0 and
+# indirect `t(variable)` calls 109/3/3, and an operator can act on the first number.
+DYNAMIC_TPL = re.compile(r"""\bt\(\s*`[^`]*\$\{""")
+DYNAMIC_REF = re.compile(r"""\bt\(\s*[A-Za-z_$][\w.$]*\s*[,)]""")
 
 missing_defaulted: dict[str, str] = {}
 missing_plain: dict[str, str] = {}
 unanalyzed: dict[str, int] = {}
+dyn_tpl: dict[str, int] = {}
+dyn_ref: dict[str, int] = {}
 defaulted_keys: dict[str, str] = {}
 for src in root.rglob("*"):
     if src.suffix not in {".ts", ".tsx", ".js", ".jsx", ".vue", ".svelte"}:
@@ -100,9 +109,16 @@ for src in root.rglob("*"):
     except Exception:
         continue
     # Count call sites, not pattern hits: `<Trans i18nKey=…>` matches twice on one line.
+    rel_src = str(src.relative_to(root))
     n_un = sum(1 for line in text.splitlines() if UNANALYZED.search(line))
     if n_un:
-        unanalyzed[str(src.relative_to(root))] = n_un
+        unanalyzed[rel_src] = n_un
+    n_tpl = sum(1 for line in text.splitlines() if DYNAMIC_TPL.search(line))
+    if n_tpl:
+        dyn_tpl[rel_src] = n_tpl
+    n_ref = sum(1 for line in text.splitlines() if DYNAMIC_REF.search(line))
+    if n_ref:
+        dyn_ref[rel_src] = n_ref
     defaulted = set(DEFAULTED.findall(text))
     for key in defaulted:
         defaulted_keys.setdefault(key, str(src.relative_to(root)))
@@ -154,8 +170,15 @@ for where, n in sorted(unanalyzed.items())[:5]:
           "(<Trans i18nKey> / useTranslation keyPrefix) — not checked, not proof of absence",
           file=sys.stderr)
 
+for where, n in sorted(dyn_tpl.items())[:5]:
+    print(f"WARN: {where}: {n} computed key(s) t(`…${{…}}`) — one branch of the expression can "
+          "be missing while defaultValue hides it; this script cannot enumerate them",
+          file=sys.stderr)
+
 print(f"--- check-i18n-keys: locales={','.join(sorted(per_locale))} keys={len(known)} "
       f"defaultValue-masked={len(missing_defaulted)} unresolved={len(missing_plain)} "
-      f"incomplete={incomplete} masked-partial={masked_partial} unanalyzed={sum(unanalyzed.values())} fail={fail} ---")
+      f"incomplete={incomplete} masked-partial={masked_partial} "
+      f"unanalyzed={sum(unanalyzed.values())} dynamic-template={sum(dyn_tpl.values())} "
+      f"dynamic-ref={sum(dyn_ref.values())} fail={fail} ---")
 sys.exit(fail)
 PY

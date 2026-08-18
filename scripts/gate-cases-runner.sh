@@ -146,10 +146,10 @@ with tempfile.TemporaryDirectory() as td:
 # Measured holes: check_spec accepted a P0 test with no command at all and one whose
 # command was `true`; and referential oracles ("同 T-001", "S0 确定的 tests") appear at a
 # rate escalating effort does not fix, which no runner can replay.
-def oracle_errs(cmd_line, req_extra="", closing=False, rows=None):
+def oracle_errs(cmd_line, req_extra="", closing=False, rows=None, given="- x"):
     tests = (
         "## 索引\n\n| ID | R |\n|---|---|\n| T-001 | R-001 |\n\n"
-        "## T-001 · probe\n\n### Given\n\n- x\n\n### When\n\n1. y\n\n"
+        f"## T-001 · probe\n\n### Given\n\n{given}\n\n### When\n\n1. y\n\n"
         "### Then（Oracle）\n\n- offset=0 与 offset=1000 首行 id 不同\n\n"
         "### 自动化\n\n" + cmd_line + "\n"
     )
@@ -221,6 +221,20 @@ none_p0 = oracle_errs(REF, closing=True, rows=r1(**{"优先级": "P1"}))
 note(none_p0[0] == 0 and none_p0[1] == 0 and "0 P0→T-xxx" in none_p0[2],
      "oracle-no-p0-is-not-an-error",
      "a Spec with no P0 rows passes — and says so, rather than saying nothing")
+
+# --- the browser bar wants a browser, and only the Oracle's own fields count ---
+VIS = "；文案与移动端可读"
+note(oracle_errs("- 命令：`npx playwright --version`", req_extra=VIS, closing=True)[0] >= 1,
+     "oracle-playwright-version-is-not-a-browser-run",
+     "naming the binary without running it does not satisfy the user-visible bar")
+note(oracle_errs("- 命令：`npx playwright test a.spec.ts`", req_extra=VIS, closing=True)[0] == 0,
+     "oracle-playwright-test-still-passes", "an actual browser run does")
+# Attack: the word lands in ### Given, which the close gate used to pool while the dispatch
+# throat never looked there — so the same Spec passed one gate and was refused by the other.
+note(oracle_errs("- 命令：`npx vitest run a.test.ts`", req_extra=VIS, closing=True,
+                 given="- a human operator watches the screen")[0] >= 1,
+     "oracle-given-mention-does-not-gate",
+     "a non-unit word in Given is not an Oracle; close and throat read the same fields")
 # Measured on 332 real requirement rows: bare case-insensitive `UI` matched inside UID,
 # setuid, build and required_for_new — 8 backend requirements with nothing to look at —
 # while a real confirmation modal was not flagged at all.
@@ -381,6 +395,22 @@ printf "const a = t('common:panel.gone', { defaultValue: 'X' });\n" >"$i18n_src"
 i18n_run && rc=0 || rc=1
 i18n_note "$((rc == 1 ? 0 : 1))" "i18n-ns-key-masked-red" \
   "t('ns:key') masked by defaultValue is caught, not skipped for having a namespace"
+
+# A computed key cannot be enumerated, so this must not read as coverage. Measured: 70 live
+# call sites on agentdeck use t(`…${…}`), while the <Trans>/keyPrefix shapes the script
+# already warned about occur 0 times there — the loud one was the shape nobody used.
+i18n_out() { bash "$ROOT/scripts/check-i18n-keys.sh" --cwd "$i18n_fx" 2>&1; }
+printf 'const a = t(`panel.${state}`, { defaultValue: "Pay now" });\n' >"$i18n_src"
+i18n_out | grep -q 'dynamic-template=1' && rc=0 || rc=1
+i18n_note "$((rc == 0 ? 0 : 1))" "i18n-computed-key-counted" \
+  "t(\`a.\${x}\`) is reported as unanalyzed instead of silently skipped"
+i18n_out | grep -q 'computed key' && rc=0 || rc=1
+i18n_note "$((rc == 0 ? 0 : 1))" "i18n-computed-key-named" \
+  "the report names the file, so the number is actionable"
+printf "const a = t('panel.title');\n" >"$i18n_src"
+i18n_out | grep -q 'dynamic-template=0' && rc=0 || rc=1
+i18n_note "$((rc == 0 ? 0 : 1))" "i18n-static-key-not-counted-dynamic" \
+  "a static key is not miscounted as computed"
 
 printf "const a = t('common:panel.title');\n" >"$i18n_src"
 i18n_run && rc=0 || rc=1

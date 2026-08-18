@@ -624,8 +624,12 @@ USER_VISIBLE = re.compile(r"(?i)(\bUI\b|文案|\bcopy\b|i18n|locale|双语|翻�
 # labels, department chips, a preview with no address bar) whose T-ids had NO 命令 line,
 # passing only on the word 'i18n' or '浏览器' appearing somewhere nearby.
 # So the signal must sit in the runner position, or be a declared kind, or be a human.
+# The browser half needs the tool to actually drive a browser: `npx playwright --version`
+# named the binary and satisfied the bar without opening a page. So require a run subcommand
+# or a spec path — `playwright install` and `--version` are setup and introspection.
 NON_UNIT_ORACLE = re.compile(
-    r"(?i)((?:^|[\s;&|`])(?:npx\s+|pnpm\s+|yarn\s+|bunx\s+)?(?:playwright|cypress|puppeteer)\b"
+    r"(?i)((?:^|[\s;&|`])(?:npx\s+|pnpm\s+|yarn\s+|bunx\s+)?(?:playwright|cypress|puppeteer)"
+    r"(?:\s+(?:test|run|open|exec)\b|[^\n]*\.(?:spec|test|cy)\.[jt]sx?\b)"
     r"|预期\s*Evidence\s*Kind[^\n]*(?:browser-job|network-har)"
     r"|Channel[^\n]*browser"
     r"|\b390\b|human|人工|manual-only)")
@@ -640,6 +644,30 @@ def automation_command(body: str) -> str | None:
         return None
     m = re.search(r"(?m)^\s*-\s*命令(?:或测试路径)?\s*[：:]\s*(.+?)\s*$", block.group(1))
     return m.group(1) if m else None
+
+
+def then_text(body: str) -> str:
+    """The Then section, flattened. One definition: the dispatch throat reads it too."""
+    m = re.search(r"(?ms)^\s*#{2,4}\s+Then[^\n]*\n(.*?)(?=^\s*#{2,4}\s+|\Z)", body)
+    return " ".join((m.group(1) if m else "").split())[:260]
+
+
+def evidence_decl(body: str) -> str:
+    """The declared Evidence Kind / Channel lines, which are part of the non-unit signal."""
+    return " ".join(
+        m.group(0) for m in re.finditer(
+            r"(?im)^\s*-\s*(?:预期\s*Evidence\s*Kind|Channel)\s*[：:][^\n]*", body)
+    )
+
+
+def oracle_signal_text(body: str) -> str:
+    """The only fields a non-unit claim may live in: command, Then, declared kind/channel.
+
+    Pooling the whole test body let a stray word in ### Given decide the verdict, so the close
+    gate accepted sets the dispatch throat refuses. Two gates reading different fields is not
+    a stricter gate, it is an inconsistent one.
+    """
+    return "\n".join((automation_command(body) or "", then_text(body), evidence_decl(body)))
 
 
 def check_p0_oracle_commands(
@@ -711,7 +739,7 @@ def check_p0_oracle_commands(
             )
 
     for req_text, tids in visible_reqs.items():
-        pooled = "\n".join(bodies.get(t, "") for t in tids)
+        pooled = "\n".join(oracle_signal_text(bodies.get(t, "")) for t in tids)
         # A declared human oracle satisfies this too — the same vocabulary the command
         # classifier accepts, or the template's `manual-only` escape hatch would be a lie.
         human_declared = any(

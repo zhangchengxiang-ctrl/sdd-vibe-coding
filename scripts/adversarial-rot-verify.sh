@@ -172,15 +172,27 @@ e=$?; set -e
 rm -rf "$tmp"
 
 # --- B5: attack — unbounded multi-slice / no-slice dispatch ---
+# Exit 2 alone proved nothing here: `--spec fake` fails check_spec, which also exits 2.
+# Measured by disabling both refusals — the attacks still exited 2, on "check_spec failed
+# for 'fake'". So this asserts the refusal each attack is supposed to trigger, by name.
+b5log="$(mktemp -d)"
 set +e
 bash skills/dispatch-codex/scripts/codex-dispatch.sh --cwd "$ROOT" --unit build --spec fake --slice S1 -- \
-  "do remaining slices S1|S2 now" >/dev/null 2>&1
+  "do remaining slices S1|S2 now" >"$b5log/a.log" 2>&1
 e1=$?
 bash skills/dispatch-codex/scripts/codex-dispatch.sh --cwd "$ROOT" --unit build --spec fake -- \
-  "implement without slice" >/dev/null 2>&1
+  "implement without slice" >"$b5log/b.log" 2>&1
 e2=$?
 set -e
-[[ $e1 -eq 2 && $e2 -eq 2 ]] && ok "B5-dispatch-rejects-unbounded" || bad "B5-dispatch-rejects-unbounded" "e1=$e1 e2=$e2"
+if [[ $e1 -eq 2 && $e2 -eq 2 ]] \
+  && grep -q 'unbounded multi-slice' "$b5log/a.log" \
+  && grep -q 'build requires --slice' "$b5log/b.log"; then
+  ok "B5-dispatch-rejects-unbounded"
+else
+  bad "B5-dispatch-rejects-unbounded" \
+    "e1=$e1 e2=$e2 a=$(tail -1 "$b5log/a.log" | head -c 70) b=$(tail -1 "$b5log/b.log" | head -c 70)"
+fi
+rm -rf "$b5log"
 
 # --- B6: attack — unstructured falsify PASS ---
 flog=$(mktemp -d)

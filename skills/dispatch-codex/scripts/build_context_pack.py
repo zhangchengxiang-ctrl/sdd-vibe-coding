@@ -219,8 +219,7 @@ def classify_oracles(sdd: Path, spec_id: str, t_ids: list[str]) -> list[dict[str
             out.append({"id": tid, "cmd": "", "then": "", "kind": "invalid",
                         "why": f"no ## {tid} body in tests.md"})
             continue
-        m = re.search(r"(?ms)^\s*#{2,4}\s+Then[^\n]*\n(.*?)(?=^\s*#{2,4}\s+|\Z)", body)
-        then = " ".join((m.group(1) if m else "").split())[:260]
+        then = cs.then_text(body)
         raw = (cs.automation_command(body) or "").strip()
         bare = raw.strip("`").strip()
         if not bare:
@@ -237,10 +236,7 @@ def classify_oracles(sdd: Path, spec_id: str, t_ids: list[str]) -> list[dict[str
         # signal at closing time, so it has to travel with the Oracle — otherwise this
         # throat refuses a Spec that `check_spec --closing` would accept, and a legitimate
         # browser-job declaration blocks the dispatch.
-        decl = " ".join(
-            m.group(0) for m in re.finditer(
-                r"(?im)^\s*-\s*(?:预期\s*Evidence\s*Kind|Channel)\s*[：:][^\n]*", body)
-        )
+        decl = cs.evidence_decl(body)
         out.append({"id": tid, "cmd": raw, "then": then, "kind": kind, "why": why,
                     "decl": decl})
     return out
