@@ -69,7 +69,7 @@ mk_meta() {   # host base_sha [frozen-oracles-tsv] → prints the meta path
   local h="$1" b="$2" frz="${3:-}" d="$1/.codex-dispatch-logs" m
   mkdir -p "$d"
   m="$d/run-$((++META_N)).meta.txt"
-  { printf 'run_id=r%s\nbase_sha=%s\nrun_state=finished\n' "$META_N" "$b"
+  { printf 'run_id=r%s\nspec=s1\nbase_sha=%s\nrun_state=finished\n' "$META_N" "$b"
     if [[ -n "$frz" ]]; then
       printf 'oracles_file=%s\noracles_sha256=%s\n' \
         "$frz" "$(LC_ALL=C sort "$frz" | sha256sum | cut -d' ' -f1)"
@@ -92,15 +92,16 @@ for o in json.load(sys.stdin).get("oracles", []):
   printf '%s' "$out"
 }
 
-write_contract() {   # host — a real Requirements table, so --oracles-all has P0 rows
-  cat >"$1/docs/specs/s1/contract.md" <<'EOF'
+write_contract() {   # host [tests-cell] — a real Requirements table, so --oracles-all has P0 rows
+  local h="$1" cell="${2:-T-001, T-002}"
+  cat >"$h/docs/specs/s1/contract.md" <<EOF
 # Contract
 
 ## Requirements
 
 | ID | 需求 | 优先级 | 证据级 | AC 摘要（行为） | Tests |
 |---|---|---|---|---|---|
-| R-001 | feature and its sibling both land | P0 | Verified | both files change | T-001, T-002 |
+| R-001 | feature lands | P0 | Verified | files change | $cell |
 EOF
 }
 
@@ -414,6 +415,43 @@ saw "ship-names-unsliced-oracle" 'no plan.md slice names: T-002'
 check "ship-slice-stays-scoped" 0 bash "$SHIP" --host "$HU" --spec s1 --slice S1 --from-meta "$MU"
 scoped_ok() { ! grep -q 'T-002' "$TMP/out.log"; }
 check "ship-slice-excludes-other-oracles" 0 scoped_ok
+
+# --- the close path must actually replay --------------------------------------
+# These live here rather than in a close-gate selftest because the fixtures are here: what is
+# being probed is that verify-deliver drives ship.sh at all. It shipped a whole increment
+# with nothing requiring it, which is how "red-green is the close gate" stayed a claim.
+VD="$ROOT/scripts/verify-deliver.sh"
+
+HV="$TMP/hverify"
+mk_host "$HV" 'bash -c true'
+write_contract "$HV" "T-001"
+BASEV="$(git -C "$HV" rev-parse HEAD)"
+mk_meta "$HV" "$BASEV" >/dev/null
+implement "$HV"
+check "verify-deliver-fails-on-nondiscriminating" 1 bash "$VD" "$HV" s1
+saw "verify-deliver-ran-the-replay" 'replay failed|baseline GREEN'
+
+HV2="$TMP/hverify2"
+mk_host "$HV2" "$GOOD_CMD"
+write_contract "$HV2" "T-001"
+BASEV2="$(git -C "$HV2" rev-parse HEAD)"
+mk_meta "$HV2" "$BASEV2" >/dev/null
+implement "$HV2"
+# check_spec --closing will still refuse this fixture's run.md, so assert on the replay half:
+# what matters is that the commands were replayed before any claim was read.
+bash "$VD" "$HV2" s1 >"$TMP/out.log" 2>&1 || true
+saw "verify-deliver-replays-red-then-green" 'OK +T-001 baseline RED'
+saw "verify-deliver-reaches-check-spec" 'check_spec --closing'
+
+HV3="$TMP/hverify3"
+mk_host "$HV3" "$GOOD_CMD"
+write_contract "$HV3" "T-001"
+implement "$HV3"
+bash "$VD" "$HV3" s1 >"$TMP/out.log" 2>&1 || true
+saw "verify-deliver-warns-without-baseline" 'no .codex-dispatch-logs meta names spec=s1'
+# Wiring, not logic: the probes in gate-cases call check_replay_evidence directly, so they
+# stay green if nothing calls it. This one goes through the real CLI.
+saw "verify-deliver-close-gate-demands-replay" 'red-green replay for T-001'
 
 echo "--- selftest-ship: pass=$pass fail=$fail ---"
 [[ "$fail" -eq 0 ]]

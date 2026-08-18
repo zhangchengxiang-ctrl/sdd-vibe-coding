@@ -677,8 +677,11 @@ def check_p0_oracle_commands(
     report: Report,
     *,
     closing: bool = False,
-) -> None:
+) -> tuple[list[str], list[str]]:
     """A P0 Oracle must be a command the runner can execute, and must be able to fail.
+
+    Returns (machine ids, 人工 ids) so the close gate can demand a replay for the first set
+    and a named acceptance for the second, without this function also being that gate.
 
     Measured holes this closes: check_spec used to accept a P0 test with no command at
     all and one whose command was `true`; and Codex writes referential oracles ("同
@@ -687,7 +690,7 @@ def check_p0_oracle_commands(
     """
     bodies = extract_test_bodies(tests)
     if not priority_column_readable(spec_dir, req_rows, report):
-        return
+        return [], []
     p0: dict[str, str] = {}          # tid -> requirement text that mapped it
     for row in req_rows:
         if not is_p0(row):
@@ -698,9 +701,11 @@ def check_p0_oracle_commands(
     if not p0:
         # Saying nothing here is what made this gate indistinguishable from a passing one.
         report.ok(f"{spec_dir.name}: no P0 Oracle to check (0 P0→T-xxx mappings)")
-        return
+        return [], []
 
     visible_reqs: dict[str, list[str]] = {}
+    machine_ids: list[str] = []
+    human_ids: list[str] = []
     for tid, req_text in sorted(p0.items()):
         body = bodies.get(tid)
         if body is None:
@@ -717,6 +722,7 @@ def check_p0_oracle_commands(
             continue
         bare = cmd.strip().strip("`").strip()
         if bare.lower() in HUMAN_ORACLE:
+            human_ids.append(tid)
             continue  # human-judged: closes via the acceptance pack, not the runner
         if NOOP_CMD.match(bare):
             report.fail(
@@ -737,6 +743,8 @@ def check_p0_oracle_commands(
                 "interpreter is missing from RUNNABLE_HEAD in check_spec.py; add the head "
                 "there rather than rewording the Oracle"
             )
+            continue
+        machine_ids.append(tid)
 
     for req_text, tids in visible_reqs.items():
         pooled = "\n".join(oracle_signal_text(bodies.get(t, "")) for t in tids)
@@ -753,6 +761,58 @@ def check_p0_oracle_commands(
                 "mobile / human oracle"
             )
     report.ok(f"{spec_dir.name}: P0 oracle commands checked ({len(p0)} ids)")
+    return machine_ids, human_ids
+
+
+def check_replay_evidence(
+    spec_dir: Path,
+    machine_ids: list[str],
+    human_ids: list[str],
+    run: str,
+    report: Report,
+) -> None:
+    """Closing must rest on a red-green replay, not on the claim that one happened.
+
+    ship.sh existed for a full increment before anything required it: the close path neither
+    invoked it nor read its evidence, so replay was optional. A command proven GREEN says
+    nothing on its own — the same command has to have been RED on the tree that predates the
+    work, which is what the baseline half records.
+    """
+    halves = replay_halves(spec_dir)
+    self_written = bool(OVERRIDE_SELF_RE.search(run))
+    for tid in machine_ids:
+        got = halves.get(tid, set())
+        missing = [
+            name
+            for name, want in (("baseline RED", ("baseline", "red")),
+                               ("verify GREEN", ("verify", "green")))
+            if want not in got
+        ]
+        if not missing:
+            continue
+        msg = (
+            f"{spec_dir.name}: closing requires a red-green replay for {tid} — missing "
+            f"{' and '.join(missing)} in .sdd-evidence/{spec_dir.name}*.jsonl. "
+            "Run `make verify-deliver` (it replays via ship.sh); green alone is not evidence"
+        )
+        # A hand-written Spec has no dispatch baseline to replay against, so the existing
+        # user-explicit override still applies — but it is a warning, never silence.
+        (report.warn if self_written else report.fail)(
+            msg + (" [override: self-written, replay waived]" if self_written else "")
+        )
+    for tid in human_ids:
+        if re.search(rf"(?i)(?:人工验收|manual-accept)[^\n]*{re.escape(tid)}", run):
+            continue
+        report.fail(
+            f"{spec_dir.name}: {tid} is a 人工/manual-only Oracle — the runner cannot close "
+            f"it. run.md needs a `人工验收：{tid} · <who saw what>` line. Typing it is not "
+            "proof a person looked; its absence is proof nobody claimed to"
+        )
+    if machine_ids or human_ids:
+        report.ok(
+            f"{spec_dir.name}: replay evidence checked "
+            f"(machine={len(machine_ids)} 人工={len(human_ids)})"
+        )
 
 
 def extract_test_bodies(tests: str) -> dict[str, str]:
@@ -776,6 +836,7 @@ def check_tests(
     contract: str = "",
     plan: str = "",
     closing: bool = False,
+    run: str = "",
 ) -> None:
     if not has_h3(tests, "Given") or not has_h3(tests, "When"):
         report.fail(f"{spec_dir.name}/tests.md: missing Given/When headings")
@@ -787,7 +848,11 @@ def check_tests(
     if structure_only:
         return
 
-    check_p0_oracle_commands(spec_dir, tests, req_rows, report, closing=closing)
+    machine_ids, human_ids = check_p0_oracle_commands(
+        spec_dir, tests, req_rows, report, closing=closing
+    )
+    if closing:
+        check_replay_evidence(spec_dir, machine_ids, human_ids, run, report)
 
     _, index_rows = parse_md_table_after(tests, "索引")
     index_ids = {
@@ -1068,7 +1133,8 @@ _FIXTURE_SPEC_NAMES = frozenset(
 )
 
 
-def _dispatch_log_dirs(start: Path | None = None) -> list[Path]:
+def _walk_up_dirs(name: str, start: Path | None = None) -> list[Path]:
+    """Existing <ancestor>/<name> dirs, nearest first. Host root often holds them."""
     dirs: list[Path] = []
     seen: set[Path] = set()
     candidates = [Path.cwd()]
@@ -1076,14 +1142,46 @@ def _dispatch_log_dirs(start: Path | None = None) -> list[Path]:
         candidates.append(start.resolve())
         candidates.extend(start.resolve().parents)
     for base in candidates:
-        d = (base / ".codex-dispatch-logs").resolve()
+        d = (base / name).resolve()
         if d.is_dir() and d not in seen:
             seen.add(d)
             dirs.append(d)
-        # host root often has logs; stop after a few parents
         if len(dirs) >= 4:
             break
     return dirs
+
+
+def _dispatch_log_dirs(start: Path | None = None) -> list[Path]:
+    return _walk_up_dirs(".codex-dispatch-logs", start)
+
+
+def replay_halves(spec_dir: Path) -> dict[str, set[tuple[str, str]]]:
+    """T-id -> {(phase, verdict)} from ship.sh's .sdd-evidence rows for this Spec.
+
+    Structural only, and deliberately so: the file lives in the tree the implementer can
+    write, so this cannot establish that a run happened. It establishes the opposite —
+    that closing without a replay is refused. `make verify-deliver` re-runs ship.sh rather
+    than reading this, because a ledger is a record, not a credential.
+    """
+    out: dict[str, set[tuple[str, str]]] = {}
+    for d in _walk_up_dirs(".sdd-evidence", spec_dir):
+        for f in sorted(d.glob(f"{spec_dir.name}*.jsonl")):
+            try:
+                lines = f.read_text(encoding="utf-8").splitlines()
+            except OSError:
+                continue
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    r = json.loads(line)
+                except ValueError:
+                    continue
+                tid, phase, verdict = r.get("id"), r.get("phase"), r.get("verdict")
+                if tid and phase and verdict:
+                    out.setdefault(str(tid), set()).add((str(phase), str(verdict)))
+    return out
 
 
 def _resolve_dispatch_jsonl(run_id_or_name: str, start: Path | None = None) -> Path | None:
@@ -1514,6 +1612,7 @@ def check_spec_dir(
         contract=contract,
         plan=plan,
         closing=closing,
+        run=run,
     )
     has_ui = detect_has_ui(contract, plan, tests)
     check_ui_surface(

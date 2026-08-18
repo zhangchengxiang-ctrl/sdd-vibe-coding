@@ -23,7 +23,7 @@ echo "== gate-cases catalog total=$total problems=$problems =="
 [[ "${1:-}" == "--baseline-only" ]] && exit 0
 
 python3 - "$ROOT" <<'PY'
-import contextlib, csv, importlib.util, io, sys, tempfile
+import contextlib, csv, importlib.util, io, json, sys, tempfile
 from pathlib import Path
 
 root = Path(sys.argv[1])
@@ -261,6 +261,56 @@ note(oracle_errs("- 命令：`npx vitest run a.test.ts`\n- 预期 Evidence Kind�
                  req_extra="；文案与移动端可读", closing=True)[0] == 0,
      "oracle-declared-browser-kind-passes",
      "a declared browser-job Evidence Kind satisfies the bar")
+
+# --- closing must rest on a replay, not on the claim that one happened -------
+# ship.sh shipped a whole increment before anything required it: the close path neither ran
+# it nor read its evidence, so red-green was advisory. Green alone is the case that matters —
+# a command that passes says nothing until the same command failed without the change.
+def close_errs(machine=("T-001",), human=(), run="", ev_rows=()):
+    """Only the replay nail, so a probe for it cannot fail on Oracle classification."""
+    with tempfile.TemporaryDirectory() as td:
+        host = Path(td)
+        sd = host / "docs/specs/s1"
+        sd.mkdir(parents=True)
+        if ev_rows:
+            evd = host / ".sdd-evidence"
+            evd.mkdir()
+            (evd / "s1-all.jsonl").write_text(
+                "".join(json.dumps(r) + "\n" for r in ev_rows), encoding="utf-8")
+        r = cs.Report()
+        buf = io.StringIO()
+        with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+            cs.check_replay_evidence(sd, list(machine), list(human), run, r)
+        return r.errors, r.warnings, buf.getvalue()
+
+def ev(phase, verdict, tid="T-001"):
+    return {"id": tid, "phase": phase, "verdict": verdict, "cmd": "x"}
+
+note("red-green replay" in close_errs()[2], "close-requires-replay",
+     "a P0 machine Oracle with no .sdd-evidence cannot close")
+note(close_errs(ev_rows=[ev("baseline", "red"), ev("verify", "green")])[0] == 0,
+     "close-accepts-red-green", "both halves present closes")
+note("baseline RED" in close_errs(ev_rows=[ev("verify", "green")])[2],
+     "close-rejects-green-only", "green with no baseline half is not red-green evidence")
+note("verify GREEN" in close_errs(ev_rows=[ev("baseline", "red")])[2],
+     "close-rejects-baseline-only", "a red baseline alone does not close either")
+note(close_errs(ev_rows=[ev("baseline", "red"), ev("verify", "green", "T-999")])[0] >= 1,
+     "close-replay-is-per-oracle", "another T-id's green does not cover this one")
+
+note("人工验收" in close_errs(machine=(), human=("T-001",))[2],
+     "close-manual-only-needs-acceptance",
+     "a 人工 Oracle needs a named acceptance line, since the runner cannot close it")
+note(close_errs(machine=(), human=("T-001",),
+                run="人工验收：T-001 · 我看了移动端 390 宽度")[0] == 0,
+     "close-manual-only-accepted", "the acceptance line closes it")
+note(close_errs(machine=(), human=("T-001",), run="人工验收：T-002 · 看了别的")[0] >= 1,
+     "close-manual-acceptance-names-the-id",
+     "an acceptance line for another id does not count")
+
+o = close_errs(run="override: 用户要求自写\n")
+note(o[0] == 0 and o[1] >= 1 and "replay waived" in o[2],
+     "close-override-warns-not-silent",
+     "a hand-written Spec has no baseline to replay, so the override warns instead of failing")
 
 # --- catalog accounting: every problem row names a probe or an open reason ---
 rows = list(csv.DictReader((root / "scripts/fixtures/gate-cases.tsv").open(encoding="utf-8"),
