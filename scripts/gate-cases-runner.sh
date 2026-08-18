@@ -146,18 +146,23 @@ with tempfile.TemporaryDirectory() as td:
 # Measured holes: check_spec accepted a P0 test with no command at all and one whose
 # command was `true`; and referential oracles ("同 T-001", "S0 确定的 tests") appear at a
 # rate escalating effort does not fix, which no runner can replay.
-def oracle_errs(cmd_line, req_extra="", closing=False):
+def oracle_errs(cmd_line, req_extra="", closing=False, rows=None):
     tests = (
         "## 索引\n\n| ID | R |\n|---|---|\n| T-001 | R-001 |\n\n"
         "## T-001 · probe\n\n### Given\n\n- x\n\n### When\n\n1. y\n\n"
         "### Then（Oracle）\n\n- offset=0 与 offset=1000 首行 id 不同\n\n"
         "### 自动化\n\n" + cmd_line + "\n"
     )
-    rows = [{"ID": "R-001", "优先级": "P0", "证据级": "Verified",
-             "需求": "签名 token 校验" + req_extra, "Tests": "T-001"}]
+    if rows is None:
+        rows = [{"ID": "R-001", "优先级": "P0", "证据级": "Verified",
+                 "需求": "签名 token 校验" + req_extra, "Tests": "T-001"}]
     r = cs.Report()
-    quiet(cs.check_p0_oracle_commands, Path("atk"), tests, rows, r, closing=closing)
-    return r.errors, r.warnings
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+        cs.check_p0_oracle_commands(Path("atk"), tests, rows, r, closing=closing)
+    # The text matters, not just the count: "errors >= 1" is also satisfied by the
+    # unreadable-column report, so a counting probe cannot tell which gate fired.
+    return r.errors, r.warnings, buf.getvalue()
 
 note(oracle_errs("- 预期 Evidence Kind：`unit`")[0] >= 1, "oracle-no-command",
      "a P0 test with no 命令 line is rejected")
@@ -187,6 +192,35 @@ note(oracle_errs("- 命令：`npx vitest run a.test.ts`", req_extra="；文案�
 note(oracle_errs("- 命令：`npx playwright test a.spec.ts`", req_extra="；文案与移动端可读",
                  closing=True)[0] == 0,
      "oracle-visible-browser-passes", "a browser oracle satisfies the user-visible bar")
+
+# --- a gate that applies to zero rows is not a passing gate ------------------
+# The P0 set is keyed on two column names. Measured before fixing: `Priority`, traditional
+# `優先級`, a `P0（必须）` cell, or a `测试` column each made this gate — and three others —
+# return with no output at all, so you could not tell 14 ids checked from none.
+REF = "- 命令：同 T-002。"
+def r1(**kw):
+    base = {"ID": "R-001", "证据级": "Verified", "需求": "签名 token 校验", "Tests": "T-001"}
+    base.update(kw)
+    return [base]
+
+note("P0-mapped T-001" in oracle_errs(REF, closing=True, rows=r1(**{"Priority": "P0"}))[2],
+     "oracle-header-priority-english", "a `Priority` column still reaches the P0 gate")
+note("P0-mapped T-001" in oracle_errs(REF, closing=True, rows=r1(**{"優先級": "P0"}))[2],
+     "oracle-header-priority-traditional", "a traditional 優先級 column still reaches it")
+note("P0-mapped T-001" in oracle_errs(REF, closing=True, rows=r1(**{"优先级": "P0（必须）"}))[2],
+     "oracle-priority-value-suffixed", "`P0（必须）` reads as P0")
+rows_cn_tests = [{"ID": "R-001", "优先级": "P0", "证据级": "Verified",
+                  "需求": "签名 token 校验", "测试": "T-001"}]
+note("P0-mapped T-001" in oracle_errs(REF, closing=True, rows=rows_cn_tests)[2],
+     "oracle-header-tests-chinese", "a `测试` column still maps the T-id")
+unknown = oracle_errs(REF, closing=True, rows=r1(**{"Prio": "P0"}))
+note(unknown[0] >= 1 and "no priority column" in unknown[2],
+     "oracle-unknown-priority-column-fails",
+     "an unreadable priority column is reported, not silently skipped")
+none_p0 = oracle_errs(REF, closing=True, rows=r1(**{"优先级": "P1"}))
+note(none_p0[0] == 0 and none_p0[1] == 0 and "0 P0→T-xxx" in none_p0[2],
+     "oracle-no-p0-is-not-an-error",
+     "a Spec with no P0 rows passes — and says so, rather than saying nothing")
 # Measured on 332 real requirement rows: bare case-insensitive `UI` matched inside UID,
 # setuid, build and required_for_new — 8 backend requirements with nothing to look at —
 # while a real confirmation modal was not flagged at all.

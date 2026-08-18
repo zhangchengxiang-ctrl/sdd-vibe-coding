@@ -520,14 +520,14 @@ def check_requirements_unverified(spec_dir: Path, contract: str, report: Report,
         return []
     for row in real:
         rid = clean(row.get("ID", ""))
-        pri = clean(row.get("优先级", "")).upper()
+        pri = row_priority(row)
         ev = clean(row.get("证据级", ""))
         if pri == "P0" and ev in {"Unverified", "Assumption"}:
             report.fail(
                 f"{spec_dir.name}: {rid} is P0 with evidence {ev} "
                 "(Unverified must not be P0/Lock)"
             )
-        tests = clean(row.get("Tests", ""))
+        tests = row_tests(row)
         if pri == "P0" and not tests:
             report.fail(f"{spec_dir.name}: {rid} P0 missing Tests mapping")
     report.ok(f"{spec_dir.name}: Requirements rows={len(real)}")
@@ -537,6 +537,55 @@ def check_requirements_unverified(spec_dir: Path, contract: str, report: Report,
 # Measured on the real hosts: only `npx` (6, agentdeck) and `python3` (9, here) actually
 # occur, so this list is not speculative coverage — it is the runner's PATH assumption.
 # `node`/`deno` sit here because they are the same runtime as `npx`/`npm`, which do.
+# Four gates below key off two column names. A host that spells either one differently used
+# to disable all four at once, and `if not p0: return` left no trace — so the output could not
+# distinguish "checked 14 ids" from "checked nothing". Measured: agentdeck's archived legacy
+# Specs already say `Priority`, so this is one header away from real, not hypothetical.
+PRI_KEYS = ("优先级", "優先級", "优先度", "优先順位", "Priority", "priority")
+TESTS_KEYS = ("Tests", "tests", "Test", "测试", "測試", "用例")
+
+
+def _col(row: dict[str, str], keys: tuple[str, ...]) -> str | None:
+    """The row's value for the first column name present, or None if none of them is."""
+    for k in keys:
+        if k in row:
+            return clean(row[k])
+    return None
+
+
+def row_priority(row: dict[str, str]) -> str:
+    """Normalised priority: `P0（必须）` and `p0` both read as P0."""
+    v = _col(row, PRI_KEYS)
+    if v is None:
+        return ""
+    m = re.match(r"\s*(P\d)", v.upper())
+    return m.group(1) if m else v.upper()
+
+
+def row_tests(row: dict[str, str]) -> str:
+    return _col(row, TESTS_KEYS) or ""
+
+
+def is_p0(row: dict[str, str]) -> bool:
+    return row_priority(row) == "P0"
+
+
+def priority_column_readable(
+    spec_dir: Path, req_rows: list[dict[str, str]], report: Report
+) -> bool:
+    """False when no row names a priority column at all — every P0 gate would no-op."""
+    if not req_rows:
+        return False
+    if any(_col(r, PRI_KEYS) is not None for r in req_rows):
+        return True
+    report.fail(
+        f"{spec_dir.name}/contract.md: Requirements table has no priority column this "
+        f"checker knows (columns={sorted(req_rows[0].keys())}) — every P0 gate would "
+        f"silently apply to zero rows. Name it one of: {', '.join(PRI_KEYS)}"
+    )
+    return False
+
+
 RUNNABLE_HEAD = re.compile(
     r"^(?:npx|npm|pnpm|yarn|bun|node|deno|make|bash|sh|zsh|python3?|pytest|vitest|"
     r"playwright|go|cargo|dotnet|mvn|gradle|docker|curl|psql|\./|/)",
@@ -609,14 +658,18 @@ def check_p0_oracle_commands(
     3/6 at medium) — a runner cannot execute those.
     """
     bodies = extract_test_bodies(tests)
+    if not priority_column_readable(spec_dir, req_rows, report):
+        return
     p0: dict[str, str] = {}          # tid -> requirement text that mapped it
     for row in req_rows:
-        if clean(row.get("优先级", "")).upper() != "P0":
+        if not is_p0(row):
             continue
         text = " ".join(clean(v) for v in row.values())
-        for tid in re.findall(r"T-\d+", clean(row.get("Tests", ""))):
+        for tid in re.findall(r"T-\d+", row_tests(row)):
             p0.setdefault(tid, text)
     if not p0:
+        # Saying nothing here is what made this gate indistinguishable from a passing one.
+        report.ok(f"{spec_dir.name}: no P0 Oracle to check (0 P0→T-xxx mappings)")
         return
 
     visible_reqs: dict[str, list[str]] = {}
@@ -773,11 +826,7 @@ def check_tests(
             report.ok(f"{spec_dir.name}: data-surface falsify hint present")
 
     # P0 success + failure/permission
-    p0_ids = [
-        clean(r.get("ID", ""))
-        for r in req_rows
-        if clean(r.get("优先级", "")).upper() == "P0"
-    ]
+    p0_ids = [clean(r.get("ID", "")) for r in req_rows if is_p0(r)]
     for rid in p0_ids:
         mapped = [
             r
@@ -797,10 +846,10 @@ def check_tests(
             )
     # Cross-check Requirements.Tests column
     for row in req_rows:
-        if clean(row.get("优先级", "")).upper() != "P0":
+        if not is_p0(row):
             continue
         rid = clean(row.get("ID", ""))
-        listed = re.findall(r"T-\d+", clean(row.get("Tests", "")))
+        listed = re.findall(r"T-\d+", row_tests(row))
         if not listed:
             continue
         for tid in listed:

@@ -262,9 +262,9 @@ def user_visible_gap(host: Path, sdd: Path, spec_id: str,
     ids = {o["id"] for o in oracles}
     pooled = "\n".join(f"{o['cmd']} {o['then']}\n{o.get('decl','')}" for o in oracles)
     for row in rows:
-        if cs.clean(row.get("优先级", "")).upper() != "P0":
+        if not cs.is_p0(row):
             continue
-        mapped = set(re.findall(r"T-\d+", cs.clean(row.get("Tests", ""))))
+        mapped = set(re.findall(r"T-\d+", cs.row_tests(row)))
         if not (mapped & ids):
             continue
         text = " ".join(cs.clean(v) for v in row.values())
@@ -278,6 +278,34 @@ def user_visible_gap(host: Path, sdd: Path, spec_id: str,
             return (f"{cs.clean(row.get('ID',''))} is user-visible but this unit's oracles "
                     "are unit-only — needs a browser / i18n / mobile / human oracle")
     return ""
+
+
+def all_p0_oracles(sdd: Path, spec_id: str) -> tuple[list[dict[str, str]], list[str], list[str]]:
+    """Every P0-mapped T-id's Oracle, read from Requirements rather than plan.md slices.
+
+    A slice table is a work breakdown; a Spec closes on its requirements. Taking the replay
+    set from 完成定义 means a P0 T-id that no slice happens to name is never an input, so a
+    whole-Spec replay could pass having never run it. Returns (oracles, p0-without-tests,
+    t-ids no slice names).
+    """
+    cs = _load_check_spec()
+    contract = read_text_maybe(sdd / "specs" / spec_id / "contract.md")
+    _, rows = cs.parse_md_table_after(contract, "Requirements")
+    t_ids: list[str] = []
+    unmapped: list[str] = []
+    for row in rows:
+        if not cs.is_p0(row):
+            continue
+        ids = re.findall(r"T-\d+", cs.row_tests(row))
+        if not ids:
+            unmapped.append(cs.clean(row.get("ID", "")))
+        for t in ids:
+            if t not in t_ids:
+                t_ids.append(t)
+    plan = read_text_maybe(sdd / "specs" / spec_id / "plan.md")
+    in_slices = set(re.findall(r"T-\d+", plan))
+    unsliced = [t for t in t_ids if t not in in_slices]
+    return classify_oracles(sdd, spec_id, t_ids), unmapped, unsliced
 
 
 def read_text_maybe(p: Path) -> str:
@@ -411,6 +439,19 @@ Deps: {pack['deps'] or 'n/a'}
 """
 
 
+def refuse_invalid(oracles: list[dict[str, str]]) -> None:
+    """The throat: neither a payload nor a replay may claim an Oracle it cannot execute."""
+    bad = [o for o in oracles if o.get("kind") == "invalid"]
+    if not bad:
+        return
+    for o in bad:
+        print(f"build_context_pack: REFUSED — {o['id']}: {o['why']}", file=sys.stderr)
+    print("build_context_pack: a dispatch payload may not claim the runner will replay "
+          "an Oracle it cannot execute. Fix tests.md 自动化 命令 (or mark it `human`).",
+          file=sys.stderr)
+    sys.exit(2)
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("host")
@@ -418,6 +459,8 @@ def main() -> None:
     ap.add_argument("slice_id", nargs="?")
     ap.add_argument("--list", action="store_true", help="list slice ids from plan.md")
     ap.add_argument("--json", action="store_true", help="emit pack as JSON")
+    ap.add_argument("--oracles-all", action="store_true",
+                    help="emit every P0-mapped Oracle for the whole Spec (closing replay)")
     args = ap.parse_args()
 
     host = Path(args.host).resolve()
@@ -436,6 +479,24 @@ def main() -> None:
     if args.list:
         for r in rows:
             print(r["slice_id"])
+        return
+
+    if args.oracles_all:
+        oracles, unmapped, unsliced = all_p0_oracles(sdd, args.spec_id)
+        if not oracles:
+            die(f"no P0-mapped Oracles in {args.spec_id}/contract.md — a whole-Spec replay "
+                "has nothing to run; map P0 requirements to T-xxx first", 2)
+        refuse_invalid(oracles)
+        for rid in unmapped:
+            print(f"build_context_pack: WARN P0 {rid} maps to no T-xxx — nothing replays it",
+                  file=sys.stderr)
+        if unsliced:
+            print("build_context_pack: WARN P0 Oracles no plan.md slice names: "
+                  f"{', '.join(unsliced)} — included here, but no dispatch unit owns them",
+                  file=sys.stderr)
+        json.dump({"spec_id": args.spec_id, "dispatch_id": "all",
+                   "t_ids": [o["id"] for o in oracles], "oracles": oracles},
+                  sys.stdout, ensure_ascii=False)
         return
 
     if not args.slice_id:
@@ -469,15 +530,7 @@ def main() -> None:
             file=sys.stderr,
         )
 
-    bad = [o for o in pack.get("oracles", []) if o.get("kind") == "invalid"]
-    if bad:
-        for o in bad:
-            die_msg = f"{o['id']}: {o['why']}"
-            print(f"build_context_pack: REFUSED — {die_msg}", file=sys.stderr)
-        print("build_context_pack: a dispatch payload may not claim the runner will replay "
-              "an Oracle it cannot execute. Fix tests.md 自动化 命令 (or mark it `human`).",
-              file=sys.stderr)
-        sys.exit(2)
+    refuse_invalid(pack.get("oracles", []))
     if pack.get("visible_gap"):
         print(f"build_context_pack: REFUSED — {pack['visible_gap']}", file=sys.stderr)
         sys.exit(2)

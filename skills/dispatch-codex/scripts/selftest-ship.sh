@@ -92,6 +92,18 @@ for o in json.load(sys.stdin).get("oracles", []):
   printf '%s' "$out"
 }
 
+write_contract() {   # host — a real Requirements table, so --oracles-all has P0 rows
+  cat >"$1/docs/specs/s1/contract.md" <<'EOF'
+# Contract
+
+## Requirements
+
+| ID | 需求 | 优先级 | 证据级 | AC 摘要（行为） | Tests |
+|---|---|---|---|---|---|
+| R-001 | feature and its sibling both land | P0 | Verified | both files change | T-001, T-002 |
+EOF
+}
+
 implement() {   # host — the change under test
   echo IMPLEMENTED >"$1/src/feature.txt"
   git -C "$1" add -A
@@ -368,6 +380,40 @@ check "ship-refuses-workspace-link-escape" 2 bash "$SHIP" --host "$HL" --spec s1
 saw "ship-explains-link-escape" 'escapes into the working tree'
 check "ship-link-escape-avoidable" 0 env SHIP_LINK= \
   bash "$SHIP" --host "$HL" --spec s1 --slice S1 --from-meta "$ML"
+
+# --- a whole-Spec replay must cover P0 T-ids that no slice names -------------
+# The replay set used to come from plan.md 完成定义. A slice table is a work breakdown, so a
+# P0 requirement mapping T-001,T-002 while every slice mentions only T-001 left T-002 out of
+# the closing replay entirely — the missing-failure case is exactly what tends to be unsliced.
+HU="$TMP/hunsliced"
+mk_host "$HU" "$GOOD_CMD"
+write_contract "$HU"
+{
+  printf '# Tests\n\n## 索引\n\n| ID | R |\n|---|---|\n| T-001 | R-001 |\n| T-002 | R-001 |\n'
+  printf '\n## T-001 · feature\n\n### Given\n\n- repo\n\n### When\n\n1. run\n\n'
+  printf '### Then（Oracle）\n\n- feature.txt says IMPLEMENTED\n\n'
+  printf '### 自动化\n\n- 命令：`%s`\n- 预期 Evidence Kind：`unit`\n' "$GOOD_CMD"
+  printf '\n## T-002 · sibling nobody sliced\n\n### Given\n\n- repo\n\n### When\n\n1. run\n\n'
+  printf '### Then（Oracle）\n\n- other.txt says ALSO\n\n'
+  printf '### 自动化\n\n- 命令：`bash -c "grep -q ALSO src/other.txt"`\n'
+  printf -- '- 预期 Evidence Kind：`unit`\n'
+} >"$HU/docs/specs/s1/tests.md"
+echo TODO >"$HU/src/other.txt"
+git -C "$HU" add -A
+git -C "$HU" commit -qm "two P0 oracles, one of them unsliced"
+BASEU="$(git -C "$HU" rev-parse HEAD)"
+MU="$(mk_meta "$HU" "$BASEU")"
+echo IMPLEMENTED >"$HU/src/feature.txt"
+echo ALSO >"$HU/src/other.txt"
+git -C "$HU" add -A
+git -C "$HU" commit -qm impl
+check "ship-whole-spec-covers-unsliced" 0 bash "$SHIP" --host "$HU" --spec s1 --from-meta "$MU"
+saw "ship-replays-unsliced-oracle" 'OK +T-002 verify GREEN'
+saw "ship-names-unsliced-oracle" 'no plan.md slice names: T-002'
+# Contrast: a single dispatch unit is still scoped to its own slice.
+check "ship-slice-stays-scoped" 0 bash "$SHIP" --host "$HU" --spec s1 --slice S1 --from-meta "$MU"
+scoped_ok() { ! grep -q 'T-002' "$TMP/out.log"; }
+check "ship-slice-excludes-other-oracles" 0 scoped_ok
 
 echo "--- selftest-ship: pass=$pass fail=$fail ---"
 [[ "$fail" -eq 0 ]]

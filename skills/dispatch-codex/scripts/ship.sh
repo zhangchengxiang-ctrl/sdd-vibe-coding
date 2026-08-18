@@ -97,44 +97,43 @@ fi
 # "executable" must exist once. That call already exits 2 on an invalid or under-covered
 # Oracle set, so a refusal here is the same refusal the dispatch got.
 PACK_ERR="$(mktemp)"; trap 'rm -f "$PACK_ERR"' EXIT
-# No --slice means the whole Spec: closing needs every P0 Oracle, not one unit's. The
-# pack is per-slice by design, so iterate its own --list rather than teaching a second
-# place how to read plan.md.
+# One --slice is a dispatch unit. No --slice is the whole Spec, and that set comes from the
+# P0 Requirements mapping rather than plan.md: a slice table is a work breakdown, so a P0
+# T-id that no slice happens to name would never be replayed and the close would pass
+# without it. Either way the Oracle list comes from the dispatch throat, not a second
+# parser — the definition of "executable" must exist once.
 if [[ -n "$SLICE" ]]; then
-  TARGET_SLICES=("$SLICE")
+  PACK_ARGS=(--json "$HOST" "$SPEC" "$SLICE")
 else
-  mapfile -t TARGET_SLICES < <(python3 "$PACK" --list "$HOST" "$SPEC" 2>"$PACK_ERR")
-  [[ "${#TARGET_SLICES[@]}" -gt 0 ]] || { cat "$PACK_ERR" >&2
-    die "no slices in $SPEC/plan.md — pass --slice, or fix the slice table"; }
+  PACK_ARGS=(--oracles-all "$HOST" "$SPEC")
 fi
+# stdout only: folding stderr in would corrupt the JSON with any warning the pack prints.
+pj="$(python3 "$PACK" "${PACK_ARGS[@]}" 2>"$PACK_ERR")" || {
+  cat "$PACK_ERR" >&2
+  if grep -q 'REFUSED' "$PACK_ERR"; then
+    die "the dispatch throat refuses $SPEC${SLICE:+ / $SLICE} — fix tests.md, not this run"
+  fi
+  die "build_context_pack failed for $SPEC${SLICE:+ / $SLICE} (see above) — this is not an \
+Oracle verdict"
+}
+# The pack's WARNs name P0 requirements nothing replays. Swallowing them here would make an
+# incomplete replay look complete.
+grep -q 'WARN' "$PACK_ERR" 2>/dev/null && sed 's/^/ship: /' "$PACK_ERR" >&2
 
 ORACLES=(); SLICE_LABEL=""
-for sl in "${TARGET_SLICES[@]}"; do
-  [[ -n "$sl" ]] || continue
-  # stdout only: folding stderr in would corrupt the JSON with any warning the pack prints.
-  pj="$(python3 "$PACK" --json "$HOST" "$SPEC" "$sl" 2>"$PACK_ERR")" || {
-    cat "$PACK_ERR" >&2
-    if grep -q 'REFUSED' "$PACK_ERR"; then
-      die "the dispatch throat refuses $SPEC/$sl — fix tests.md, not this run"
-    fi
-    die "build_context_pack failed for $SPEC/$sl (see above) — this is not an Oracle verdict"
-  }
-  while IFS= read -r line; do
-    [[ -n "$line" ]] || continue
-    oid="${line%%$'\t'*}"
-    dup=0
-    for have in "${ORACLES[@]}"; do [[ "${have%%$'\t'*}" == "$oid" ]] && dup=1 && break; done
-    [[ "$dup" == "1" ]] || ORACLES+=("$line")
-  done < <(printf '%s' "$pj" | python3 -c '
+while IFS= read -r line; do
+  [[ -n "$line" ]] || continue
+  oid="${line%%$'\t'*}"
+  dup=0
+  for have in "${ORACLES[@]}"; do [[ "${have%%$'\t'*}" == "$oid" ]] && dup=1 && break; done
+  [[ "$dup" == "1" ]] || ORACLES+=("$line")
+done < <(printf '%s' "$pj" | python3 -c '
 import json, sys
 pack = json.load(sys.stdin)
 for o in pack.get("oracles", []):
     print("\t".join([o.get("id", ""), o.get("kind", ""), o.get("cmd", "").strip("`").strip()]))
 ')
-  if [[ -z "$SLICE_LABEL" ]]; then
-    SLICE_LABEL="$(printf '%s' "$pj" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("dispatch_id",""))')"
-  fi
-done
+SLICE_LABEL="$(printf '%s' "$pj" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("dispatch_id",""))')"
 [[ -n "$SLICE" ]] || SLICE_LABEL="all"
 [[ "${#ORACLES[@]}" -gt 0 ]] || die "no Oracles for $SPEC${SLICE:+ / $SLICE} — nothing to replay"
 
