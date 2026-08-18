@@ -44,7 +44,7 @@
 确认后连续执行至关版分叉——**不含 Deploy**：
 
 1. Plan 落盘（事实映射、纵向切片、强 Oracle、`check_spec`）；禁止中途「待批准」
-2. Build/Repair 按施工通道派发；edit-wave 后 verify-wave 证伪（[`falsify-attestation`](../../dispatch-codex/references/falsify-attestation.md)）
+2. Build/Repair 按施工通道派发；edit-wave 后 verify-wave 红绿 replay（`ship.sh --from-meta`）
 3. 全部 D 收口 → Agent Verify → 证据卡或人类验收包
 4. Fail → 统一 Repair（fresh exec）→ 回验
 

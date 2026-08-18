@@ -4,8 +4,6 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 ASSERT="$ROOT/skills/dispatch-codex/scripts/assert_plan_artifacts.py"
-REQUIRE="$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh"
-RECORD="$ROOT/skills/dispatch-codex/scripts/record-conductor-falsify.sh"
 WISH="$ROOT/skills/dispatch-codex/scripts/wish-orchestrate.sh"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -16,7 +14,7 @@ check() {
   local name="$1" expect="$2"
   shift 2
   set +e
-  "$@" >/dev/null 2>&1
+  "$@" >"$TMP/last.log" 2>&1
   local st=$?
   set -e
   if [[ "$st" -eq "$expect" ]]; then
@@ -24,6 +22,17 @@ check() {
     pass=$((pass + 1))
   else
     echo "FAIL $name (exit $st expected $expect)" >&2
+    fail=$((fail + 1))
+  fi
+}
+
+saw_gates() {   # name pattern — the last check's output must contain it, so a refusal is
+  # attributed to the gate under test rather than to any other exit-2 path
+  if grep -qE "$2" "$TMP/last.log" 2>/dev/null; then
+    echo "PASS $1"; pass=$((pass + 1))
+  else
+    echo "FAIL $1 — output lacked /$2/" >&2
+    tail -3 "$TMP/last.log" 2>/dev/null | sed 's/^/      /' >&2
     fail=$((fail + 1))
   fi
 }
@@ -39,61 +48,14 @@ for f in VERSION.md contract.md tests.md plan.md run.md; do
 done
 check "plan-complete" 0 python3 "$ASSERT" "$TMP/host" ok-spec
 
-# --- require-conductor-falsify: unstructured / structured ---
-LOG="$TMP/logs"
-mkdir -p "$LOG"
-echo "ran some tests" >"$LOG/run1_falsify.log"
-check "falsify-no-verdict" 1 bash "$REQUIRE" --log-dir "$LOG" --run-id run1
-
-echo "VERDICT: S1 FAIL" >"$LOG/run2_falsify.log"
-check "falsify-verdict-fail-unstructured" 1 bash "$REQUIRE" --log-dir "$LOG" --run-id run2
-
-# Verdict PASS alone is no longer enough
-echo "VERDICT: S1 PASS (conductor re-ran)" >"$LOG/run3_falsify.log"
-check "falsify-verdict-pass-unstructured" 1 bash "$REQUIRE" --log-dir "$LOG" --run-id run3
-
-# Structured PASS
-cat >"$LOG/run4_falsify.log" <<'EOF'
-COMMAND: echo probe
-EXIT_CODE: 0
-SLICE: S1
-RUN_ID: run4
-VERDICT: S1 PASS
-EOF
-check "falsify-structured-pass" 0 bash "$REQUIRE" --log-dir "$LOG" --run-id run4
-
-# PASS with non-zero EXIT_CODE
-cat >"$LOG/run5_falsify.log" <<'EOF'
-COMMAND: false
-EXIT_CODE: 1
-VERDICT: S1 PASS
-EOF
-check "falsify-pass-nonzero-exit" 1 bash "$REQUIRE" --log-dir "$LOG" --run-id run5
-
-# ARTIFACT without hash
-cat >"$LOG/run6_falsify.log" <<'EOF'
-COMMAND: echo x
-EXIT_CODE: 0
-ARTIFACT: /tmp/nope
-VERDICT: S1 PASS
-EOF
-check "falsify-artifact-no-hash" 1 bash "$REQUIRE" --log-dir "$LOG" --run-id run6
-
-SKIP_FALSIFY_VERDICT=1 check "falsify-skip-verdict-env" 0 \
-  bash "$REQUIRE" --log-dir "$LOG" --run-id run1
-
-SKIP_STRUCTURED_FALSIFY=1 check "falsify-skip-structured-env" 0 \
-  bash "$REQUIRE" --log-dir "$LOG" --run-id run3
-
-# --- record-conductor-falsify ---
-check "record-falsify-success" 0 \
-  bash "$RECORD" --log-dir "$LOG" --run-id rec1 --slice S1 -- echo probe-ok
-check "require-after-record" 0 bash "$REQUIRE" --log-dir "$LOG" --run-id rec1
-bash "$RECORD" --log-dir "$LOG" --run-id rec_noop --slice S1 -- true >/dev/null || true
-check "require-noop-command" 1 bash "$REQUIRE" --log-dir "$LOG" --run-id rec_noop
-check "record-falsify-fail-cmd" 1 \
-  bash "$RECORD" --log-dir "$LOG" --run-id rec2 --slice S1 -- false
-check "require-after-record-fail" 1 bash "$REQUIRE" --log-dir "$LOG" --run-id rec2
+# --- the wave gate: an Oracle replay, not a hand-written attestation ------------
+# What was here: 13 probes for require-/record-conductor-falsify, a structured
+# COMMAND + EXIT_CODE + VERDICT log the conductor typed by hand. That file was the manual
+# form of "a command and its exit code", and ship.sh does it for real against the dispatch's
+# own baseline. The replay itself is probed in selftest-ship (70 cases); what belongs here is
+# that wish-orchestrate still refuses to wave on without one.
+# Probed behaviourally below, once the wish fixture exists — grepping the script for the
+# function's own name would pass on a stub, which is the static-slogan check this repo deleted.
 
 fill_spec() {   # real Oracles derived from plan.md — a bodyless tests.md has none
   local spec_dir="$1" ids t
@@ -138,6 +100,41 @@ CORRELATION_ID=w1-test
 SPEC_ID=w1
 EOF
 check "wish-dry-skip-passed" 0 bash "$WISH" --cwd "$HOST" --spec w1 --dry-run --slice S1
+
+# The wave gate: a dispatch awaiting its replay may not wave on. Behavioural, not a grep —
+# it drives wish-orchestrate with the awaiting flag set and no meta to replay against.
+wave_state() {   # $1 = the awaiting variable name to write
+  cat >"$LOGW/wish-state-w1.env" <<EOF
+$1=1
+LAST_RUN_ID=missingrun
+LAST_RUN_IDS='missingrun'
+LAST_SLICE=S1
+LAST_DISPATCH=''
+PASSED_SLICES=''
+PASSED_UNITS=''
+CORRELATION_ID=w1-test
+SPEC_ID=w1
+EOF
+}
+wave_state AWAITING_REPLAY
+check "wave-gate-blocks-without-replay" 2 bash "$WISH" --cwd "$HOST" --spec w1 --dry-run --slice S2
+saw_gates "wave-gate-names-missing-meta" 'no dispatch meta for missingrun'
+# A wave dispatched before the rename wrote the old variable; dropping the alias would
+# retire the gate for exactly those in-flight waves.
+wave_state AWAITING_FALSIFY
+check "wave-gate-legacy-state-blocks" 2 bash "$WISH" --cwd "$HOST" --spec w1 --dry-run --slice S2
+wave_state AWAITING_REPLAY
+check "wave-gate-skip-is-opt-in" 0 env SKIP_REPLAY_GATE=1 \
+  bash "$WISH" --cwd "$HOST" --spec w1 --dry-run --slice S2
+rm -f "$LOGW/wish-state-w1.env"
+cat >"$LOGW/wish-state-w1.env" <<'EOF'
+AWAITING_REPLAY=0
+LAST_RUN_ID=
+LAST_SLICE=
+PASSED_SLICES='S1'
+CORRELATION_ID=w1-test
+SPEC_ID=w1
+EOF
 
 PACK_UNITS="$ROOT/skills/dispatch-codex/scripts/pack_dispatch_units.py"
 SCHEDULE="$ROOT/skills/dispatch-codex/scripts/schedule_waves.py"
@@ -281,8 +278,8 @@ check "auth-block-in-dispatch" 0 \
   grep -q "CLI dispatch authorization" "$ROOT/skills/dispatch-codex/scripts/codex-dispatch.sh"
 
 # --- attestation doc exists ---
-check "falsify-attestation-doc" 0 \
-  test -f "$ROOT/skills/dispatch-codex/references/falsify-attestation.md"
+check "oracle-replay-runner-present" 0 \
+  test -f "$ROOT/skills/dispatch-codex/scripts/ship.sh"
 
 echo "--- codex lifecycle (mock CLI, isolated tmp; no host repos) ---"
 bash "$ROOT/skills/dispatch-codex/scripts/selftest-codex-lifecycle.sh"

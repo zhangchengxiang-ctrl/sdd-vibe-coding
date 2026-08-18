@@ -500,8 +500,8 @@ elif ! { base_sha="$(git -C "$HOSTP" rev-parse HEAD)"
          done < <(grep -oE 'cwd=[^ ]+' "$MOCK_DIR/invocations.log" | sort -u)
          [[ "$bad_sha" -eq 0 ]]; }; then
   FAIL "t7-wish-parallel-pinned-sha" "a worktree was not pinned to the main tree HEAD"
-elif [[ -f "$state" ]] && ! grep -q "AWAITING_FALSIFY=1" "$state"; then
-  FAIL "t7-wish-parallel-state" "expected AWAITING_FALSIFY=1"
+elif [[ -f "$state" ]] && ! grep -q "AWAITING_REPLAY=1" "$state"; then
+  FAIL "t7-wish-parallel-state" "expected AWAITING_REPLAY=1 (the wave gate is now a replay)"
 else
   id1="$(tr -d '[:space:]' <"$r1")"
   id2="$(tr -d '[:space:]' <"$r2")"

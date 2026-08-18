@@ -17,7 +17,9 @@
 - 未覆盖入口：
 - 实现冻结时间（开始单元测试前）：
 - oracle-freeze: `intact`（禁改 `tests.md` / 验收矩阵；改 Oracle 须回 Plan）
-- 红绿证据: `red <cmd> exit=<n> · green <cmd> exit=0` | `N/A · polish|trivial|无自动化`
+- 红绿证据: 由 runner 写入 `.sdd-evidence/`（`make verify-deliver HOST=… SPEC=…`）;此行只做人读摘要。
+  `N/A · polish|trivial|无自动化` 仅当该 Spec **没有** P0 机检 Oracle——有一条就必须有基线红+改后绿两半
+- 人工验收: `T-xxx · <谁看到了什么>`（`manual-only`/`人工` Oracle 关版必填;runner 关不了它们）
 
 ## 结果
 

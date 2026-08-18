@@ -194,13 +194,27 @@ else
 fi
 rm -rf "$b5log"
 
-# --- B6: attack — unstructured falsify PASS ---
+# --- B6: attack — claim a replay instead of running one ---
+# Was: a hand-written `VERDICT: S1 PASS` attestation, which the falsify gate rejected for
+# lacking COMMAND/EXIT_CODE. That whole file was the manual form of "a command and its exit
+# code", so the attack now targets its replacement — forge the ledger ship.sh writes.
 flog=$(mktemp -d)
-printf '%s\n' 'VERDICT: S1 PASS' >"$flog/r_falsify.log"
+mkdir -p "$flog/docs/specs/s1" "$flog/.sdd-evidence"
+printf '%s\n' '{"id":"T-001","phase":"baseline","verdict":"red","cmd":"forged"}' \
+              '{"id":"T-001","phase":"verify","verdict":"green","cmd":"forged"}' \
+  >"$flog/.sdd-evidence/s1-all.jsonl"
 set +e
-bash skills/dispatch-codex/scripts/require-conductor-falsify.sh --log-dir "$flog" --run-id r >/dev/null 2>&1
+python3 - "$flog/docs/specs/s1" <<'PY' >/dev/null 2>&1
+import importlib.util, sys
+from pathlib import Path
+spec = importlib.util.spec_from_file_location("cs", "skills/spec/scripts/check_spec.py")
+cs = importlib.util.module_from_spec(spec); spec.loader.exec_module(cs)
+# A forged row has no log on disk, so it must not anchor a close.
+sys.exit(0 if cs.closing_anchor("", Path(sys.argv[1]), []) else 1)
+PY
 e=$?; set -e
-[[ $e -eq 1 ]] && ok "B6-unstructured-falsify-blocked" || bad "B6-unstructured-falsify-blocked" "exit=$e"
+[[ $e -eq 1 ]] && ok "B6-forged-replay-row-not-an-anchor" \
+  || bad "B6-forged-replay-row-not-an-anchor" "exit=$e (a row naming no log anchored a close)"
 rm -rf "$flog"
 
 # --- B7: attack — try to raise rot ceiling by adding slogan file (simulate) ---

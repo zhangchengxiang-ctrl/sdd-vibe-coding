@@ -65,6 +65,17 @@ note(not (root / "scripts/hooks").exists()
      "hooks-gone", "no hooks subsystem to self-authorize")
 note("ALLOW_PARTIAL" not in (root / "scripts/scaffold.sh").read_text(encoding="utf-8"),
      "allow-partial-gone", "scaffold cannot half-write a host")
+# The conductor falsify attestation: a hand-written COMMAND + EXIT_CODE + VERDICT log. It was
+# the manual form of "a command and its exit code", and typing one proved only that. ship.sh
+# replays the frozen Oracle against the dispatch's own baseline instead. Deleted mechanisms
+# have a way of reappearing as "just a small helper".
+note(not any((root / p).exists() for p in (
+        "skills/dispatch-codex/scripts/require-conductor-falsify.sh",
+        "skills/dispatch-codex/scripts/record-conductor-falsify.sh",
+        "skills/dispatch-codex/references/falsify-attestation.md")),
+     "falsify-attestation-gone", "no hand-written attestation can stand in for a replay")
+note("record-falsify" not in (root / "Makefile").read_text(encoding="utf-8"),
+     "falsify-targets-gone", "the Makefile no longer offers a way to type an attestation")
 
 # --- prose claims no longer buy anything: the close action is the gate ---
 run_claim = "- 状态: `acceptance-passed`\n- 是否可以交付: `可交付`\n"

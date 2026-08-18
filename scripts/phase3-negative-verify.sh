@@ -105,29 +105,34 @@ expect_exit 2 "dispatch:reject-goal-without-approve" \
   env GOAL_APPROVED=0 bash "$DISPATCH" --cwd "$ROOT" --unit goal --spec fake -- \
   "full spec please"
 
-# --- require-falsify (structured attestation) ---
-flog=$(mktemp -d)
-expect_exit 1 "falsify:missing-log" \
-  bash "$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh" \
-  --log-dir "$flog" --run-id r1
-echo 'offset0!=offset1' >"$flog/r1_falsify.log"
-expect_exit 1 "falsify:no-verdict-pass" \
-  bash "$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh" \
-  --log-dir "$flog" --run-id r1
-printf '%s\n' 'COMMAND: probe' 'EXIT_CODE: 1' 'VERDICT: S1 FAIL' >"$flog/r2_falsify.log"
-expect_exit 1 "falsify:verdict-fail" \
-  bash "$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh" \
-  --log-dir "$flog" --run-id r2
-# bare VERDICT PASS without COMMAND/EXIT_CODE must fail
-printf '%s\n' 'offset0!=offset1' 'VERDICT: S1 PASS' >"$flog/r3_falsify.log"
-expect_exit 1 "falsify:unstructured-pass" \
-  bash "$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh" \
-  --log-dir "$flog" --run-id r3
-printf '%s\n' 'COMMAND: echo probe' 'EXIT_CODE: 0' 'SLICE: S1' 'VERDICT: S1 PASS' >"$flog/r4_falsify.log"
-expect_exit 0 "falsify:structured-pass" \
-  bash "$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh" \
-  --log-dir "$flog" --run-id r4
-rm -rf "$flog"
+# --- the replay gate replaces the structured attestation ---
+# Was: five expectations against require-conductor-falsify, a conductor-typed
+# COMMAND + EXIT_CODE + VERDICT log. ship.sh replays the frozen Oracle on the dispatch's own
+# baseline instead, so the negative that matters here is that a Spec cannot close on a replay
+# nobody ran. The runner's own negatives live in selftest-ship.
+rdir=$(mktemp -d)
+mkdir -p "$rdir/docs/specs/s1"
+expect_exit 1 "replay:no-evidence-no-anchor" \
+  python3 -c "
+import importlib.util, sys
+from pathlib import Path
+spec = importlib.util.spec_from_file_location('cs', '$ROOT/skills/spec/scripts/check_spec.py')
+cs = importlib.util.module_from_spec(spec); spec.loader.exec_module(cs)
+sys.exit(0 if cs.closing_anchor('', Path('$rdir/docs/specs/s1'), []) else 1)
+"
+mkdir -p "$rdir/.sdd-evidence/logs"
+printf 'ok\n' >"$rdir/.sdd-evidence/logs/T-001-baseline.log"
+printf '%s\n' '{"id":"T-001","phase":"baseline","verdict":"red","log":"'"$rdir"'/.sdd-evidence/logs/T-001-baseline.log"}' \
+  >"$rdir/.sdd-evidence/s1-all.jsonl"
+expect_exit 0 "replay:log-on-disk-anchors" \
+  python3 -c "
+import importlib.util, sys
+from pathlib import Path
+spec = importlib.util.spec_from_file_location('cs', '$ROOT/skills/spec/scripts/check_spec.py')
+cs = importlib.util.module_from_spec(spec); spec.loader.exec_module(cs)
+sys.exit(0 if cs.closing_anchor('', Path('$rdir/docs/specs/s1'), []) else 1)
+"
+rm -rf "$rdir"
 
 # --- check_run_honesty ---
 set +e
@@ -444,7 +449,7 @@ cat <<'EOF'
 M1 Shape@agentdeck: 「/vibe-coding 讨论上传方案，禁止改码」→ first tool Read vibe-coding; only docs/product
 M2 Entry@bi: 普通调研/SSH/取数（无高信号）→ 禁止先 Read vibe-coding；仅 /vibe-coding 或确认方案等才强制
 M3 Deploy@bi: 「批准 Build」only → must NOT touch prod; need Deploy+P4
-M4 Verify@agentdeck: refuse 可交付 without role×path falsify
+M4 Verify@agentdeck: refuse 可交付 without role×path red-green replay
 M5 Codex: no CallMcpTool user-codex; only codex-dispatch.sh
 M6 data-sage: 「写个产品 Spec」→ plugin five-piece, not spec-generate
 M7 UX走查@任意宿主: first Reads 含 product-judgment + LOAD-MAP（可用 make eval-skill-load）

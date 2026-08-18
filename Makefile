@@ -3,7 +3,7 @@
 
 .PHONY: help install install-dev install-cursor install-claude install-codex \
 	scaffold codex-dispatch wish-orchestrate context-pack verify check-docs check-spec verify-deliver close-spec \
-	preflight-rail codex-preflight require-falsify record-falsify dispatch-gates-selftest public-gates contract-sync \
+	preflight-rail codex-preflight ship dispatch-gates-selftest public-gates contract-sync \
 	dispatch-live-lifecycle dispatch-live-scenario \
 	phase3-negative eval-live eval-skill-load wish-journey \
 	rot corrections host-drift single-definition orphan-refs gate-cases \
@@ -50,9 +50,8 @@ help:
 		'                            派 Codex（唯一通道；never + 墙钟；Build/Goal 需 SPEC=；Build 需 SLICE=）' \
 		'  make context-pack HOST=路径 SPEC=id SLICE=S1   生成 Codex Context Pack（stdout）' \
 		'  make wish-orchestrate HOST=路径 SPEC=id [SLICE=S1]  许愿：打包 D→edit-wave Codex（可并行；幂等+锁）' \
-		'  make record-falsify LOG_DIR=路径 RUN_ID=id SLICE=S1 CMD="…"  结构化证伪取证' \
-		'  make require-falsify LOG_DIR=路径 [RUN_ID=]  指挥侧证伪门（须 COMMAND+EXIT_CODE+VERDICT）' \
-		'  make dispatch-gates-selftest  离线硬门自检（Plan / structured falsify / wish）' \
+		'  make ship HOST=路径 SPEC=id [SLICE=S1] META=…  红绿 replay（基线红→改后绿）' \
+		'  make dispatch-gates-selftest  离线硬门自检（Plan / oracle replay / wish）' \
 		'  make dispatch-live-lifecycle  真机 codex exec 生命周期自检（烧 token）' \
 		'  make dispatch-live-scenario   真机多 D DAG 场景自检（烧 token）' \
 		'  make gate-cases            91 例门强度回测目录 + live 探针' \
@@ -164,34 +163,17 @@ preflight-rail:
 	if [ "$(AUTHORIZED)" = "1" ]; then extra="--authorized"; fi; \
 	bash scripts/preflight-rail.sh --cwd "$(HOST)" $$extra
 
-require-falsify:
-	@if [ -z "$(LOG_DIR)" ]; then \
-		echo 'Usage: make require-falsify LOG_DIR=<dir> [RUN_ID=]'; \
-		exit 2; \
-	fi
-	@extra=""; \
-	if [ -n "$(RUN_ID)" ]; then extra="--run-id $(RUN_ID)"; fi; \
-	bash skills/dispatch-codex/scripts/require-conductor-falsify.sh --log-dir "$(LOG_DIR)" $$extra
 
-# Record structured falsify attestation (runs CMD, writes COMMAND/EXIT_CODE/VERDICT).
-# Example: make record-falsify LOG_DIR=… RUN_ID=… SLICE=S1 CMD='pytest -k s1'
-record-falsify:
-	@if [ -z "$(LOG_DIR)" ] || [ -z "$(RUN_ID)" ] || [ -z "$(CMD)" ]; then \
-		echo 'Usage: make record-falsify LOG_DIR=<dir> RUN_ID=<id> [SLICE=S1] CMD="<falsify command>"'; \
-		exit 2; \
-	fi
-	@extra=""; \
-	if [ -n "$(SLICE)" ]; then extra="$$extra --slice $(SLICE)"; fi; \
-	bash skills/dispatch-codex/scripts/record-conductor-falsify.sh \
-		--log-dir "$(LOG_DIR)" --run-id "$(RUN_ID)" $$extra -- bash -c "$(CMD)"
-
-# Offline hard-gate selftest (no Codex): Plan artifacts + structured falsify + wish status.
+# Offline hard-gate selftest (no Codex): Plan artifacts + Oracle replay + wish status.
 dispatch-gates-selftest:
 	bash skills/dispatch-codex/scripts/selftest-gates.sh
 
 # Red-green replay of the frozen Oracles. --from-meta reads the baseline SHA the dispatch
 # recorded, so nobody has to remember which tree predates the change.
-#   make ship HOST=~/code/agentdeck SPEC=my-spec SLICE=S1 BASE=<sha>
+#   make ship HOST=~/code/agentdeck SPEC=my-spec SLICE=S1 \
+#     META=~/code/agentdeck/.codex-dispatch-logs/<run-id>.meta.txt
+# BASE= alone is refused: letting the judged party pick its baseline makes red-green a
+# formality. SHIP_ALLOW_MANUAL_BASE=1 permits it and marks the evidence unverified.
 ship:
 	bash skills/dispatch-codex/scripts/ship.sh --host $(HOST) --spec $(SPEC) \
 	  $(if $(SLICE),--slice $(SLICE),) $(if $(BASE),--base $(BASE),) \

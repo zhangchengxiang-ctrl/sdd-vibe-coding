@@ -1,7 +1,7 @@
 {
-  "skills_bytes": 217474,
-  "skills_md_count": 64,
-  "skills_lines": 4639,
+  "skills_bytes": 215169,
+  "skills_md_count": 63,
+  "skills_lines": 4568,
   "mdc_count": 1,
   "always_on_window_lines": 124,
   "entry_lines": 66,
@@ -13,7 +13,7 @@
     "skills/debug/SKILL.md": 122,
     "skills/deploy/SKILL.md": 70,
     "skills/design/SKILL.md": 117,
-    "skills/dispatch-codex/SKILL.md": 280,
+    "skills/dispatch-codex/SKILL.md": 264,
     "skills/spec/SKILL.md": 152,
     "skills/testing/SKILL.md": 111,
     "skills/vibe-coding/SKILL.md": 66

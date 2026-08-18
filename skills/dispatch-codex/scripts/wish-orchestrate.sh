@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Wish orchestration: pack A→D (272K) → edit-wave Codex Build → verify-wave falsify.
+# Wish orchestration: pack A→D (272K) → edit-wave Codex Build → verify-wave Oracle replay.
 #
 # Usage:
 #   bash wish-orchestrate.sh --cwd HOST --spec SPEC_ID [--slice S1] [--effort medium|high]
@@ -9,7 +9,7 @@
 #   bash wish-orchestrate.sh --cwd HOST --spec SPEC_ID --force-slice S1
 #   bash wish-orchestrate.sh --cwd HOST --spec SPEC_ID --parallel 2
 #
-# Does NOT run Verify / human acceptance (钉 3). Machine loop = pack→edit-wave→structured falsify.
+# Does NOT run Verify / human acceptance (钉 3). Machine loop = pack→edit-wave→Oracle replay.
 set -euo pipefail
 
 usage() {
@@ -34,7 +34,7 @@ Options:
 
 Exit codes:
   0  last requested edit-wave dispatched or all already passed
-  3  edit-wave dispatched; structured falsify PASS required before next wave
+  3  edit-wave dispatched; red-green Oracle replay required before next wave
   2  usage / hard failure
 EOF
 }
@@ -83,11 +83,11 @@ PACK_UNITS="$PLUGIN_ROOT/skills/dispatch-codex/scripts/pack_dispatch_units.py"
 SCHEDULE="$PLUGIN_ROOT/skills/dispatch-codex/scripts/schedule_waves.py"
 DISPATCH="$PLUGIN_ROOT/skills/dispatch-codex/scripts/codex-dispatch.sh"
 DETECT="$PLUGIN_ROOT/skills/dispatch-codex/scripts/detect_compact.py"
-REQUIRE_FALSIFY="$PLUGIN_ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh"
+SHIP="$PLUGIN_ROOT/skills/dispatch-codex/scripts/ship.sh"
 [[ -f "$PACK_PY" ]] || die "missing $PACK_PY"
 [[ -f "$PACK_UNITS" ]] || die "missing $PACK_UNITS"
 [[ -f "$DISPATCH" ]] || die "missing $DISPATCH"
-[[ -f "$REQUIRE_FALSIFY" ]] || die "missing $REQUIRE_FALSIFY"
+[[ -f "$SHIP" ]] || die "missing $SHIP"
 
 if [[ "$LIST" == "1" ]]; then
   python3 "$PACK_PY" "$CWD" "$SPEC_ID" --list
@@ -119,7 +119,7 @@ if ! flock -n 9; then
 fi
 
 load_state() {
-  AWAITING_FALSIFY=0
+  AWAITING_REPLAY=0
   LAST_RUN_ID=""
   LAST_RUN_IDS=""
   LAST_SLICE=""
@@ -131,11 +131,18 @@ load_state() {
     # shellcheck disable=SC1090
     source "$STATE_FILE"
   fi
+  # A wave dispatched before this rename left AWAITING_FALSIFY=1 in the state file. Dropping
+  # the old name would silently retire the gate for exactly those in-flight waves. `:-` cannot
+  # express that: AWAITING_REPLAY is initialised to "0" above, which is non-empty, so the
+  # fallback never fired. The behavioural probe caught it; grepping for this line did not.
+  if [[ "${AWAITING_REPLAY:-0}" != "1" && "${AWAITING_FALSIFY:-0}" == "1" ]]; then
+    AWAITING_REPLAY=1
+  fi
 }
 
 save_state() {
   cat >"$STATE_FILE" <<EOF
-AWAITING_FALSIFY=$AWAITING_FALSIFY
+AWAITING_REPLAY=$AWAITING_REPLAY
 LAST_RUN_ID=$LAST_RUN_ID
 LAST_RUN_IDS='$LAST_RUN_IDS'
 LAST_SLICE=$LAST_SLICE
@@ -230,9 +237,13 @@ for wave in w.get("edit_waves") or []:
 PY
 }
 
-enforce_prior_falsify() {
-  if [[ "${SKIP_FALSIFY_GATE:-0}" == "1" ]]; then
-    echo "wish-orchestrate: WARN SKIP_FALSIFY_GATE=1 — maintainer-only; never in user sessions" >&2
+# The machine gate between waves. It used to require a structured falsify attestation — a
+# hand-written COMMAND + EXIT_CODE + VERDICT log, i.e. the manual form of "a command and its
+# exit code". ship.sh does that for real: it replays each frozen Oracle on the dispatch's own
+# baseline and refuses anything that was not RED there first.
+enforce_prior_replay() {
+  if [[ "${SKIP_REPLAY_GATE:-0}" == "1" ]]; then
+    echo "wish-orchestrate: WARN SKIP_REPLAY_GATE=1 — maintainer-only; never in user sessions" >&2
     if [[ -n "${LAST_DISPATCH:-}" ]]; then
       for uid in $LAST_DISPATCH; do
         mark_unit_passed "$uid"
@@ -243,22 +254,30 @@ enforce_prior_falsify() {
     elif [[ -n "${LAST_SLICE:-}" ]]; then
       mark_slice_passed "$LAST_SLICE"
     fi
-    AWAITING_FALSIFY=0
+    AWAITING_REPLAY=0
     LAST_RUN_IDS=""
     save_state
     return 0
   fi
   load_state
-  if [[ "${AWAITING_FALSIFY:-0}" != "1" ]]; then
+  if [[ "${AWAITING_REPLAY:-0}" != "1" ]]; then
     return 0
   fi
   local ids="${LAST_RUN_IDS:-$LAST_RUN_ID}"
   [[ -n "$ids" ]] || return 0
-  echo "wish-orchestrate: prior dispatch ${LAST_DISPATCH:-$LAST_SLICE} awaits structured falsify ($ids)" >&2
-  local rid
+  echo "wish-orchestrate: prior dispatch ${LAST_DISPATCH:-$LAST_SLICE} awaits an Oracle replay ($ids)" >&2
+  local rid meta sl
   for rid in $ids; do
-    if ! bash "$REQUIRE_FALSIFY" --log-dir "$LOG_DIR" --run-id "$rid"; then
-      die "falsify gate blocked: make record-falsify LOG_DIR=$LOG_DIR RUN_ID=$rid SLICE=${LAST_SLICE:-S?} -- <cmd>"
+    meta="$LOG_DIR/${rid}.meta.txt"
+    [[ -f "$meta" ]] || die "no dispatch meta for $rid ($meta) — without the baseline it \
+recorded there is nothing to replay against; do not wave on"
+    # The meta names the slices that dispatch covered; ship.sh takes a comma list. Without
+    # one, replay the whole Spec rather than guessing a narrower set.
+    sl="$(sed -n 's/^slices=//p' "$meta" | head -1)"
+    if ! bash "$SHIP" --host "$CWD" --spec "$SPEC_ID" ${sl:+--slice "$sl"} --from-meta "$meta"; then
+      die "replay gate blocked for $rid: every P0 Oracle must be RED on ${rid}'s baseline and \
+GREEN now. Fix the Oracle or the implementation — bash $SHIP --host $CWD --spec $SPEC_ID \
+${sl:+--slice $sl} --from-meta $meta"
     fi
   done
   if [[ -n "${LAST_DISPATCH:-}" ]]; then
@@ -271,7 +290,7 @@ enforce_prior_falsify() {
   elif [[ -n "${LAST_SLICE:-}" ]]; then
     mark_slice_passed "$LAST_SLICE"
   fi
-  AWAITING_FALSIFY=0
+  AWAITING_REPLAY=0
   LAST_RUN_IDS=""
   save_state
 }
@@ -287,7 +306,7 @@ if [[ "$STATUS" == "1" ]]; then
   echo "  host=$CWD"
   echo "  spec=$SPEC_ID"
   echo "  correlation_id=${CORRELATION_ID:-}"
-  echo "  awaiting_falsify=${AWAITING_FALSIFY:-0}"
+  echo "  awaiting_replay=${AWAITING_REPLAY:-0}"
   echo "  last_run_id=${LAST_RUN_ID:-}"
   echo "  last_run_ids=${LAST_RUN_IDS:-}"
   echo "  last_slice=${LAST_SLICE:-}"
@@ -321,7 +340,7 @@ if [[ -n "$too_large" && "$PACK_ONLY" != "1" && "$DRY_RUN" != "1" ]]; then
   die "units exceed 180K window: $too_large — split allowlist / Spec; do not Goal-hard-撑"
 fi
 
-enforce_prior_falsify
+enforce_prior_replay
 load_state
 
 # Resolve target unit ids for this invoke
@@ -518,7 +537,7 @@ fi
 
 [[ ${#RUN_IDS[@]} -gt 0 ]] || die "no run_ids recorded"
 
-AWAITING_FALSIFY=1
+AWAITING_REPLAY=1
 LAST_RUN_ID="${RUN_IDS[0]}"
 LAST_RUN_IDS="${RUN_IDS[*]}"
 LAST_DISPATCH="${DISPATCHED_UIDS[*]}"
@@ -526,12 +545,12 @@ LAST_SLICE="$(unit_slices "${DISPATCHED_UIDS[0]}" | awk '{print $1}')"
 save_state
 
 if [[ -f "$PLUGIN_ROOT/scripts/wish-journey.sh" ]]; then
-  bash "$PLUGIN_ROOT/scripts/wish-journey.sh" --cwd "$CWD" --spec "$SPEC_ID" --set awaiting-falsify >/dev/null 2>&1 || true
+  bash "$PLUGIN_ROOT/scripts/wish-journey.sh" --cwd "$CWD" --spec "$SPEC_ID" --set awaiting-replay >/dev/null 2>&1 || true
 fi
 
 echo "wish-orchestrate: dispatched units=${DISPATCHED_UIDS[*]} run_ids=${RUN_IDS[*]} correlation=$CORRELATION_ID" >&2
-echo "wish-orchestrate: NEXT — verify-wave: make record-falsify LOG_DIR=$LOG_DIR RUN_ID=<id> SLICE=<S*> -- <cmd>" >&2
-echo "wish-orchestrate: then: make require-falsify LOG_DIR=$LOG_DIR RUN_ID=<id>  (each run_id)" >&2
+echo "wish-orchestrate: NEXT — verify-wave replays the Oracles; it runs automatically on the" >&2
+echo "  next invocation, or now: bash $SHIP --host $CWD --spec $SPEC_ID --from-meta $LOG_DIR/<id>.meta.txt" >&2
 
 # More edit-waves remaining?
 remaining=0
@@ -560,9 +579,9 @@ while IFS= read -r wave; do
 done < <(edit_waves)
 
 if [[ "$remaining" == "1" ]]; then
-  echo "wish-orchestrate: stopping before next edit-wave (verify-wave falsify gate)." >&2
+  echo "wish-orchestrate: stopping before next edit-wave (verify-wave replay gate)." >&2
   exit 3
 fi
 
-echo "wish-orchestrate: requested edit-wave dispatched. Structured falsify then Agent Verify (not Codex; not Deploy)." >&2
+echo "wish-orchestrate: requested edit-wave dispatched. Oracle replay then Agent Verify (not Codex; not Deploy)." >&2
 exit 0

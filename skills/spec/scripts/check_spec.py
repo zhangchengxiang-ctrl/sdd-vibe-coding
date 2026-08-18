@@ -1155,15 +1155,9 @@ def _dispatch_log_dirs(start: Path | None = None) -> list[Path]:
     return _walk_up_dirs(".codex-dispatch-logs", start)
 
 
-def replay_halves(spec_dir: Path) -> dict[str, set[tuple[str, str]]]:
-    """T-id -> {(phase, verdict)} from ship.sh's .sdd-evidence rows for this Spec.
-
-    Structural only, and deliberately so: the file lives in the tree the implementer can
-    write, so this cannot establish that a run happened. It establishes the opposite —
-    that closing without a replay is refused. `make verify-deliver` re-runs ship.sh rather
-    than reading this, because a ledger is a record, not a credential.
-    """
-    out: dict[str, set[tuple[str, str]]] = {}
+def replay_rows(spec_dir: Path) -> dict[str, list[dict]]:
+    """T-id -> ship.sh evidence rows for this Spec, nearest .sdd-evidence first."""
+    out: dict[str, list[dict]] = {}
     for d in _walk_up_dirs(".sdd-evidence", spec_dir):
         for f in sorted(d.glob(f"{spec_dir.name}*.jsonl")):
             try:
@@ -1178,9 +1172,26 @@ def replay_halves(spec_dir: Path) -> dict[str, set[tuple[str, str]]]:
                     r = json.loads(line)
                 except ValueError:
                     continue
-                tid, phase, verdict = r.get("id"), r.get("phase"), r.get("verdict")
-                if tid and phase and verdict:
-                    out.setdefault(str(tid), set()).add((str(phase), str(verdict)))
+                tid = r.get("id")
+                if tid:
+                    out.setdefault(str(tid), []).append(r)
+    return out
+
+
+def replay_halves(spec_dir: Path) -> dict[str, set[tuple[str, str]]]:
+    """T-id -> {(phase, verdict)} from ship.sh's .sdd-evidence rows for this Spec.
+
+    Structural only, and deliberately so: the file lives in the tree the implementer can
+    write, so this cannot establish that a run happened. It establishes the opposite —
+    that closing without a replay is refused. `make verify-deliver` re-runs ship.sh rather
+    than reading this, because a ledger is a record, not a credential.
+    """
+    out: dict[str, set[tuple[str, str]]] = {}
+    for tid, rows in replay_rows(spec_dir).items():
+        for r in rows:
+            phase, verdict = r.get("phase"), r.get("verdict")
+            if phase and verdict:
+                out.setdefault(tid, set()).add((str(phase), str(verdict)))
     return out
 
 
@@ -1316,9 +1327,15 @@ def closing_anchor(run: str, spec_dir: Path, evidence_cells: list[str]) -> str:
     ok, _ = dispatch_evidence_valid(run, spec_dir, allow_override=False)
     if ok:
         return "dispatch jsonl"
-    for m in re.finditer(r"[\w./\\-]*_falsify\.log", run):
-        if _resolve_cited(m.group(0).strip("`"), spec_dir):
-            return f"falsify log {m.group(0)}"
+    # The falsify PASS log used to anchor a close. It was a hand-written COMMAND + EXIT_CODE +
+    # VERDICT file — the manual form of "a command and its exit code" — so citing one proved
+    # only that someone typed it. ship.sh writes the machine form: a replay row whose log is
+    # on disk and whose bytes hash to what the row recorded.
+    for tid, rows in sorted(replay_rows(spec_dir).items()):
+        for r in rows:
+            log = r.get("log") or ""
+            if log and Path(log).is_file():
+                return f"replay log for {tid} ({log})"
     return ""
 
 
@@ -1388,7 +1405,7 @@ def check_run_honesty(
             report.fail(
                 f"{spec_dir.name}/run.md: closing requires one artifact on disk — "
                 "an Evidence `log=`/`path=` that exists, a dispatch-run-id with a "
-                "completed jsonl, or the falsify PASS log"
+                "completed jsonl, or a ship.sh replay log in .sdd-evidence/logs"
             )
         ok_ev, ev_reason = dispatch_evidence_valid(run, spec_dir)
         if not ok_ev:
@@ -1400,10 +1417,12 @@ def check_run_honesty(
             for e in evidence_cells
             if not cell_is_placeholder(e)
         )
-        if not re.search(r"证伪|falsify", run, re.I) and not has_kind:
+        if not has_kind:
+            # The other half of this nail used to be "run.md mentions 证伪 or falsify", which
+            # any Spec could satisfy by containing the word. The red-green replay requirement
+            # in check_replay_evidence is the machine-checked form of the same demand.
             report.fail(
-                f"{spec_dir.name}/run.md: closing requires falsify mention or "
-                "Evidence with kind="
+                f"{spec_dir.name}/run.md: closing requires Evidence with kind="
             )
 
     for row in matrix:
@@ -1663,7 +1682,7 @@ def main() -> int:
     parser.add_argument(
         "--closing",
         action="store_true",
-        help="Close-gate mode: require Evidence + dispatch/override + falsify (make verify-deliver)",
+        help="Close-gate mode: Evidence + dispatch/override + red-green replay (make verify-deliver)",
     )
     args = parser.parse_args()
     host = Path(args.host).resolve()

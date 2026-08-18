@@ -30,8 +30,8 @@ Codex 有效窗约 258K，过线会 **auto-compact**（有损）。指挥侧不�
 2. Pack **禁止**内嵌：`tests.md` 全文、design-standards 长文、无关模块源码。  
 3. 一次 Pack = **一个 D**（可含多个 `SLICE_IDS`）。无 `DISPATCH_ID`/`SLICE_IDS` 的「整份 Spec / 全部切片」→ 拒绝。Goal 仅当该 D 估峰 ≤180K。  
 4. **allowlist 必填**；空触及路径 = 不合格 Pack，不得派。  
-5. 指挥侧验收：对照仓库 + verify-wave **结构化证伪**（钉 3）；见 [`falsify-attestation.md`](./falsify-attestation.md)。  
-   falsify 不得挡住下一个编辑锁不冲突的 edit-wave。  
+5. 指挥侧验收：对照仓库 + verify-wave **红绿 replay**（钉 3）：`ship.sh --from-meta <run>.meta.txt`。  
+   replay 不得挡住下一个编辑锁不冲突的 edit-wave。  
 6. jsonl 须有 **`turn.completed`**；仅当出现 **compact 事件类型** 才判窗损。禁止把 `usage.input_tokens` 当窗宽。失败 → fresh exec。  
 7. Plan：`--spec` + 落盘后 `assert_plan_artifacts.py`（禁聊天「待批准」假成功）。
 

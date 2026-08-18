@@ -15,8 +15,7 @@ PACK="$ROOT/skills/dispatch-codex/scripts/pack_dispatch_units.py"
 SCHED="$ROOT/skills/dispatch-codex/scripts/schedule_waves.py"
 WISH="$ROOT/skills/dispatch-codex/scripts/wish-orchestrate.sh"
 DETECT="$ROOT/skills/dispatch-codex/scripts/detect_compact.py"
-RECORD="$ROOT/skills/dispatch-codex/scripts/record-conductor-falsify.sh"
-REQUIRE="$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh"
+SHIP="$ROOT/skills/dispatch-codex/scripts/ship.sh"
 
 command -v codex >/dev/null || { echo "SCENARIO FAIL: codex not on PATH" >&2; exit 2; }
 [[ -d "$FIX" ]] || { echo "SCENARIO FAIL: missing fixture $FIX" >&2; exit 2; }
@@ -125,7 +124,7 @@ bash "$WISH" --cwd "$HOST" --spec live-relay --parallel 2 --effort medium \
 w1=$?
 set -e
 t1="$(date +%s)"
-echo "wave1 exit=$w1 elapsed=$((t1-t0))s (expect 3=falsify gate, or 0 if last wave)"
+echo "wave1 exit=$w1 elapsed=$((t1-t0))s (expect 3=replay gate, or 0 if last wave)"
 tail -n 50 "$TMP/wave1.err" || true
 
 if [[ "$w1" -ne 0 && "$w1" -ne 3 ]]; then
@@ -181,33 +180,31 @@ PY
     || bad "wave1-$rid-last" "missing --output-last-message"
 done
 
-echo "----- 4) falsify WAVE 1 with real pytest (not Codex) -----"
+echo "----- 4) replay WAVE 1 Oracles (ship.sh, not Codex) -----"
+# Was: record-conductor-falsify running pytest and writing a COMMAND/EXIT_CODE/VERDICT log,
+# then require-conductor-falsify reading it back. ship.sh replays the Oracle the dispatch
+# froze, and proves it was RED on that dispatch's own baseline first — which the attestation
+# never did, because a conductor-typed PASS only ever proved the conductor typed it.
 export PYTHONPATH="$HOST"
 set +e
-bash "$RECORD" --log-dir "$LOG" --run-id "$id1" --slice S1 --cwd "$HOST" -- \
-  python3 -m pytest tests/test_token.py tests/test_rate.py -q \
-  >"$TMP/falsify-d1.out" 2>"$TMP/falsify-d1.err"
+bash "$SHIP" --host "$HOST" --spec live-relay --from-meta "$LOG/${id1}.meta.txt" \
+  >"$TMP/replay-d1.out" 2>"$TMP/replay-d1.err"
 f1=$?
-bash "$RECORD" --log-dir "$LOG" --run-id "$id2" --slice S3 --cwd "$HOST" -- \
-  python3 -m pytest tests/test_collect.py -q \
-  >"$TMP/falsify-d2.out" 2>"$TMP/falsify-d2.err"
+bash "$SHIP" --host "$HOST" --spec live-relay --from-meta "$LOG/${id2}.meta.txt" \
+  >"$TMP/replay-d2.out" 2>"$TMP/replay-d2.err"
 f2=$?
 set -e
-echo "falsify D1 pytest exit=$f1"; tail -n 30 "$TMP/falsify-d1.err"; echo "---"; cat "$LOG/${id1}_falsify.log" 2>/dev/null | tail -n 20
-echo "falsify D2 pytest exit=$f2"; tail -n 30 "$TMP/falsify-d2.err"; echo "---"; cat "$LOG/${id2}_falsify.log" 2>/dev/null | tail -n 20
+echo "replay D1 exit=$f1"; tail -n 30 "$TMP/replay-d1.err"
+echo "replay D2 exit=$f2"; tail -n 30 "$TMP/replay-d2.err"
 
 if [[ "$f1" -ne 0 || "$f2" -ne 0 ]]; then
-  bad "wave1-falsify-pytest" "D1=$f1 D2=$f2 — Codex did not make wave-1 tests green"
+  bad "wave1-replay" "D1=$f1 D2=$f2 — wave-1 Oracles are not red-then-green"
   echo "===== SCENARIO SUMMARY fail=$fail (stop before wave 2) host=$HOST ====="
   SCENARIO_FAIL=1
   KEEP=1
   exit 1
 fi
-ok "wave1 pytest falsify D1+D2"
-
-bash "$REQUIRE" --log-dir "$LOG" --run-id "$id1"
-bash "$REQUIRE" --log-dir "$LOG" --run-id "$id2"
-ok "wave1 require-falsify both run_ids"
+ok "wave1 red-green replay D1+D2"
 
 echo "----- 5) WAVE 2 real Codex (D3 gateway) -----"
 t2="$(date +%s)"
@@ -236,25 +233,19 @@ else
 fi
 [[ -s "$LOG/${id3}.last.md" ]] && ok "wave2 D3 last.md" || bad "wave2-last" "missing last.md"
 
-echo "----- 6) falsify WAVE 2 + full suite -----"
+echo "----- 6) replay WAVE 2 + full suite -----"
 set +e
-bash "$RECORD" --log-dir "$LOG" --run-id "$id3" --slice S4 --cwd "$HOST" -- \
-  python3 -m pytest tests/test_gateway.py -q \
-  >"$TMP/falsify-d3.out" 2>"$TMP/falsify-d3.err"
+bash "$SHIP" --host "$HOST" --spec live-relay --from-meta "$LOG/${id3}.meta.txt" \
+  >"$TMP/replay-d3.out" 2>"$TMP/replay-d3.err"
 f3=$?
 ( cd "$HOST" && PYTHONPATH=. python3 -m pytest tests -q ) >"$TMP/pytest-final.txt" 2>&1
 full=$?
 set -e
-echo "falsify D3 exit=$f3"; tail -n 20 "$TMP/falsify-d3.err"; cat "$LOG/${id3}_falsify.log" 2>/dev/null | tail -n 15
+echo "replay D3 exit=$f3"; tail -n 20 "$TMP/replay-d3.err"
 echo "full pytest exit=$full"; tail -n 40 "$TMP/pytest-final.txt"
 
-[[ "$f3" -eq 0 ]] && ok "wave2 pytest falsify D3" || bad "wave2-falsify" "gateway tests still red"
+[[ "$f3" -eq 0 ]] && ok "wave2 red-green replay D3" || bad "wave2-replay" "gateway Oracle not red-then-green"
 [[ "$full" -eq 0 ]] && ok "full pytest green after both waves" || bad "full-pytest" "suite not green"
-
-if [[ "$f3" -eq 0 ]]; then
-  bash "$REQUIRE" --log-dir "$LOG" --run-id "$id3"
-  ok "wave2 require-falsify D3"
-fi
 
 echo "----- 7) isolation: host under TMP, not product repos -----"
 case "$HOST" in

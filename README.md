@@ -67,8 +67,7 @@ make install         # 推荐：有 CLI 的端都装；缺则 SKIP
 | `make verify-deliver HOST=/path SPEC=id` | Verify 关版门（`check_spec --closing`） | 宣称可交付 / prod-smoke 通过前 |
 | `make preflight-rail HOST=/path` | Shape 写码闸（业务 dirty 无授权则失败） | 讨论/设计会话自检 |
 | `make codex-dispatch HOST=/path UNIT=plan\|build\|goal PROMPT_FILE=…` | 派 Codex（never + 墙钟；Build 需 `SPEC=`+`SLICE=`；Goal 需 `GOAL_APPROVED=1`） | 指挥侧外包有界单元 |
-| `make require-falsify LOG_DIR=… [RUN_ID=]` | 指挥侧结构化证伪门 | Codex Build 返回后、下一片前 |
-| `make record-falsify LOG_DIR=… RUN_ID=… CMD="…"` | 跑证伪命令并写取证日志 | 片间 falsify |
+| `make ship HOST=… SPEC=… META=…` | 红绿 replay：冻结 Oracle 在派发基线上必红、改后必绿 | Codex Build 返回后、下一片前 |
 | `make wish-journey HOST=. SPEC=id …` | 磁盘旅程相位 | 许愿半自动可恢复 |
 | `make gate-cases` | 91 例门强度回测目录 + live 探针 | 改门后回归 |
 | `make public-gates` | 公开 CI 门（无 evals） | PR / 克隆自检 |

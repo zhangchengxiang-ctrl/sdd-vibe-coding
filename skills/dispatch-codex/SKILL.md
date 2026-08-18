@@ -105,7 +105,7 @@ disable-model-invocation: true
 - [ ] 已跑 `make codex-preflight HOST=…`（trust 登记 / AGENTS 32KiB / profile）
 - [ ] Build/Goal 已过 `check_spec`（或脚本 `--spec`）
 - [ ] Plan：`--spec` + 落盘后 `assert_plan_artifacts`（脚本默认执行）
-- [ ] 片间：`require-conductor-falsify` 且日志为**结构化取证**（`COMMAND`+`EXIT_CODE: 0`+`VERDICT: … PASS`；见 `falsify-attestation.md`）
+- [ ] 片间：`ship.sh --from-meta <run>.meta.txt` 红绿 replay 过（基线红→改后绿;基线也绿即无效 Oracle）
 - [ ] 多切片必带 `--dispatch-id`（脚本硬拒无界多切片）
 - [ ] prompt **无**合同大段 / tests 全文
 - [ ] 调用勿用会吞失败码的管道（若 `| tee`，须 `set -o pipefail`）
@@ -158,12 +158,10 @@ bash skills/dispatch-codex/scripts/codex-dispatch.sh \
 <薄派单正文 / Context Pack>
 EOF
 
-# Wish edit-wave：一波 D（可并行 1–4）后 exit 3，structured falsify PASS 再派下一波
+# Wish edit-wave：一波 D（可并行 1–4）后 exit 3，红绿 replay 过再派下一波。
+# 下一次调用会自己先跑 replay 门,不需要手动记账。
 bash skills/dispatch-codex/scripts/wish-orchestrate.sh \
   --cwd <HOST_ROOT> --spec <SPEC_ID> --parallel 2
-make record-falsify LOG_DIR=<HOST>/.codex-dispatch-logs RUN_ID=<from meta> SLICE=S1 \
-  CMD='<falsify command>'
-make require-falsify LOG_DIR=<HOST>/.codex-dispatch-logs RUN_ID=<from meta>
 bash skills/dispatch-codex/scripts/wish-orchestrate.sh \
   --cwd <HOST_ROOT> --spec <SPEC_ID>
 # 状态：wish-orchestrate … --status / --units
@@ -180,8 +178,8 @@ EOF
 - 脚本写死 `approval_policy=never`
 - **每单前置 CLI authorization 块**：覆盖宿主「先聊计划再等人批」；禁 `doc-coauthoring` / 反问收尾
 - **许愿 Plan：禁止中途「待批准」**；Codex exit 0 但未落盘五件套 → 派发失败（exit 2）
-- **falsify 须结构化取证**（`COMMAND`+`EXIT_CODE: 0`+`VERDICT: PASS`）；仅有日志或裸 `VERDICT` → 失败
-  （见 [`falsify-attestation.md`](./references/falsify-attestation.md)）
+- **验收靠 replay 不靠手写取证**：`ship.sh --from-meta <meta>` 逐条跑冻结的 Oracle，先证它在该派发
+  的 `base_sha` 上是**红**的，改后必须绿。基线也绿 → 判 `nondiscriminating`（该 Oracle 什么都没测）
 - **wish-orchestrate：** per-spec flock + per-D 锁；edit-wave 内可并行；`PASSED_SLICES`/`PASSED_UNITS` 幂等跳过；`--force-slice` 才重派
 - 墙钟到点会 `SIGTERM`/`SIGKILL` 并 exit `124`——之后对照仓库验收
 - `--json` 是**必需**（完成信号=`turn.completed`）；`--no-json` 被拒，除非 `SKIP_TURN_CHECK=1`。日志目录可 `--log-dir`

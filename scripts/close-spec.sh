@@ -2,7 +2,7 @@
 # Close a spec version in one command (关版收口).
 #
 # Does, in order:
-#   1. verify-deliver (check_spec --closing: Evidence + dispatch/override + falsify)
+#   1. verify-deliver (ship.sh red-green replay, then check_spec --closing)
 #   2. VERSION.md 状态 -> archived (+ 变更记录 row)
 #   3. git mv docs/specs/<id> -> docs/specs/archive/<id> (plain mv without git)
 #   4. wish-journey phase -> acceptance-passed (best-effort)

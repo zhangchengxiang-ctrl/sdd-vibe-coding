@@ -50,10 +50,9 @@ Polish / trivial / 无自动化 → `红绿证据: N/A · polish|trivial|无自�
 
 - Verify / 系列验收 / 「验到可交付」→ **Cursor/指挥侧**执行；**禁止**派 Codex 做主验收。
 - Codex 最多：矩阵/剧本**草稿**；或 ≤15–20min、完成条件=**指定命令 stdout** 的窄派单；超时=失败。
-- 结案前指挥侧亲自跑 **≥1 条证伪**，并落盘**结构化取证**（见
-  [`falsify-attestation.md`](../../dispatch-codex/references/falsify-attestation.md)）：
-  `COMMAND` + `EXIT_CODE: 0` + `VERDICT: … PASS`（推荐 `record-conductor-falsify.sh`）。
-  仅手写 `VERDICT: PASS` **不**过闸。
+- 结案前 **runner 逐条 replay 冻结的 Oracle**：`make verify-deliver HOST=… SPEC=…`。每条 P0 机检
+  Oracle 都要有「基线红 + 改后绿」两半;只有绿的那半 → 不过闸。手写取证已删除——它证明的只是有人写了它。
+- `人工`/`manual-only` Oracle runner 关不了：run.md 需 `人工验收：T-xxx · <谁看到了什么>`。
 
 ## Floor ≠ 关版
 

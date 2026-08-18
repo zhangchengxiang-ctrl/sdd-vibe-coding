@@ -48,7 +48,7 @@ Build/Goal runs skills/spec/scripts/check_spec.py first (SKIP_SPEC_CHECK=1 to by
 Build: one dispatch unit (may contain multiple A slices packed under 272K).
 Unbounded "整份 Spec" without DISPATCH_ID/SLICE_IDS → fail (do not Goal-hard-撑).
 Goal: requires env GOAL_APPROVED=1.
-After Build ok: conductor must write <log-dir>/<run-id>_falsify.log with VERDICT: PASS.
+After Build ok: the conductor replays the frozen Oracles (ship.sh --from-meta <meta>).
 EOF
 }
 
@@ -360,7 +360,6 @@ fi
   [[ -n "$SLICE_ID" ]] && echo "slices=$SLICE_ID"
   [[ -n "$DISPATCH_ID" ]] && echo "dispatch_id=$DISPATCH_ID"
   echo "last_message=$LAST_MSG_FILE"
-  echo "falsify_log=$LOG_DIR/${RUN_ID}_falsify.log"
   # HEAD at dispatch time IS the baseline tree: ship.sh needs it to prove each Oracle
   # RED before the implementation exists. Recording it here keeps the operator out of
   # the loop — a remembered SHA is not evidence.
@@ -490,8 +489,8 @@ fi
 
 echo "codex-dispatch: ok; meta=$META_FILE" >&2
 if [[ "$UNIT" == "build" || "$UNIT" == "goal" ]]; then
-  echo "codex-dispatch: NEXT — conductor falsify → tee to $LOG_DIR/${RUN_ID}_falsify.log" >&2
+  echo "codex-dispatch: NEXT — replay the frozen Oracles on this dispatch's baseline" >&2
   echo "codex-dispatch: log must contain a line: VERDICT: ${SLICE_ID%%,*} PASS" >&2
-  echo "codex-dispatch: then: bash skills/dispatch-codex/scripts/require-conductor-falsify.sh --log-dir $LOG_DIR --run-id $RUN_ID" >&2
+  echo "codex-dispatch: then: bash skills/dispatch-codex/scripts/ship.sh --host $CWD${SPEC_ID:+ --spec $SPEC_ID}${SLICE_ID:+ --slice $SLICE_ID} --from-meta $META_FILE" >&2
 fi
 exit 0

@@ -18,8 +18,8 @@ bad() { echo "FAIL  $1 — $2" >&2; fail=$((fail + 1)); }
   && ok "rails" || bad "rails" "missing"
 [[ -f "$ROOT/skills/vibe-coding/references/workflow-contract.md" ]] \
   && ok "workflow-contract-index" || bad "workflow-contract-index" "missing"
-[[ -f "$ROOT/skills/dispatch-codex/references/falsify-attestation.md" ]] \
-  && ok "falsify-attestation" || bad "falsify-attestation" "missing"
+[[ -f "$ROOT/skills/dispatch-codex/scripts/ship.sh" ]] \
+  && ok "oracle-replay-runner" || bad "oracle-replay-runner" "missing"
 
 # --- projected rule templates exist ---
 for rule in sdd-vibe-entry; do
@@ -42,8 +42,8 @@ test -f "$ROOT/skills/dispatch-codex/scripts/detect_compact.py" \
   && ok "detect-compact" || bad "detect-compact" "missing"
 test -f "$ROOT/skills/dispatch-codex/references/dispatch-units.md" \
   && ok "dispatch-units-doc" || bad "dispatch-units-doc" "missing"
-test -f "$ROOT/skills/dispatch-codex/scripts/require-conductor-falsify.sh" \
-  && ok "require-falsify-script" || bad "require-falsify-script" "missing"
+test -f "$ROOT/scripts/verify-deliver.sh" \
+  && ok "close-gate-script" || bad "close-gate-script" "missing"
 test -f "$ROOT/skills/dispatch-codex/scripts/wish-orchestrate.sh" \
   && ok "wish-orchestrate-script" || bad "wish-orchestrate-script" "missing"
 

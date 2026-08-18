@@ -58,7 +58,12 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-PHASES=(idle design-ready planning building awaiting-falsify verifying repairing awaiting-human-acceptance acceptance-passed blocked)
+# awaiting-falsify is the former name of awaiting-replay: the machine gate between waves is
+# now a red-green Oracle replay, not a hand-written attestation. Both names stay accepted —
+# hosts have markers on disk carrying the old one, and rejecting those would strand a wish
+# mid-flight — but --set normalises to the new one so the disk converges.
+PHASES=(idle design-ready planning building awaiting-replay awaiting-falsify verifying repairing awaiting-human-acceptance acceptance-passed blocked)
+normalise_phase() { [[ "$1" == "awaiting-falsify" ]] && printf awaiting-replay || printf %s "$1"; }
 
 is_phase() {
   local p="$1" x
@@ -77,8 +82,8 @@ can_transition() {
     idle__design-ready) return 0 ;;
     design-ready__planning|design-ready__building) return 0 ;;
     planning__building|planning__design-ready) return 0 ;;
-    building__awaiting-falsify|building__verifying|building__repairing|building__blocked) return 0 ;;
-    awaiting-falsify__building|awaiting-falsify__verifying|awaiting-falsify__repairing|awaiting-falsify__blocked) return 0 ;;
+    building__awaiting-replay|building__verifying|building__repairing|building__blocked) return 0 ;;
+    awaiting-replay__building|awaiting-replay__verifying|awaiting-replay__repairing|awaiting-replay__blocked) return 0 ;;
     verifying__awaiting-human-acceptance|verifying__acceptance-passed|verifying__repairing|verifying__blocked) return 0 ;;
     repairing__building|repairing__verifying|repairing__blocked) return 0 ;;
     awaiting-human-acceptance__acceptance-passed|awaiting-human-acceptance__repairing|awaiting-human-acceptance__blocked) return 0 ;;
@@ -94,6 +99,7 @@ fi
 
 [[ -n "$SPEC" ]] || { echo "wish-journey: --spec required" >&2; exit 2; }
 [[ -n "$ACTION" ]] || { echo "wish-journey: need --status|--set|--transition|--assert" >&2; exit 2; }
+[[ -n "$TARGET_PHASE" ]] && TARGET_PHASE="$(normalise_phase "$TARGET_PHASE")"
 
 ROOT="$(sdd_find_root "$CWD")"
 DIR="$ROOT/.sdd/journey"
@@ -108,6 +114,7 @@ load() {
     # shellcheck disable=SC1090
     source "$FILE"
   fi
+  PHASE="$(normalise_phase "${PHASE:-idle}")"
 }
 
 save() {
@@ -154,7 +161,7 @@ case "$ACTION" in
   assert)
     case "$TARGET_PHASE" in
       write|build)
-        if [[ "${PHASE:-}" =~ ^(planning|building|awaiting-falsify|verifying|repairing)$ ]]; then
+        if [[ "${PHASE:-}" =~ ^(planning|building|awaiting-replay|verifying|repairing)$ ]]; then
           echo "wish-journey: assert $TARGET_PHASE ok (phase=$PHASE)"
           exit 0
         fi
