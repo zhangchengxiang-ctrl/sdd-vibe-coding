@@ -4,7 +4,7 @@
 
 - SDD docs root: docs
 - Codex harness baseline tokens: 40000
-- **Codex：** `codex-dispatch.sh` / `wish-orchestrate.sh`。一次一个 D。Build ≠ Deploy。
+- **Codex：** `codex-dispatch.sh` / `wish-orchestrate.sh`。一次一个切片。Build ≠ Deploy。
 
 ## 项目
 

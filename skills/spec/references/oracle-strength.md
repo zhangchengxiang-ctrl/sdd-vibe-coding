@@ -5,14 +5,8 @@
 
 ## 弱 Oracle（禁止单独作为 Then）
 
-下列措辞**不能**作为某条 T-xxx 的全部可观察断言（可作导语，须另有可区分断言）：
-
-- 能打开 / 页面打开 / 页面正常
-- 有数据 / 列表有数据 / 表格出现 / 能看到列表
-- 正常显示 / 渲染成功 / 加载成功
-- 可以滚动 / 冒烟通过 / smoke pass / page loads / works
-
-`check_spec`：Then 体去掉标签与弱词后几乎为空 → **fail**。
+「能打开 / 有数据 / 正常显示 / 可以滚动 / 冒烟通过 / works」这类措辞**不能**作为某条 T-xxx 的全部
+可观察断言（可作导语，须另有可区分断言）。词表真源是 `check_spec.py` 的机检本体，不在本文重抄。
 
 ## 数据面必写（list / dashboard / 分页·排序·筛选）
 
@@ -25,18 +19,19 @@
 | 筛选 | 开/关后结果集可区分 |
 | 交互真源 | 若存量已有页码分页，禁止再叠无限滚动（或反之）— 写进 Out / 失败用例 |
 
-自动化行建议直接写证伪命令（例：`offset=0` vs `offset=N` 比首键）。
-
 ## Evidence Kind（写入 tests 自动化或 run 时）
 
-Plan 阶段在「自动化」注明预期 Kind（`api-diff` / `network-har` / `browser-job` / …）。  
-Verify 回写 `run.md` 时 Evidence 列必须带 `kind=`；纯 `window-smoke` / `health` 不得单独支撑 Pass。
+Plan 在「自动化」注明预期 Kind（`api-diff` / `network-har` / `browser-job` / …）。关版要求
+Evidence 带 `kind=` 且非纯冒烟 —— 这两条由 `check_spec --closing` 机检，此处只说该写。
 
 ## 好 / 坏对照
 
-| 坏 Then | 好 Then |
-|---|---|
-| 列表有数据 | `offset=0` 与 `offset=1000` 首行 `id` 不同；`has_more` 与 total 一致 |
-| 点击排序后正常 | 网络请求含 `order_by=amount&dir=desc`；首行 amount ≥ 次行 |
-| 可以继续滚动加载 | 第二次 load-more 请求 offset/cursor 递增；响应主键与第一批无交集 |
-| 页面能打开 | （数据面不够）+ 角色走完 Job 后表头与代表行符合合同 |
+用法:**写完 Then 先问「最便宜的错解会不会也绿」**。带 ✱ 的是实测到的，不是设想的。
+
+| 坏 Then | 好 Then | 便宜错解（必须跑不过） |
+|---|---|---|
+| 列表有数据 | `offset=0` 与 `offset=1000` 首行 `id` 不同 | 忽略 `offset`，两次返回第一页 |
+| 点击排序后正常 | 请求含 `order_by=amount&dir=desc`；首行 ≥ 次行 | 只在前端排当前页 |
+| 可以继续滚动加载 | 第二次 load-more offset 递增；主键无交集 | offset 不递增，重复同一批 |
+| 页面能打开 | 角色走完 Job 后表头与代表行符合合同 | ✱ i18n `defaultValue`:中文用户看到英文，lint/tsc/vitest 全静默 |
+| 命令能过 | 同一命令在改动前的树上必须**红** | ✱ `bash -c true`;或断言在实现方自己新写的测试里 |

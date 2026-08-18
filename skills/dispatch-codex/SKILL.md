@@ -52,12 +52,12 @@ disable-model-invocation: true
 
 口诀：**Build 默认 terra×medium**，真难再升 sol。升档**不**修 Oracle 可执行性（terra×high 3/8 < medium 3/6）——靠机检门。
 
-## 流程（一次一个 D）
+## 流程（一次一个切片）
 
 1. **选定单元**
    - Plan：产品包 / 已确认方案 → 整份 Spec 落盘；
-   - Build：已批准 Spec → `pack_dispatch_units.py` 得到 D（默认第一个未完成 D）；
-   - 多 Spec / 多 D：先出 DAG+波次；一聊一个 edit-wave。
+   - Build：已批准 Spec → `build_context_pack.py --waves` 得到波次（默认第一波未完成切片）；
+   - 多 Spec：一聊一个 edit-wave。
 2. **Build 必带 Context Pack**（见 [`context-pack.md`](./references/context-pack.md)）;一个切片 = 一次 exec，不再打包
    ```bash
    python3 skills/dispatch-codex/scripts/pack_dispatch_units.py <HOST> <SPEC_ID> --list
@@ -176,10 +176,8 @@ bash skills/dispatch-codex/scripts/wish-orchestrate.sh \
   的 `base_sha` 上是**红**的，改后必须绿。基线也绿 → 判 `nondiscriminating`（该 Oracle 什么都没测）
 - **wish-orchestrate：** per-spec flock + per-切片锁；波次内可并行（依赖 + 编辑锁决定，不再按估峰打包）；`PASSED_SLICES` 幂等跳过；`--force-slice` 才重派
 - **动作计数不是估峰**：meta 记 `actions=`，≥150 警告。实测悬崖 200（≤50 → 3%、51–200 → 64%、200+ → 100% 被压缩）
-- 墙钟到点会 `SIGTERM`/`SIGKILL` 并 exit `124`——之后对照仓库验收
-- `--json` 是**必需**（完成信号=`turn.completed`）；`--no-json` 被拒，除非 `SKIP_TURN_CHECK=1`。日志目录可 `--log-dir`
-- Make：`make codex-dispatch HOST=… UNIT=plan|build PROMPT_FILE=…`（都传 `SPEC=`；Build 传 `SLICE=`）
-- 离线门闩自检：`bash skills/dispatch-codex/scripts/selftest-gates.sh`
+- 墙钟到点 `SIGTERM`/`SIGKILL` + exit `124`;`--json` **必需**（完成信号=`turn.completed`），`--no-json` 被拒
+- Make：`make codex-dispatch HOST=… UNIT=plan|build PROMPT_FILE=…`（都传 `SPEC=`；Build 传 `SLICE=`）;自检 `make dispatch-gates-selftest`
 
 **无裸 `codex exec` 兜底。** 手搓命令会丢掉配额分类、`run_state`、`turn.completed` 判定
 与 worktree 隔离（四个已修失效一次复原）。包装缺失 → `blocked`。

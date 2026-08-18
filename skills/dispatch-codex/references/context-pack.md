@@ -8,7 +8,7 @@
 ## 1. 为什么要 Pack
 
 Codex 有效窗约 258K，过线会 **auto-compact**（有损）。指挥侧不得把愿望聊天或整份 Spec 正文塞进 prompt。  
-**耐久规则**在宿主 `AGENTS.md` + 插件 skills；**本轮任务**只给本 **D（派发单元）** 的小包 + **硬 allowlist**。
+**耐久规则**在宿主 `AGENTS.md` + 插件 skills；**本轮任务**只给**本切片**的小包 + **硬 allowlist**。
 
 ## 2. 必填字段
 
@@ -30,8 +30,7 @@ Codex 有效窗约 258K，过线会 **auto-compact**（有损）。指挥侧不�
 2. Pack **禁止**内嵌：`tests.md` 全文、design-standards 长文、无关模块源码。  
 3. 一次 Pack = **一个切片**（A == D）。多切片一次 exec → 拒绝;整份 Spec 交给 wish-orchestrate 分波。  
 4. **allowlist 必填**；空触及路径 = 不合格 Pack，不得派。  
-5. 指挥侧验收：对照仓库 + verify-wave **红绿 replay**（钉 3）：`ship.sh --from-meta <run>.meta.txt`。  
-   replay 不得挡住下一个编辑锁不冲突的 edit-wave。  
+5. 验收是红绿 replay（钉 3，真源见 [`verification-loop`](../../vibe-coding/references/verification-loop.md)）;它不挡编辑锁不冲突的下一波。  
 6. jsonl 须有 **`turn.completed`**；仅当出现 **compact 事件类型** 才判窗损。禁止把 `usage.input_tokens` 当窗宽。失败 → fresh exec。  
 7. Plan：`--spec` + 落盘后 `assert_plan_artifacts.py`（禁聊天「待批准」假成功）。
 

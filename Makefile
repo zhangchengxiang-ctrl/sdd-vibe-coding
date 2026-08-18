@@ -3,7 +3,7 @@
 
 .PHONY: help install install-dev install-cursor install-claude install-codex \
 	scaffold codex-dispatch wish-orchestrate context-pack verify check-docs check-spec verify-deliver close-spec \
-	preflight-rail codex-preflight ship dispatch-gates-selftest public-gates contract-sync \
+	preflight-rail codex-preflight ship oracle-migration dispatch-gates-selftest public-gates contract-sync \
 	dispatch-live-lifecycle dispatch-live-scenario \
 	phase3-negative eval-live eval-skill-load wish-journey \
 	rot corrections host-drift single-definition orphan-refs gate-cases \
@@ -51,6 +51,7 @@ help:
 		'  make context-pack HOST=路径 SPEC=id SLICE=S1   生成 Codex Context Pack（stdout）' \
 		'  make wish-orchestrate HOST=路径 SPEC=id [SLICE=S1]  许愿：打包 D→edit-wave Codex（可并行；幂等+锁）' \
 		'  make ship HOST=路径 SPEC=id [SLICE=S1] META=…  红绿 replay（基线红→改后绿）' \
+		'  make oracle-migration HOST=路径 [ARCHIVED=1] [CSV=1]  还有多少 P0 Oracle runner 跑不了' \
 		'  make dispatch-gates-selftest  离线硬门自检（Plan / oracle replay / wish）' \
 		'  make dispatch-live-lifecycle  真机 codex exec 生命周期自检（烧 token）' \
 		'  make dispatch-live-scenario   真机多 D DAG 场景自检（烧 token）' \
@@ -199,6 +200,15 @@ contract-sync:
 
 gate-cases:
 	bash scripts/gate-cases-runner.sh
+
+# Migration meter, not a gate: how many P0 Oracles a runner still cannot execute. The gates
+# refuse them where it matters; this makes the remaining bill visible per Spec.
+#   make oracle-migration HOST=~/code/agentdeck [ARCHIVED=1] [CSV=1]
+oracle-migration:
+	@extra=""; \
+	if [ "$(ARCHIVED)" = "1" ]; then extra="$$extra --archived"; fi; \
+	if [ "$(CSV)" = "1" ]; then extra="$$extra --csv"; fi; \
+	bash scripts/oracle-migration.sh --cwd "$(HOST)" $$extra
 
 # Rot budget meter. Ceiling = scripts/rot-baseline.json (ratchet: only lower).
 rot:

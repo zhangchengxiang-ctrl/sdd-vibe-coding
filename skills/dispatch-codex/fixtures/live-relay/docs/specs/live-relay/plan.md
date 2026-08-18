@@ -25,7 +25,7 @@
 | S3 | ingest(event) | T-005, T-006 | svc/ingest/collect.py | | oracle:unit |
 | S4 | gateway.handle | T-007, T-008 | svc/gateway.py | S1, S3 | oracle:unit |
 
-> S1+S2 同写 `svc/auth/token.py` → 应打成一个 D。S3 写集不相交 → 可与 auth D 并行。S4 依赖 S1+S3 → 第二 edit-wave。
+> S1+S2 同写 `svc/auth/token.py` → 编辑锁把它们分到不同波。S3 写集不相交 → 可与 S1 同波。S4 依赖 S1+S3 → 更后的波。
 
 ## 备选与取舍
 

@@ -23,7 +23,7 @@ echo "== gate-cases catalog total=$total problems=$problems =="
 [[ "${1:-}" == "--baseline-only" ]] && exit 0
 
 python3 - "$ROOT" <<'PY'
-import contextlib, csv, importlib.util, io, json, sys, tempfile
+import contextlib, csv, importlib.util, io, json, subprocess, sys, tempfile
 from pathlib import Path
 
 root = Path(sys.argv[1])
@@ -83,6 +83,29 @@ note(not any((root / p).exists() for p in (
         "skills/dispatch-codex/scripts/schedule_waves.py",
         "skills/dispatch-codex/references/dispatch-units.md")),
      "token-estimator-gone", "no packer can group slices by an estimated token peak")
+# The migration meter must classify by the SAME rules as the gate, or the bill it reports is
+# a different bill. It imports check_spec's regexes rather than restating them; this checks the
+# wiring holds on a fixture with one of each shape.
+with tempfile.TemporaryDirectory() as td:
+    mh = Path(td) / "docs/specs/mig"
+    mh.mkdir(parents=True)
+    (mh / "contract.md").write_text(
+        "## Requirements\n\n| ID | 优先级 | Tests |\n|---|---|---|\n"
+        "| R-001 | P0 | T-001, T-002, T-003, T-004 |\n", encoding="utf-8")
+    body = ("## 索引\n\n| ID | R |\n|---|---|\n| T-001 | R-001 |\n\n")
+    for tid, cmd in (("T-001", "npx vitest run a.test.ts"), ("T-002", "同 T-001。"),
+                     ("T-003", "true"), ("T-004", "manual-only")):
+        body += (f"\n## {tid} · x\n\n### Given\n\n- x\n\n### When\n\n1. y\n\n"
+                 f"### Then（Oracle）\n\n- z\n\n### 自动化\n\n- 命令：`{cmd}`\n")
+    (mh / "tests.md").write_text(body, encoding="utf-8")
+    mig = subprocess.run(["bash", str(root / "scripts/oracle-migration.sh"), "--cwd", td],
+                         capture_output=True, text=True)
+    out = mig.stdout
+    note("need_rewrite=2" in out and "not executable" in out and "no-op" in out
+         and "T-004" not in out and "T-001 " not in out,
+         "oracle-migration-agrees-with-gate",
+         "the meter counts the referential and the no-op, and leaves manual-only and a real command alone")
+
 note("compact_limit" not in (root / "skills/dispatch-codex/scripts/codex-dispatch.sh").read_text(encoding="utf-8")
      and "GOAL_APPROVED" not in (root / "skills/dispatch-codex/scripts/codex-dispatch.sh").read_text(encoding="utf-8"),
      "goal-unit-gone", "the dispatcher has no goal unit and no compaction budget to estimate")
