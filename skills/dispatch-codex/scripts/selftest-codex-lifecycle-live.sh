@@ -27,10 +27,50 @@ cat >"$HOST/docs/specs/live1/plan.md" <<'EOF'
 | 切片 ID | 入口 | 完成定义（链 T-xxx） | 触及路径 | 依赖 | 备注 |
 | S1 | marker | T-001 | src/marker.ts | | oracle:unit |
 EOF
-for f in VERSION.md contract.md tests.md run.md; do
+for f in VERSION.md run.md; do
   printf '# %s\n\nLive lifecycle fixture (%s). Isolated tmp host.\n' "$f" "$f" \
     >"$HOST/docs/specs/live1/$f"
 done
+# A real Requirements table and a real machine Oracle: with a placeholder tests.md the dispatch
+# throat has nothing to freeze, so the freeze and the replay would be silently skipped and this
+# live run would prove less than it looks like it proves.
+cat >"$HOST/docs/specs/live1/contract.md" <<'EOF'
+# Contract
+
+## Requirements
+
+| ID | 需求 | 优先级 | 证据级 | AC 摘要（行为） | Tests |
+|---|---|---|---|---|---|
+| R-001 | marker exports n = 1 | P0 | Verified | src/marker.ts changes | T-001 |
+EOF
+cat >"$HOST/docs/specs/live1/tests.md" <<'EOF'
+# Tests
+
+## 索引
+
+| ID | R |
+|---|---|
+| T-001 | R-001 |
+
+## T-001 · marker is bumped
+
+### Given
+
+- src/marker.ts exports n = 0
+
+### When
+
+1. run the oracle
+
+### Then（Oracle）
+
+- src/marker.ts contains `export const n = 1`, and does not contain `n = 0`
+
+### 自动化
+
+- 命令：`bash -c "grep -q 'export const n = 1' src/marker.ts"`
+- 预期 Evidence Kind：`unit`
+EOF
 git -C "$HOST" init -q
 git -C "$HOST" -c user.email=sdd-live@example.test -c user.name=sdd-live add -A
 git -C "$HOST" -c user.email=sdd-live@example.test -c user.name=sdd-live commit -qm init
@@ -100,10 +140,45 @@ if [[ -f "$meta" ]]; then
     || bad "run-id-match" "file=$rid meta=$meta_rid"
   grep -q '^dispatch_id=D1$' "$meta" && ok "meta.dispatch_id=D1" \
     || bad "meta-dispatch-id" "not D1"
+  # The Oracle must have been frozen at dispatch: ship.sh replays that file, not whatever
+  # tests.md says by the time anyone looks.
+  frz="$(sed -n 's/^oracles_file=//p' "$meta" | head -1)"
+  if [[ -n "$frz" && -s "$frz" ]] && grep -q $'^T-001\tmachine\t' "$frz"; then
+    ok "oracle frozen at dispatch ($(basename "$frz"))"
+  else
+    bad "oracle-freeze-live" "meta has no usable oracles_file (got '${frz:-none}')"
+  fi
+  # Budget by a count, on a real log.
+  acts="$(sed -n 's/^actions=//p' "$meta" | head -1)"
+  if [[ "$acts" =~ ^[1-9][0-9]*$ ]]; then
+    ok "actions counted on a real run (actions=$acts)"
+  else
+    bad "actions-live" "meta has no non-zero actions= (got '${acts:-none}')"
+  fi
 fi
 
 if [[ -s "$jsonl" ]]; then
-  echo "----- jsonl event types -----"
+  # The whole chain, on a real dispatch: the Oracle frozen above must be RED on the commit this
+# dispatch recorded as its baseline, and GREEN on the tree Codex just changed. A mock cannot
+# prove this — the baseline worktree and the real edit are both required.
+SHIP="$ROOT/skills/dispatch-codex/scripts/ship.sh"
+if [[ -f "$meta" && -f "$SHIP" ]]; then
+  set +e
+  bash "$SHIP" --host "$HOST" --spec live1 --slice S1 --from-meta "$meta" \
+    >"$TMP/ship.log" 2>&1
+  ship_st=$?
+  set -e
+  echo "----- ship.sh (tail) -----"
+  tail -n 12 "$TMP/ship.log" || true
+  if [[ "$ship_st" -eq 0 ]] && grep -q 'baseline RED' "$TMP/ship.log" \
+     && grep -q 'verify GREEN' "$TMP/ship.log"; then
+    ok "red-green replay on a real dispatch (baseline RED -> verify GREEN)"
+  else
+    bad "replay-live" "exit=$ship_st; the frozen Oracle did not go red-then-green (see above)"
+  fi
+fi
+
+echo "----- jsonl event types -----"
   python3 - "$jsonl" <<'PY'
 import json, sys, collections
 c = collections.Counter()
