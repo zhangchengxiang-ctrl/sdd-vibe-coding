@@ -435,15 +435,31 @@ Deps: {pack['deps'] or 'n/a'}
 """
 
 
-def paths_overlap(a: set[str], b: set[str]) -> bool:
-    """True when two allowlists can touch the same file.
+def _path_key(p: str) -> str:
+    """Canonical, wildcard-free prefix of an allowlist entry.
 
-    String equality was not enough: a slice declaring `src/` and one declaring `src/a.ts` share
-    no string, so they landed in the same wave although the first may edit the second's file and
-    the two worktrees then conflict on merge.
+    `./src` and `src` are the same directory; `src/**/*.ts` can touch `src/a.ts`. Comparing the
+    raw strings said none of those overlapped, so they went out in the same wave and the
+    worktrees could conflict on merge. Cutting at the first wildcard is deliberately
+    conservative: it can call two patterns overlapping when they would not, and a needless extra
+    wave is cheaper than a merge conflict.
     """
-    for x in a:
-        for y in b:
+    p = p.strip().rstrip("/")
+    while p.startswith("./"):
+        p = p[2:]
+    for i, ch in enumerate(p):
+        if ch in "*?[":
+            p = p[:i].rstrip("/")
+            break
+    return p
+
+
+def paths_overlap(a: set[str], b: set[str]) -> bool:
+    """True when two allowlists can touch the same file."""
+    for x in (_path_key(i) for i in a):
+        for y in (_path_key(j) for j in b):
+            if not x or not y:
+                return True          # an empty key means "anything below the root"
             if x == y or x.startswith(y + "/") or y.startswith(x + "/"):
                 return True
     return False

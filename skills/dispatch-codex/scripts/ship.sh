@@ -154,18 +154,34 @@ if [[ -z "$SLICE" ]]; then
   # Whole-Spec replay: the frozen record is the union of every dispatch this Spec had.
   while IFS= read -r m; do
     [[ -n "$m" ]] || continue
-    grep -qx "spec=$SPEC" "$m" 2>/dev/null || continue
+    grep -qxF "spec=$SPEC" "$m" 2>/dev/null || continue
     f="$(sed -n 's/^oracles_file=//p' "$m" | head -1)"
     [[ -n "$f" && -f "$f" ]] || continue
     freeze_files+=("$f")
   done < <(ls -tr "$HOST/.codex-dispatch-logs"/*.meta.txt 2>/dev/null)
 fi
+declare -A FROZEN_SRC=()
+freeze_conflict=()
 for f in ${freeze_files[@]+"${freeze_files[@]}"}; do
   while IFS= read -r line; do
     [[ -n "$line" ]] || continue
-    FROZEN["${line%%$'\t'*}"]="$line"
+    fid="${line%%$'\t'*}"
+    if [[ -n "${FROZEN[$fid]:-}" && "${FROZEN[$fid]}" != "$line" ]]; then
+      # Last-write-wins here would let a second dispatch (or a hand-written meta) replace the
+      # judge the first one was held to, which is the drift this whole mechanism exists to catch.
+      echo "ship: $fid frozen differently by ${FROZEN_SRC[$fid]}: ${FROZEN[$fid]}" >&2
+      echo "ship: $fid frozen differently by $(basename "$f"): $line" >&2
+      freeze_conflict+=("$fid")
+      continue
+    fi
+    FROZEN["$fid"]="$line"
+    FROZEN_SRC["$fid"]="$(basename "$f")"
   done <"$f"
 done
+if [[ "${#freeze_conflict[@]}" -gt 0 ]]; then
+  die "two dispatches froze ${freeze_conflict[*]} differently — the Oracle changed between \
+them. Decide which judge stands and re-dispatch; do not close across both."
+fi
 
 if [[ -n "$FREEZE" && -n "${FREEZE_SHA:-}" ]]; then
   froze_sha="$(LC_ALL=C sort "$FREEZE" | sha256sum | cut -d' ' -f1)"
@@ -196,6 +212,20 @@ fi
 if [[ "${#unfrozen[@]}" -gt 0 ]]; then
   echo "ship: WARN no dispatch froze ${unfrozen[*]} — replaying the current tests.md for \
 them, which the implementer could have written. Dispatch them, or judge them by hand." >&2
+fi
+if [[ -z "$SLICE" ]]; then
+  # Only meaningful for a whole-Spec replay: per-slice, the other slices' frozen ids are
+  # legitimately absent from this unit.
+  vanished=()
+  for fid in "${!FROZEN[@]}"; do
+    found=0
+    for row in "${ORACLES[@]}"; do [[ "${row%%$'\t'*}" == "$fid" ]] && found=1 && break; done
+    [[ "$found" == "1" ]] || vanished+=("$fid")
+  done
+  if [[ "${#vanished[@]}" -gt 0 ]]; then
+    die "${vanished[*]} was frozen by a dispatch but is no longer a P0 Oracle of this Spec — \
+an obligation cannot be closed by deleting it. Restore the mapping, or archive the Spec."
+  fi
 fi
 ORACLE_SHA="$(printf '%s\n' "${ORACLES[@]}" | LC_ALL=C sort | sha256sum | cut -d' ' -f1)"
 

@@ -36,11 +36,15 @@ for d in "$HOST/.codex-dispatch-logs"; do
   [[ -d "$d" ]] || continue
   while IFS= read -r f; do
     [[ -n "$f" ]] || continue
-    grep -qx "spec=$SPEC" "$f" 2>/dev/null || continue
+    grep -qxF "spec=$SPEC" "$f" 2>/dev/null || continue
     grep -q '^base_sha=' "$f" 2>/dev/null || continue
     rid="$(sed -n 's/^run_id=//p' "$f" | head -1)"
     jsonl="$d/${rid}.jsonl"
-    if [[ -z "$rid" || ! -s "$jsonl" ]] || ! grep -q 'turn\.completed' "$jsonl" 2>/dev/null; then
+    # Parsed, not grepped: `{"note":"turn.completed"}` is text, not a completed turn, and
+    # accepting it made a forged meta eligible as the baseline.
+    if [[ -z "$rid" || ! -s "$jsonl" ]] \
+      || ! python3 "$ROOT/skills/dispatch-codex/scripts/detect_compact.py" \
+             --require-turn "$jsonl" >/dev/null 2>&1; then
       echo "verify-deliver: skipping $(basename "$f") — no completed jsonl for run_id=${rid:-?}" >&2
       continue
     fi

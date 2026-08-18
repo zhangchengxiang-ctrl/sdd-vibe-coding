@@ -159,6 +159,25 @@ with tempfile.TemporaryDirectory() as td:
     note(honesty(linked, closing=True, spec_dir=sd) >= 1, "closing-artifact-symlink-out-rejected",
          "a symlink pointing out of the host does not anchor either")
 
+# The Evidence column was fixed first; the replay-log anchor is a second door into the same
+# room, and it did not go through the containment check at all.
+with tempfile.TemporaryDirectory() as td:
+    h = Path(td); (h / ".git").mkdir()
+    sd = h / "docs/specs/s1"; sd.mkdir(parents=True)
+    (h / ".sdd-evidence").mkdir()
+    (h / ".sdd-evidence/s1-all.jsonl").write_text(json.dumps(
+        {"spec": "s1", "id": "T-001", "phase": "baseline", "verdict": "red",
+         "log": "/etc/hostname"}) + "\n", encoding="utf-8")
+    note(not cs.closing_anchor("", sd, []), "closing-replay-log-outside-host-rejected",
+         "a replay row naming a file outside the host does not anchor a close either")
+    (h / "artifacts").mkdir()
+    (h / "artifacts/in.log").write_text("ok\n", encoding="utf-8")
+    (h / ".sdd-evidence/s1-all.jsonl").write_text(json.dumps(
+        {"spec": "s1", "id": "T-001", "phase": "baseline", "verdict": "red",
+         "log": str(h / "artifacts/in.log")}) + "\n", encoding="utf-8")
+    note(bool(cs.closing_anchor("", sd, [])), "closing-replay-log-inside-host-anchors",
+         "a replay log inside the host still anchors it")
+
 # --- wordlists advise, they do not reject (U2 F08, U4 antipatterns) ---
 def one_test(then_body):
     return (
@@ -373,9 +392,26 @@ note(close_errs(machine=(), human=("T-001",), run="人工验收：T-002 · 看�
      "an acceptance line for another id does not count")
 # T-0010 is a different Oracle, and `[^\n]*T-001` matched it: a machine id whose prefix is a
 # human id would have closed the human one.
-note(close_errs(machine=(), human=("T-001",), run="人工验收：T-0010 · bot")[0] >= 1,
-     "close-manual-acceptance-id-boundary",
-     "T-0010 does not satisfy the acceptance owed by T-001")
+for bogus in ("人工验收：T-0010 · bot", "人工验收：T-001a — not done",
+              "manual-accept T-001-2", "```\n人工验收：T-001 · example\n```"):
+    note(close_errs(machine=(), human=("T-001",), run=bogus)[0] >= 1,
+         f"close-manual-acceptance-rejects-{bogus[:14].strip()}",
+         "an id that continues, or a fenced example, does not satisfy T-001's acceptance")
+note(close_errs(machine=(), human=("T-001",), run="人工验收：T-001 · 我看了 390 宽度")[0] == 0,
+     "close-manual-acceptance-real-line-passes", "a real acceptance line still closes it")
+
+# The host boundary is the git root, not the shape of the path: a nested SDD docs root used to
+# make the host the app directory, so an artifact at the repo root was wrongly rejected.
+with tempfile.TemporaryDirectory() as td:
+    h = Path(td); (h / ".git").mkdir()
+    sd = h / "apps/acme/docs/specs/s1"; sd.mkdir(parents=True)
+    (h / "artifacts").mkdir(); (h / "artifacts/t001.log").write_text("ok\n", encoding="utf-8")
+    nested = head + "| R-001 | T-001 | a.ts | kind=unit · log=artifacts/t001.log | Pass |\n"
+    note(honesty(nested, closing=True, spec_dir=sd) == 0, "closing-nested-sdd-root-artifact-ok",
+         "a repo-root artifact anchors a Spec under a nested SDD docs root")
+
+note(_same_spec_probe := cs._same_spec("Pay", "pay"), "close-spec-id-case-insensitive",
+     "a row written `pay` answers for Spec `Pay`, the way the filesystem sees them")
 
 o = close_errs(run="override: 用户要求自写\n")
 note(o[0] == 0 and o[1] >= 1 and "replay waived" in o[2],

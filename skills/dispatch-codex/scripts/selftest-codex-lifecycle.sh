@@ -301,8 +301,10 @@ set +e
 bash "$DISPATCH" --cwd "$HOST1" --unit build --spec cpx --slice $'S1 S2' \
   --log-dir "$LOG1" --timeout 20 -- 'go' >"$TMP/t1f.out" 2>"$TMP/t1f.err"
 st_ws=$?
+# Space-separated on purpose: the comma form is caught by the narrow capture too, so only this
+# one shows whether the widened capture is doing anything.
 SKIP_SPEC_CHECK=1 bash "$DISPATCH" --cwd "$HOST1" --unit build --spec cpx --slice S1 \
-  --log-dir "$LOG1" --timeout 20 -- $'SLICE_IDS=S1,S2\nfinish both' \
+  --log-dir "$LOG1" --timeout 20 -- $'SLICE_IDS=S1 S2\nfinish both' \
   >"$TMP/t1f2.out" 2>"$TMP/t1f2.err"
 st_payload=$?
 set -e

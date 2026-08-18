@@ -66,13 +66,17 @@ write_tests() {   # host cmd
 # rather than hand-passing --base: that is what production does, and the custody checks
 # below only exist on this route.
 mk_meta() {   # host base_sha [frozen-oracles-tsv] → prints the meta path
-  local h="$1" b="$2" frz="${3:-}" d="$1/.codex-dispatch-logs" m
+  local h="$1" b="$2" frz="${3:-}" d="$1/.codex-dispatch-logs" m rid
   mkdir -p "$d"
-  m="$d/run-$((++META_N)).meta.txt"
+  # mktemp, not a counter: every caller uses `$(mk_meta …)`, which runs in a subshell, so an
+  # incremented META_N never came back — two calls produced the same filename and the second
+  # silently replaced the first. That made a two-dispatch fixture indistinguishable from one.
+  m="$(mktemp "$d/run-XXXXXX.meta.txt")"
+  rid="$(basename "$m" .meta.txt)"
   # A meta is custody only if the run it names left a completed transcript, so the fixture
   # leaves one too — otherwise these probes exercise a path production now refuses.
-  printf '%s\n' '{"type":"turn.completed","spec":"s1"}' >"$d/r${META_N}.jsonl"
-  { printf 'run_id=r%s\nspec=s1\nbase_sha=%s\nrun_state=finished\n' "$META_N" "$b"
+  printf '%s\n' '{"type":"turn.completed","spec":"s1"}' >"$d/${rid}.jsonl"
+  { printf 'run_id=%s\nspec=s1\nbase_sha=%s\nrun_state=finished\n' "$rid" "$b"
     if [[ -n "$frz" ]]; then
       printf 'oracles_file=%s\noracles_sha256=%s\n' \
         "$frz" "$(LC_ALL=C sort "$frz" | sha256sum | cut -d' ' -f1)"
@@ -80,7 +84,6 @@ mk_meta() {   # host base_sha [frozen-oracles-tsv] → prints the meta path
   } >"$m"
   printf '%s' "$m"
 }
-META_N=0
 freeze_of() {   # host slice → writes the frozen tsv the dispatch would have written
   local h="$1" sl="$2" out
   out="$h/.codex-dispatch-logs/frozen-$sl.tsv"   # separate statement: `local a=$1 b=$a`
@@ -472,6 +475,14 @@ bash "$VD" "$HV4" s1 >"$TMP/out.log" 2>&1 || true
 saw "verify-deliver-skips-meta-without-transcript" 'skipping forged.meta.txt'
 saw "verify-deliver-refuses-without-custody" 'no .codex-dispatch-logs meta names spec=s1'
 
+# The transcript must be parsed, not grepped: `{"note":"turn.completed"}` is text.
+printf '%s\n' '{"note":"turn.completed"}' >"$HV4/.codex-dispatch-logs/forged.jsonl"
+bash "$VD" "$HV4" s1 >"$TMP/out.log" 2>&1 || true
+saw "verify-deliver-rejects-textual-turn-completed" 'skipping forged.meta.txt'
+printf '%s\n' '{"type":"turn.completed"}' >"$HV4/.codex-dispatch-logs/forged.jsonl"
+bash "$VD" "$HV4" s1 >"$TMP/out.log" 2>&1 || true
+saw "verify-deliver-accepts-real-turn-completed" 'baseline from forged.meta.txt'
+
 # --- a whole-Spec close must survive per-slice freezes -------------------------
 # The blocker the second review found: each dispatch freezes only its own slice's Oracles, so
 # comparing one digest of the whole set against S1's frozen file called it drift when nothing
@@ -519,6 +530,48 @@ p.write_text(s, encoding="utf-8")
 PY2
 check "ship-per-oracle-drift-refused" 2 bash "$SHIP" --host "$HM" --spec s1 --from-meta "$MM"
 saw "ship-names-the-drifted-id" 'oracle drift on T-001'
+
+# Two dispatches that froze one T-id differently: taking the newest would let a re-freeze
+# replace the judge the first dispatch was held to. Its own host — reusing a fixture other
+# probes have already mutated is how the first version of this probe ended up measuring drift.
+HC="$TMP/hconflict"
+mk_host "$HC" "$GOOD_CMD"
+write_contract "$HC" "T-001"
+BASEC="$(git -C "$HC" rev-parse HEAD)"
+MC1="$(mk_meta "$HC" "$BASEC" "$(freeze_of "$HC" S1)")"
+printf 'T-001\tmachine\tbash -c "grep -q SOMETHING_ELSE src/feature.txt"\n' \
+  >"$HC/.codex-dispatch-logs/frozen-conflict.tsv"
+mk_meta "$HC" "$BASEC" "$HC/.codex-dispatch-logs/frozen-conflict.tsv" >/dev/null
+implement "$HC"
+check "ship-conflicting-freezes-refused" 2 bash "$SHIP" --host "$HC" --spec s1 --from-meta "$MC1"
+# The loop echoes "frozen differently" whether or not the refusal fires, so assert the die's
+# own sentence — otherwise disabling the refusal leaves this green.
+saw "ship-names-conflicting-freeze" 'two dispatches froze'
+
+# An obligation cannot be closed by deleting it: a T-id a dispatch froze must still be a P0
+# Oracle of the Spec.
+HG="$TMP/hgone"
+mk_host "$HG" "$GOOD_CMD"
+write_contract "$HG" "T-001, T-002"
+{
+  printf '# Tests\n\n## 索引\n\n| ID | R |\n|---|---|\n| T-001 | R-001 |\n| T-002 | R-001 |\n'
+  printf '\n## T-001 · a\n\n### Given\n\n- x\n\n### When\n\n1. y\n\n'
+  printf '### Then（Oracle）\n\n- feature.txt says IMPLEMENTED\n\n'
+  printf '### 自动化\n\n- 命令：`%s`\n- 预期 Evidence Kind：`unit`\n' "$GOOD_CMD"
+  printf '\n## T-002 · b\n\n### Given\n\n- x\n\n### When\n\n1. y\n\n'
+  printf '### Then（Oracle）\n\n- other.txt says ALSO\n\n'
+  printf '### 自动化\n\n- 命令：`bash -c "grep -q ALSO src/other.txt"`\n'
+  printf -- '- 预期 Evidence Kind：`unit`\n'
+} >"$HG/docs/specs/s1/tests.md"
+echo TODO >"$HG/src/other.txt"
+git -C "$HG" add -A && git -C "$HG" commit -qm two
+BASEG="$(git -C "$HG" rev-parse HEAD)"
+MG="$(mk_meta "$HG" "$BASEG" "$(freeze_of "$HG" S1)")"
+echo IMPLEMENTED >"$HG/src/feature.txt"; echo ALSO >"$HG/src/other.txt"
+git -C "$HG" add -A && git -C "$HG" commit -qm impl
+write_contract "$HG" "T-002"     # T-001 was frozen, then dropped from the mapping
+check "ship-vanished-obligation-refused" 2 bash "$SHIP" --host "$HG" --spec s1 --from-meta "$MG"
+saw "ship-names-vanished-obligation" 'no longer a P0 Oracle'
 
 echo "--- selftest-ship: pass=$pass fail=$fail ---"
 [[ "$fail" -eq 0 ]]

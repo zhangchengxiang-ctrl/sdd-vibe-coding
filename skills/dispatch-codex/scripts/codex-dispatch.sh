@@ -262,9 +262,14 @@ them separately, or run wish-orchestrate --parallel N to wave them with the edit
   fi
   # A payload naming more than one slice is the same refusal by another route: marking the
   # prompt "packed" used to disable the prose check without anyone comparing it to --slice.
-  payload_ids="$(printf '%s' "$PROMPT" | grep -Eio 'SLICE_IDS[[:space:]]*=[[:space:]]*[[:alnum:]_.,-]+' | head -1 | sed -E 's/.*=[[:space:]]*//')"
+  # Capture to end of line: `SLICE_IDS=S1 S2` used to yield just `S1`, so a space-separated
+  # pair walked through the check that exists to stop it.
+  payload_ids="$(printf '%s' "$PROMPT" | grep -Ei '^[^\n]*SLICE_IDS[[:space:]]*=' | head -1 | sed -E 's/.*SLICE_IDS[[:space:]]*=[[:space:]]*//')"
   if [[ -n "$payload_ids" ]]; then
-    payload_n="$(printf '%s' "$payload_ids" | tr ',[:space:]' '\n' | grep -c '[^[:space:]]' || true)"
+    # Count slice-shaped tokens only. Capturing to end of line was necessary (`SLICE_IDS=S1 S2`
+    # used to yield just `S1`), but it also swallows trailing prose: a real fixture writes
+    # `SLICE_IDS=S1 probe`, which is one slice and a word, not two slices.
+    payload_n="$(printf '%s' "$payload_ids" | tr ',[:space:]' '\n' | grep -cEi '^S[0-9]+$' || true)"
     [[ "${payload_n:-0}" -le 1 ]] || die "payload declares SLICE_IDS=$payload_ids — A == D means \
 one slice per exec, whatever --slice says. Dispatch them separately."
   fi

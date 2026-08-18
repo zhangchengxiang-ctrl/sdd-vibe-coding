@@ -764,6 +764,11 @@ def check_p0_oracle_commands(
     return machine_ids, human_ids
 
 
+def _strip_fences(text: str) -> str:
+    """Drop ``` fenced blocks: a documented example is not a claim."""
+    return re.sub(r"(?ms)^\s*```.*?^\s*```\s*$", "", text)
+
+
 def check_replay_evidence(
     spec_dir: Path,
     machine_ids: list[str],
@@ -801,9 +806,13 @@ def check_replay_evidence(
             msg + (" [override: self-written, replay waived]" if self_written else "")
         )
     for tid in human_ids:
-        # `[^\n]*T-001` also matches "T-0010": without the boundary, an acceptance line for a
-        # machine Oracle would close a human one whose id is its prefix.
-        if re.search(rf"(?i)(?:人工验收|manual-accept)[^\n]*{re.escape(tid)}(?![0-9])", run):
+        # `[^\n]*T-001` also matched "T-0010", and `(?![0-9])` still accepted `T-001a` and
+        # `T-001-2`. The id must end at a character that cannot continue an id, and fenced code
+        # blocks are stripped first: an example in a doc block is not an acceptance.
+        if re.search(
+            rf"(?im)^[^\n]*(?:人工验收|manual-accept)[^\n]*{re.escape(tid)}(?![0-9A-Za-z_-])",
+            _strip_fences(run),
+        ):
             continue
         report.fail(
             f"{spec_dir.name}: {tid} is a 人工/manual-only Oracle — the runner cannot close "
@@ -1157,6 +1166,18 @@ def _dispatch_log_dirs(start: Path | None = None) -> list[Path]:
     return _walk_up_dirs(".codex-dispatch-logs", start)
 
 
+def _same_spec(a: str, b: str) -> str | bool:
+    """Spec ids equal the way a filesystem sees them: case-folded, NFC-normalised.
+
+    A byte comparison rejected a `Pay` Spec whose row was written `pay`. This is NOT a security
+    boundary — the field is self-asserted by a file in the tree being judged — it only stops the
+    evidence of one Spec from answering for a differently-named one.
+    """
+    import unicodedata
+    n = lambda x: unicodedata.normalize("NFC", x).casefold()
+    return n(a) == n(b)
+
+
 def replay_rows(spec_dir: Path) -> dict[str, list[dict]]:
     """T-id -> ship.sh evidence rows for this Spec, nearest .sdd-evidence first."""
     out: dict[str, list[dict]] = {}
@@ -1177,7 +1198,9 @@ def replay_rows(spec_dir: Path) -> dict[str, list[dict]]:
                     r = json.loads(line)
                 except ValueError:
                     continue
-                if str(r.get("spec") or "") != spec_dir.name:
+                if _same_spec(str(r.get("spec") or ""), spec_dir.name):
+                    pass
+                else:
                     continue
                 tid = r.get("id")
                 if tid:
@@ -1299,7 +1322,16 @@ EVIDENCE_PATH_RE = re.compile(r"(?i)\b(?:log|path|file|artifact|report)\s*=\s*([
 
 
 def _host_root(spec_dir: Path) -> Path:
-    """The repo the Spec lives in: <host>/**/specs/<id>, so walk up past specs/."""
+    """The repo the Spec lives in.
+
+    Keyed on the git root, not on the shape of the path: a host may declare a nested SDD docs
+    root (`SDD docs root: apps/acme/docs`), and walking up past `specs/` made the host
+    apps/acme — so a legitimate artifact at $REPO/artifacts/ was rejected as "outside the
+    host". The specs walk stays as the fallback for a Spec dir in no repo at all.
+    """
+    for anc in [spec_dir, *spec_dir.parents]:
+        if (anc / ".git").exists():
+            return anc
     for anc in spec_dir.parents:
         if anc.name == "specs":
             return anc.parent.parent if anc.parent.name in {"docs", ".sdd"} else anc.parent
@@ -1312,7 +1344,15 @@ def _resolve_cited(p: str, spec_dir: Path) -> Path | None:
     of the tree did too. Resolved with symlinks followed, so a link cannot smuggle the target."""
     host = _host_root(spec_dir).resolve()
     cand = Path(p)
-    hits = [cand] if cand.is_absolute() else [r / p for r in [spec_dir, *spec_dir.parents[:3]]]
+    # Relative citations used to be looked up in the Spec dir and three parents. With a nested
+    # SDD docs root that stops short of the repo, so `artifacts/t001.log` at the repo root was
+    # unresolvable. Search every ancestor up to the host, and no further.
+    roots = [spec_dir]
+    for anc in spec_dir.parents:
+        roots.append(anc)
+        if anc.resolve() == host:
+            break
+    hits = [cand] if cand.is_absolute() else [r / p for r in roots]
     for h in hits:
         if not h.exists():
             continue
@@ -1360,7 +1400,9 @@ def closing_anchor(run: str, spec_dir: Path, evidence_cells: list[str]) -> str:
     for tid, rows in sorted(replay_rows(spec_dir).items()):
         for r in rows:
             log = r.get("log") or ""
-            if log and Path(log).is_file():
+            # Same containment rule as the Evidence column: a path that merely exists somewhere
+            # on the machine is not this Spec's artifact, whichever field cited it.
+            if log and _resolve_cited(log, spec_dir) is not None:
                 return f"replay log for {tid} ({log})"
     return ""
 
