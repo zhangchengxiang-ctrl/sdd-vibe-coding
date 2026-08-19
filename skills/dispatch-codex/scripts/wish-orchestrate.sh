@@ -35,7 +35,7 @@ Options:
 Exit codes:
   0  last requested edit-wave dispatched or all already passed
   3  edit-wave dispatched; red-green Oracle replay required before next wave
-  2  usage / hard failure
+  2  usage / hard failure / Codex-ineligible slices (CONDUCTOR_REQUIRED)
 EOF
 }
 
@@ -82,9 +82,11 @@ PACK_PY="$PLUGIN_ROOT/skills/dispatch-codex/scripts/build_context_pack.py"
 DISPATCH="$PLUGIN_ROOT/skills/dispatch-codex/scripts/codex-dispatch.sh"
 DETECT="$PLUGIN_ROOT/skills/dispatch-codex/scripts/detect_compact.py"
 SHIP="$PLUGIN_ROOT/skills/dispatch-codex/scripts/ship.sh"
+ELIGIBLE_PY="$PLUGIN_ROOT/skills/dispatch-codex/scripts/assert_codex_eligible.py"
 [[ -f "$PACK_PY" ]] || die "missing $PACK_PY"
 [[ -f "$DISPATCH" ]] || die "missing $DISPATCH"
 [[ -f "$SHIP" ]] || die "missing $SHIP"
+[[ -f "$ELIGIBLE_PY" ]] || die "missing $ELIGIBLE_PY"
 
 if [[ "$LIST" == "1" ]]; then
   python3 "$PACK_PY" "$CWD" "$SPEC_ID" --list
@@ -128,6 +130,7 @@ load_state() {
   PASSED_SLICES=""
   PASSED_UNITS=""
   CORRELATION_ID=""
+  CONDUCTOR_REQUIRED=""
   if [[ -f "$STATE_FILE" ]]; then
     # shellcheck disable=SC1090
     source "$STATE_FILE"
@@ -151,6 +154,7 @@ LAST_DISPATCH='$LAST_DISPATCH'
 PASSED_SLICES='$PASSED_SLICES'
 PASSED_UNITS='$PASSED_UNITS'
 CORRELATION_ID=$CORRELATION_ID
+CONDUCTOR_REQUIRED='$CONDUCTOR_REQUIRED'
 SPEC_ID=$SPEC_ID
 EOF
 }
@@ -287,6 +291,7 @@ if [[ "$STATUS" == "1" ]]; then
   echo "  last_dispatch=${LAST_DISPATCH:-}"
   echo "  passed_slices=${PASSED_SLICES:-}"
   echo "  passed_units=${PASSED_UNITS:-}"
+  echo "  conductor_required=${CONDUCTOR_REQUIRED:-}"
   echo "  plan_slices=${SLICES[*]}"
   echo "  dispatch_units=$(all_unit_ids)"
   exit 0
@@ -348,6 +353,22 @@ if [[ ${#TARGET_UNITS[@]} -eq 0 ]]; then
   echo "wish-orchestrate: nothing to dispatch (all requested units already PASSED or dry-run skips)." >&2
   echo "wish-orchestrate: Agent Verify next (machine close if no-UI; else human-acceptance-pack). Not Deploy." >&2
   exit 0
+fi
+
+if [[ "$PACK_ONLY" != "1" && "${SKIP_CODEX_BOUNDARY:-0}" != "1" ]]; then
+  [[ -f "$ELIGIBLE_PY" ]] || die "missing $ELIGIBLE_PY"
+  ineligible=()
+  for uid in "${TARGET_UNITS[@]}"; do
+    if ! python3 "$ELIGIBLE_PY" "$CWD" "$SPEC_ID" "$uid" >/dev/null; then
+      ineligible+=("$uid")
+    fi
+  done
+  if [[ ${#ineligible[@]} -gt 0 ]]; then
+    CONDUCTOR_REQUIRED="${ineligible[*]}"
+    save_state
+    die "CONDUCTOR_REQUIRED=${ineligible[*]} — outside Codex boundary; conductor implements \
+these slices (see skills/dispatch-codex/references/codex-boundary.md)"
+  fi
 fi
 
 if [[ "$PACK_ONLY" == "1" ]]; then

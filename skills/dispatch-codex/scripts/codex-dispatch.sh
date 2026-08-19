@@ -4,9 +4,10 @@
 #
 # Usage:
 #   bash skills/dispatch-codex/scripts/codex-dispatch.sh \
-#     --cwd /path/to/host --unit plan|build -- [prompt...]
+#     --cwd /path/to/host --unit build -- [prompt...]
 #   echo "$PROMPT" | bash …/codex-dispatch.sh --cwd … --unit build
 #
+# --unit plan is refused (Codex boundary) unless SKIP_CODEX_BOUNDARY=1.
 # Env overrides:
 #   CODEX_DISPATCH_TIMEOUT_SEC   default: plan=900, build=1200
 #   CODEX_DISPATCH_MODEL         default: gpt-5.6-sol
@@ -21,7 +22,7 @@ Usage: codex-dispatch.sh --cwd DIR --unit plan|build [options] [-- PROMPT]
 
 Required:
   --cwd DIR              Host repo root (Codex -C)
-  --unit plan|build      Completion unit (sets timeout/sandbox/effort defaults)
+  --unit plan|build      build = eligible slice; plan refused unless SKIP_CODEX_BOUNDARY=1
 
 Options:
   --effort LEVEL         minimal|low|medium|high|xhigh|max (default: medium)
@@ -110,6 +111,10 @@ case "$UNIT" in
   goal) die "--unit goal is gone (A == D): dispatch one slice per exec with --unit build --slice S<n>" ;;
   *) die "--unit must be plan|build (got: $UNIT)" ;;
 esac
+if [[ "$UNIT" == "plan" && "${SKIP_CODEX_BOUNDARY:-0}" != "1" ]]; then
+  die "unit plan is outside the Codex boundary (conductor owns Plan). See \
+skills/dispatch-codex/references/codex-boundary.md — SKIP_CODEX_BOUNDARY=1 is maintainer-only"
+fi
 
 # Tier is a subscription-quota lever, not a quality lever. Rejecting the cheaper
 # tiers here is what pinned all 75 real dispatches to Sol and burned the credit
@@ -264,7 +269,7 @@ them separately, or run wish-orchestrate --parallel N to wave them with the edit
   # prompt "packed" used to disable the prose check without anyone comparing it to --slice.
   # Capture to end of line: `SLICE_IDS=S1 S2` used to yield just `S1`, so a space-separated
   # pair walked through the check that exists to stop it.
-  payload_ids="$(printf '%s' "$PROMPT" | grep -Ei '^[^\n]*SLICE_IDS[[:space:]]*=' | head -1 | sed -E 's/.*SLICE_IDS[[:space:]]*=[[:space:]]*//')"
+  payload_ids="$(printf '%s' "$PROMPT" | grep -Ei '^[^\n]*SLICE_IDS[[:space:]]*=' | head -1 | sed -E 's/.*SLICE_IDS[[:space:]]*=[[:space:]]*//' || true)"
   if [[ -n "$payload_ids" ]]; then
     # Count slice-shaped tokens only. Capturing to end of line was necessary (`SLICE_IDS=S1 S2`
     # used to yield just `S1`), but it also swallows trailing prose: a real fixture writes
@@ -295,6 +300,20 @@ if [[ "$UNIT" == "build" ]]; then
     if ! python3 "$CHECK_SPEC" "$CWD" "$SPEC_ID" --skip-agents; then
       die "check_spec failed for '$SPEC_ID' — refuse Codex $UNIT (fix Spec or SKIP_SPEC_CHECK=1)"
     fi
+  fi
+fi
+
+ELIGIBLE_PY="$PLUGIN_ROOT/skills/dispatch-codex/scripts/assert_codex_eligible.py"
+if [[ "$UNIT" == "build" && "${SKIP_CODEX_BOUNDARY:-0}" != "1" ]]; then
+  [[ -f "$ELIGIBLE_PY" ]] || die "assert_codex_eligible.py not found at $ELIGIBLE_PY"
+  _el_slice="${SLICE_ID%%,*}"
+  _el_slice="${_el_slice%% *}"
+  [[ -n "$SPEC_ID" && -n "$_el_slice" ]] \
+    || die "Codex boundary check needs --spec and --slice"
+  echo "codex-dispatch: preflight Codex boundary ($SPEC_ID/$_el_slice)" >&2
+  if ! python3 "$ELIGIBLE_PY" "$CWD" "$SPEC_ID" "$_el_slice"; then
+    die "slice $_el_slice is outside the Codex boundary — conductor implements it \
+(see skills/dispatch-codex/references/codex-boundary.md)"
   fi
 fi
 

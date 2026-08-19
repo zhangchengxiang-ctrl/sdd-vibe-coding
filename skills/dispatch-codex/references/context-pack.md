@@ -32,7 +32,7 @@ Codex 有效窗约 258K，过线会 **auto-compact**（有损）。指挥侧不�
 4. **allowlist 必填**；空触及路径 = 不合格 Pack，不得派。  
 5. 验收是红绿 replay（钉 3，真源见 [`verification-loop`](../../vibe-coding/references/verification-loop.md)）;它不挡编辑锁不冲突的下一波。  
 6. jsonl 须有 **`turn.completed`**；仅当出现 **compact 事件类型** 才判窗损。禁止把 `usage.input_tokens` 当窗宽。失败 → fresh exec。  
-7. Plan：`--spec` + 落盘后 `assert_plan_artifacts.py`（禁聊天「待批准」假成功）。
+7. Plan 由指挥侧落盘（`--unit plan` 默认拒绝）。
 
 ## 4. `plan.md` 切片表约定
 

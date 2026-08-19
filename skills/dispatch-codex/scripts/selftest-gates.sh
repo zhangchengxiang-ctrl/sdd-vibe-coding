@@ -4,6 +4,8 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 ASSERT="$ROOT/skills/dispatch-codex/scripts/assert_plan_artifacts.py"
+ELIGIBLE="$ROOT/skills/dispatch-codex/scripts/assert_codex_eligible.py"
+DISPATCH="$ROOT/skills/dispatch-codex/scripts/codex-dispatch.sh"
 WISH="$ROOT/skills/dispatch-codex/scripts/wish-orchestrate.sh"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
@@ -362,6 +364,110 @@ else
   echo "FAIL pack-human-emits — a human oracle must still produce a pack" >&2
   fail=$((fail + 1))
 fi
+
+# --- Codex boundary (eligible vs refuse) ---
+check "eligible-file-unit-oracle" 0 python3 "$ELIGIBLE" "$HOSTM" m1 S1
+check "ineligible-directory-allowlist" 2 python3 "$ELIGIBLE" "$HOSTX" x1 S1
+saw_gates "ineligible-dir-reason" 'directory-allowlist'
+check "ineligible-oracle-lab" 2 python3 "$ELIGIBLE" "$HOSTL" l1 S1
+saw_gates "ineligible-lab-reason" 'oracle-human-or-lab'
+
+HOSTUI="$TMP/uihost"
+mkdir -p "$HOSTUI/docs/specs/u1" "$HOSTUI/src"
+echo 'x' >"$HOSTUI/src/App.tsx"
+cat >"$HOSTUI/docs/specs/u1/plan.md" <<'EOF'
+| 切片 ID | 入口 | 完成定义（链 T-xxx） | 触及路径 | 依赖 | 备注 |
+| S1 | Web page | T-001 | src/App.tsx | | oracle:unit page_kind: list |
+EOF
+fill_spec "$HOSTUI/docs/specs/u1"
+check "ineligible-ui-path" 2 python3 "$ELIGIBLE" "$HOSTUI" u1 S1
+saw_gates "ineligible-ui-reason" 'ui-'
+
+HOSTH="$TMP/humhost"
+mkdir -p "$HOSTH/docs/specs/h1" "$HOSTH/src"
+echo 'x' >"$HOSTH/src/a.ts"
+cat >"$HOSTH/docs/specs/h1/plan.md" <<'EOF'
+| 切片 ID | 入口 | 完成定义（链 T-xxx） | 触及路径 | 依赖 | 备注 |
+| S1 | a | T-001 | src/a.ts | | oracle:human |
+EOF
+fill_spec "$HOSTH/docs/specs/h1"
+# fill_spec writes a machine command; the note still marks human/lab-style work.
+check "ineligible-note-human" 2 python3 "$ELIGIBLE" "$HOSTH" h1 S1
+saw_gates "ineligible-human-reason" 'oracle-human-or-lab'
+
+HOSTE="$TMP/emptycmd"
+mkdir -p "$HOSTE/docs/specs/e1" "$HOSTE/src"
+echo 'x' >"$HOSTE/src/a.ts"
+cat >"$HOSTE/docs/specs/e1/plan.md" <<'EOF'
+| 切片 ID | 入口 | 完成定义（链 T-xxx） | 触及路径 | 依赖 | 备注 |
+| S1 | a | T-001 | src/a.ts | | oracle:unit |
+EOF
+for t in VERSION.md contract.md run.md; do
+  printf '# %s\n\nenough content for placeholder gates.\n' "$t" >"$HOSTE/docs/specs/e1/$t"
+done
+cat >"$HOSTE/docs/specs/e1/tests.md" <<'EOF'
+# Tests
+
+## 索引
+
+| ID | R |
+|---|---|
+| T-001 | R-001 |
+
+## T-001 · probe
+
+### Given
+
+- fixture
+
+### When
+
+1. run
+
+### Then（Oracle）
+
+- offset=0 与 offset=1000 首行 id 不同
+EOF
+check "ineligible-no-command" 2 python3 "$ELIGIBLE" "$HOSTE" e1 S1
+saw_gates "ineligible-no-cmd-reason" 'oracle-invalid|no-machine-oracle'
+
+check "plan-unit-refused" 2 bash "$DISPATCH" --cwd "$HOSTM" --unit plan --spec m1 -- "noop"
+saw_gates "plan-unit-names-boundary" 'Codex boundary'
+
+check "dispatch-refuses-dir-slice" 2 env SKIP_SPEC_CHECK=1 \
+  bash "$DISPATCH" --cwd "$HOSTX" --unit build --spec x1 --slice S1 -- "SLICE_ID=S1"
+saw_gates "dispatch-dir-names-boundary" 'Codex boundary'
+
+HOSTMIX="$TMP/mixhost"
+mkdir -p "$HOSTMIX/docs/specs/mix1" "$HOSTMIX/src"
+echo a >"$HOSTMIX/src/ok.ts"
+echo b >"$HOSTMIX/src/App.tsx"
+cat >"$HOSTMIX/docs/specs/mix1/plan.md" <<'EOF'
+| 切片 ID | 入口 | 完成定义（链 T-xxx） | 触及路径 | 依赖 | 备注 |
+| S1 | api | T-001 | src/ok.ts | | oracle:unit |
+| S2 | ui | T-002 | src/App.tsx | | oracle:unit page_kind: list |
+EOF
+fill_spec "$HOSTMIX/docs/specs/mix1"
+check "wish-mixed-wave-conductor" 2 bash "$WISH" --cwd "$HOSTMIX" --spec mix1 --dry-run --parallel 2
+saw_gates "wish-names-conductor-required" 'CONDUCTOR_REQUIRED'
+
+check "check-spec-executor-split" 0 python3 -c '
+import importlib.util, sys
+from pathlib import Path
+root, ui_host, el_host = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
+spec = importlib.util.spec_from_file_location("cs", root / "skills/spec/scripts/check_spec.py")
+cs = importlib.util.module_from_spec(spec); spec.loader.exec_module(cs)
+ui = ui_host / "docs/specs/u1"
+ok, why = cs.dispatch_evidence_valid("executor: conductor\n", ui)
+assert ok, why
+ok2, why2 = cs.dispatch_evidence_valid("结论：实现完成\n", ui)
+assert not ok2 and "conductor" in why2, why2
+el = el_host / "docs/specs/m1"
+ok3, why3 = cs.dispatch_evidence_valid("executor: conductor\n", el)
+assert not ok3 and "eligible" in why3, why3
+ok4, why4 = cs.dispatch_evidence_valid("override: 用户要求自写\n", el)
+assert ok4, why4
+' "$ROOT" "$HOSTUI" "$HOSTM"
 
 # --- auth block present in dispatcher ---
 check "auth-block-in-dispatch" 0 \
