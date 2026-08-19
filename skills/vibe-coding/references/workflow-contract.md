@@ -4,6 +4,7 @@
 
 | 文件 | 何时读 | 内容 |
 |------|--------|------|
+| [`explore-deliver.md`](./explore-deliver.md) | **常驻**（SDD 命中后） | Explore/Deliver · 意图优先 · 实质闸 · 懒加载 |
 | [`gates.md`](./gates.md) | **常驻** | 人闸 · 写码授权 (a)(b)(c) · 施工通道 · 许愿自动编排 |
 | [`states.md`](./states.md) | 关版 / 状态 | Version · Delivery Target · Spec Run · 完成声明 |
 | [`rails.md`](./rails.md) | 进 Build/Verify/Repair | 轨清单 · Oracle 冻结 · Plan 落盘 |

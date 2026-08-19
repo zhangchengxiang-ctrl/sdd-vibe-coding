@@ -10,7 +10,7 @@ disable-model-invocation: true
 
 # Testing：Verify 与证据
 
-本 Skill 只运行在已确认的 Verify Rail，不修改业务代码。
+本 Skill 只运行在已确认的 Verify Rail，不修改业务代码。先读 [`explore-deliver.md`](../vibe-coding/references/explore-deliver.md)（Deliver 前台）。
 
 ## FIRST ACTION（有 UI / UX 走查 · 硬门）
 

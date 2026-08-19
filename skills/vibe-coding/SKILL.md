@@ -13,14 +13,16 @@ description: >-
 
 # Vibe Coding
 
-**北极星：** 人定方案 → AI 按质量条交付 → 关版（无 UI 机器 / 有 UI 人点验）→（另批）Deploy。  
+**北极星：** 先满足用户本轮意图 → **仅 Deliver 时**启用形式安全网 → 关版（无 UI 机器 / 有 UI 人点验）→（另批）Deploy。  
+Explore / Deliver 合同 → [`explore-deliver.md`](./references/explore-deliver.md)。  
 指挥侧 Build = 先判 Codex eligible（[`codex-boundary.md`](../dispatch-codex/references/codex-boundary.md)）；合格片走 [`dispatch-codex`](../dispatch-codex/SKILL.md)。
 
 ## FIRST ACTION
 
 1. 判 `project.kind`（`software` | `plugin` | `other`）——见 [`project-kind.md`](./references/project-kind.md)；禁止默认 software。  
-2. 仅 software 宿主 + 显式 SDD 意图时：第一个工具调用 = Read 本文件 → 再读宿主 `AGENTS.md`。  
-3. 本轨只读 1 份常驻合同：[`gates.md`](./references/gates.md)。关版读 [`states.md`](./references/states.md)；进 Build/Verify 读 [`rails.md`](./references/rails.md)。
+2. 仅 software 宿主 + 显式 SDD 意图时：第一个工具调用 = Read 本文件 → 再读 [`explore-deliver.md`](./references/explore-deliver.md) + 宿主 `AGENTS.md`。  
+3. **判 Explore / Deliver**（未说落盘/确认/切 Spec/开始做/关版/发布 → 默认 **Explore**）。  
+4. **常驻只读** [`gates.md`](./references/gates.md) 摘要；**勿**首轮加载全套 design-standards / spec / testing——进对应 Rail 再读（见 explore-deliver §懒加载）。
 
 | kind | 动作 |
 |---|---|
@@ -32,23 +34,26 @@ description: >-
 
 | 用户意图 | 模式 |
 |---|---|
+| 帮我想想 / 聊聊 / 怎么设计 / 调研 / 读代码 / 对比方案（未要求落盘） | **Explore** → 直接答；Shape 用 `design`+debate/grounding；infra 机制可 Explore+读码后入 Plan |
+| 用户说「先别走 SDD / 不要卡片 / 直接给方案 / 这轮 Explore」 | **Explore**（强制；见 explore-deliver） |
+| 机制/平台（kill/timeout/取消传播/RG/capacity/cancel/query gateway/中止 等）且要 **落盘/实施** | Deliver → Plan → Skill `spec` |
 | 初始化 / 接入存量 / 基线空 | 冷启动 → Skill `design` → `project-init` |
-| 我希望 / 我想要（基线已齐） | Shape → Skill `design`（产品方案） |
-| 就按这个做 / 确认方案 | 指挥侧 Plan → eligible 派 Codex → Verify |
+| 我希望 / 我想要（基线已齐） | 默认 **Explore** → `design`；用户要「产品方案/给 PM」→ Deliver Shape 卡片 |
+| 就按这个做 / 确认方案 | **Deliver** → Plan → eligible 派 Codex → Verify |
 | 派 Codex / 用 Codex 做 | 仅 eligible；越界仍指挥侧 |
-| 切 Spec / Plan | Plan → Skill `spec` |
-| Spec 批准 / 开始做 / 实现 | Build：eligible 切片打包派发；其余指挥侧 |
+| 切 Spec / Plan | **Deliver** → Plan → Skill `spec` |
+| Spec 批准 / 开始做 / 实现 | **Deliver** → Build |
 | polish / 抛光 / 前端小改 / 按 refinement 修 | **Polish**（非 material；material → Shape） |
-| 验收 / UX 走查 | Verify → Skill `testing` |
-| 通过了 / 关版 / 归档 | 关版授权 → `make close-spec`；再问是否 Deploy |
-| 发布 / 上线 / 部署 | Deploy → Skill `deploy`（P0–P6） |
+| 验收 / UX 走查 | **Deliver** → Verify → Skill `testing` |
+| 通过了 / 关版 / 归档 | **Deliver** → `make close-spec`；再问是否 Deploy |
+| 发布 / 上线 / 部署 | **Deliver** → Skill `deploy`（P0–P6） |
 | 只定位复杂/线上问题 | Diagnose → Skill `debug` |
 
-## 高质量内核（不可省）
+## 高质量内核（Deliver 时不可省）
 
 | 层 | 义务 |
 |----|------|
-| 产品正确 | 方案闸：Job / In-Out / 主路径；人确认前不施工 |
+| 产品正确 | 方案闸：Job / In-Out / 主路径；**Explore 不要求卡片** |
 | 合同正确 | 事实映射 → 纵向切片 → Spec 五件套 → 强 Oracle |
 | 实现正确 | 一 D 一次 exec（272K）；eligible → Context Pack→Codex；否则指挥侧；Oracle 冻结 |
 | 验证正确 | 先证伪；maker ≠ grader |
@@ -56,6 +61,7 @@ description: >-
 
 ## 按需
 
+- Explore / Deliver：[`explore-deliver.md`](./references/explore-deliver.md)  
 - Polish / material：[`change-control.md`](./references/design-standards/change-control.md) + LOAD-MAP  
 - UI 施工索引：[`design-standards/LOAD-MAP.md`](./references/design-standards/LOAD-MAP.md)  
 - Workspace：[`workspace-contract.md`](./references/workspace-contract.md)  

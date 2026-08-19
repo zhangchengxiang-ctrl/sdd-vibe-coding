@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 # Spec：Plan 技术方案
 
-只在 Plan 模式使用。先读宿主 `AGENTS.md`、已确认产品真源、`workflow-contract.md`（含
+只在 Plan 模式使用。先读宿主 `AGENTS.md`、[`explore-deliver.md`](../vibe-coding/references/explore-deliver.md)（Deliver）、已确认产品真源、`workflow-contract.md`（含
 **薄提示词原则**、**证据分级**、**施工通道**、**Plan 落盘授权**）、`workspace-contract.md`
 与 `evidence-contract.md`，以及
 [`design-standards/system-architecture.md`](../vibe-coding/references/design-standards/system-architecture.md)
@@ -33,7 +33,11 @@ disable-model-invocation: true
 9. **架构与设计边界轻门**：触及新入口 / 跨层 / 新存储 / 新权限模型 / 新部署单元时，
    `plan.md` 按 `system-architecture.md` §7 写明沿用或新开边界、C4 层级、ADR、Unverified；
    有 UI 时按 LOAD-MAP 字段门控补 Job Brief / `UI surface` / Design Read / `page_kind|motif` / `anchor` 等。齐套后再请求 Build。
-10. **机检**：宣称 Plan 可实施或派 Build 前，运行
+10. **Infra 机制特别指引（当用户提出 kill/timeout/RG/cancel/query gateway/中止 等机制设计）**：
+   - 套用 [`infra-mechanism-brief.md`](./references/infra-mechanism-brief.md) 的 Required 字段与 tests.md 断言建议，把“成功语义/失败语义/传播边界/幂等性”写进 contract/tests。
+   - 在 contract/plan/tests 任一处包含 `ux: n/a` 或 `无 UI`，避免 `check_spec.py` 把 infra 误判成 UI（从而要求 UI 字段门控）。
+   - P0 Oracle 默认使用 `unit` / `machine` 两态可机检脚本；不要在验收/证据内容里写“请人点验/请你自验”。
+11. **机检**：宣称 Plan 可实施或派 Build 前，运行
     `python3 <plugin>/skills/spec/scripts/check_spec.py <host> <spec-id>`
    （见 [`scripts/check_spec.py`](./scripts/check_spec.py)）。通过后：eligible 切片才派 Codex，否则指挥侧实现。
 

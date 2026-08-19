@@ -27,6 +27,7 @@ DEFAULT_AGENT = "cursor-agent"
 # Prefer these absolute files when a substring matches.
 PLUGIN_PATH_HINTS: list[tuple[str, str]] = [
     ("vibe-coding/SKILL.md", "skills/vibe-coding/SKILL.md"),
+    ("explore-deliver.md", "skills/vibe-coding/references/explore-deliver.md"),
     ("testing/SKILL.md", "skills/testing/SKILL.md"),
     ("design/SKILL.md", "skills/design/SKILL.md"),
     ("project-init.md", "skills/design/references/project-init.md"),

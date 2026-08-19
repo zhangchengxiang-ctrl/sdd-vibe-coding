@@ -72,6 +72,8 @@ test -f "$ROOT/skills/vibe-coding/references/design-standards/product-judgment.m
   && ok "skill:product-judgment" || bad "skill:product-judgment" "missing product-judgment.md"
 test -f "$ROOT/skills/vibe-coding/references/design-standards/LOAD-MAP.md" \
   && ok "skill:load-map" || bad "skill:load-map" "missing LOAD-MAP.md"
+test -f "$ROOT/skills/vibe-coding/references/explore-deliver.md" \
+  && ok "skill:explore-deliver" || bad "skill:explore-deliver" "missing explore-deliver.md"
 
 # --- preflight-rail ---
 tmp=$(mktemp -d)

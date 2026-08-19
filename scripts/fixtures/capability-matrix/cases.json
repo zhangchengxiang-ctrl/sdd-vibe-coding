@@ -44,9 +44,10 @@
       "fixture": "AGENTS.md: project.kind=software；基线已齐",
       "must_read_substrings": [
         "vibe-coding/SKILL.md",
+        "explore-deliver.md",
         "AGENTS.md"
       ],
-      "max_read_index_for_required": 3,
+      "max_read_index_for_required": 4,
       "expected": {
         "rail": "shape",
         "may_write_code": false,
@@ -169,6 +170,27 @@
       "last_eval": "2026-08-01 cursor-agent --matrix PASS"
     },
     {
+      "id": "E-EXPLORE-DEFAULT-NO-CARD",
+      "dim": "explore+intent",
+      "tier": [
+        "route",
+        "load"
+      ],
+      "prompt": "帮我想想 query-gateway 怎么设计 kill 大任务，先别走 SDD 卡片，直接读代码给方案",
+      "must_read_substrings": [
+        "explore-deliver.md"
+      ],
+      "max_read_index_for_required": 6,
+      "expected": {
+        "rail": "explore",
+        "may_write_code": false,
+        "must_not_default_card": true
+      },
+      "oracle": "Explore：debate/grounding+实质闸；禁止默认理解卡与请确认方案",
+      "status": "designed",
+      "probe_prompt": "Skill-load probe id=E-EXPLORE-DEFAULT-NO-CARD.\nUser intent: 帮我想想 kill 机制，先别走 SDD 卡片。\n\nHARD RULES:\n1) Do NOT write files. Do NOT output 我理解的目标 or 请确认方案.\n2) FIRST Read: skills/vibe-coding/references/explore-deliver.md\n3) Reply ONLY JSON: {\"probe\":\"E-EXPLORE-DEFAULT-NO-CARD\",\"mode\":\"explore\",\"ok\":true}\n"
+    },
+    {
       "id": "S-VAGUE-WISH",
       "dim": "shape",
       "tier": [
@@ -177,10 +199,10 @@
       ],
       "prompt": "我想让运营更快处理退款，先帮我想清楚",
       "expected": {
-        "rail": "shape",
+        "rail": "explore",
         "may_write_code": false
       },
-      "oracle": "我理解的目标卡；不宣称已实现",
+      "oracle": "Explore：直接讨论与实质闸；不默认理解卡；不请确认方案",
       "status": "covered",
       "maps_to": [
         "pm-shape-vague-wish"
@@ -230,6 +252,28 @@
         "preflight-rail"
       ],
       "must_read_substrings": []
+    },
+    {
+      "id": "I-INFRA-MECHANISM-ROUTE-SPEC",
+      "dim": "infra+plan+no-ui",
+      "tier": [
+        "static",
+        "route",
+        "load"
+      ],
+      "prompt": "设计 query-gateway 的 kill/timeout/cancel 机制（kill 大任务超时、取消传播、RG/隔离语义）。只产出可机检的 spec/contract/tests/plan，不写 UI 交互描述。",
+      "must_read_substrings": [
+        "vibe-coding/SKILL.md",
+        "spec/SKILL.md",
+        "infra-mechanism-brief.md",
+        "system-architecture.md"
+      ],
+      "max_read_index_for_required": 10,
+      "expected": {
+        "rail": "spec",
+        "may_write_code": false
+      },
+      "status": "designed"
     },
     {
       "id": "S-UI-ACL-JUDGMENT",

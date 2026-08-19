@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "description": "Explore/Deliver substance probes — grade agent output, not only Read order",
+  "cases": [
+    {
+      "id": "ES-INFRA-KILL-LIVE-RELAY",
+      "timeout_sec": 240,
+      "host_fixture": "skills/dispatch-codex/fixtures/live-relay",
+      "prompt": "Use vibe-coding Explore mode. User: 设计 live-relay 的 query kill/timeout 机制——gateway 收到 cancel 后如何中止、失败语义是什么。先读代码再给方案，不要 SDD 理解卡，不要请确认方案。\n\nHARD RULES:\n1) Read svc/gateway.py and at least one related file before answering.\n2) Do NOT write or edit files.\n3) Do NOT output sections titled 我理解的目标 / 当前进展 / 请确认方案.\n4) Answer in plain technical prose: mechanism layers, success vs failure semantics, code anchors.\n5) End with a short JSON line (no fence): {\"probe\":\"ES-INFRA-KILL-LIVE-RELAY\",\"ok\":true}\n",
+      "must_read_substrings": ["gateway.py"],
+      "must_not_contain": [
+        "我理解的目标",
+        "请确认方案",
+        "就按这个做",
+        "design-ready"
+      ],
+      "substance_any": [
+        "gateway",
+        "cancel",
+        "timeout",
+        "kill",
+        "NotImplemented",
+        "handle",
+        "fail",
+        "success",
+        "pytest"
+      ],
+      "substance_min_hits": 3
+    },
+    {
+      "id": "ES-DELIVER-CARD-OPTIN",
+      "timeout_sec": 180,
+      "host_fixture": "skills/dispatch-codex/fixtures/live-relay",
+      "prompt": "Use vibe-coding. User: 帮我想想 gateway 怎么设计，Explore，不要卡片。\n\nHARD RULES:\n1) Do NOT write files.\n2) FIRST Read skills/vibe-coding/references/explore-deliver.md\n3) Reply ONLY JSON (no fence): {\"probe\":\"ES-DELIVER-CARD-OPTIN\",\"mode\":\"explore\",\"read_explore_deliver\":true}\n",
+      "must_read_substrings": ["explore-deliver.md"],
+      "must_not_contain": ["我理解的目标", "请确认方案"],
+      "substance_any": ["explore"],
+      "substance_min_hits": 1
+    }
+  ]
+}

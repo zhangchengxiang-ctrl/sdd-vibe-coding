@@ -5,10 +5,11 @@ alwaysApply: true
 
 # SDD 入口硬门
 
-**真源：** `vibe-coding/SKILL.md` + `project-kind.md` + `gates.md`。
+**真源：** `vibe-coding/SKILL.md` + `explore-deliver.md` + `project-kind.md` + `gates.md`。
 
 1. 先判 `project.kind`（`software`|`plugin`|`other`）。**禁止**默认假定 software。  
-2. 仅显式 SDD 意图时，**第一个工具调用** = Read `vibe-coding/SKILL.md`，再读宿主 `AGENTS.md`。  
-3. 不算显式意图（调研/SSH/取数/修 bug/实现/排障/聊聊等）→ **禁止**因此加载 vibe-coding。  
-4. 命中但未完成 Read → **禁止**改业务代码 / 宣称可交付 / 生产部署。  
-5. 写码授权 / Deploy P4 / Codex 施工通道 → 只读 [`gates.md`](../../skills/vibe-coding/references/gates.md)（本文件不复述）。
+2. 仅显式 SDD 意图时，**第一个工具调用** = Read `vibe-coding/SKILL.md` → `explore-deliver.md` → 宿主 `AGENTS.md`。  
+3. **默认 Explore**（帮我想/怎么设计/调研/读码）；**Deliver** 仅当确认方案/切 Spec/开始做/关版/发布或用户要落盘。Explore ≠ 只写 docs。  
+4. 不算显式意图（调研/SSH/取数/修 bug/实现/排障/聊聊等）→ **禁止**因此加载 vibe-coding。  
+5. 命中但未完成 Read → **禁止**改业务代码 / 宣称可交付 / 生产部署。  
+6. 写码授权 / Deploy P4 / Codex 施工通道 → 只读 [`gates.md`](../../skills/vibe-coding/references/gates.md)（本文件不复述）。

@@ -26,6 +26,20 @@
       ],
       "max_read_index_for_required": 8,
       "result_must_contain": ["job_brief", "rule/job-before-chrome"]
+    },
+    {
+      "id": "plan-infra-mechanism-route-spec",
+      "rail": "spec",
+      "timeout_sec": 180,
+      "prompt": "Use Skill spec. User intent: 设计 query-gateway 的 kill/timeout/cancel 机制（kill 大任务超时、取消传播、RG 隔离）；合同与 tests 必须可机检机制语义，不做 UI 交互描述。\n\nHARD RULES for this probe:\n1) Do NOT write or edit files. Do NOT open a browser.\n2) Your FIRST tool uses MUST Read these plugin files (absolute paths under the plugin dir you were given):\n   - skills/vibe-coding/SKILL.md\n   - skills/spec/SKILL.md\n   - skills/spec/references/infra-mechanism-brief.md\n   - skills/vibe-coding/references/design-standards/system-architecture.md\n3) After those Reads, stop. Reply with ONLY a JSON object (no markdown fence):\n{\"probe\":\"plan-infra-mechanism-route-spec\",\"cited_refs\":[\"infra-mechanism-brief.md\"],\"ok\":true}\n",
+      "must_read_substrings": [
+        "vibe-coding/SKILL.md",
+        "spec/SKILL.md",
+        "infra-mechanism-brief.md",
+        "system-architecture.md"
+      ],
+      "max_read_index_for_required": 10,
+      "result_must_contain": ["infra-mechanism-brief.md"]
     }
   ]
 }

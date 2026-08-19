@@ -1,10 +1,21 @@
 # Gates（常驻）
 
 > 写码授权 · 人闸 · 施工通道 · 许愿自动编排。**唯一常驻合同。**  
+> Explore / Deliver → [`explore-deliver.md`](./explore-deliver.md)。  
 > 状态词 → [`states.md`](./states.md)；Build/Verify/Repair 清单 → [`rails.md`](./rails.md)。  
 > A == D:一个纵向切片（Skill `spec`）= 一次 Codex exec。依赖与编辑锁决定波次，不再按估算的 token 峰值打包。
 
-## 人闸（质量两钉 + 生产另钉）
+## Explore vs Deliver（写码与落盘）
+
+| 模式 | 改业务代码 | 写 `docs/specs/` | 写 `docs/product/` |
+|------|------------|------------------|-------------------|
+| **Explore** | 禁止（除非另有 (b)(c)） | 禁止 | **可选**；**非**默认动作——优先读码/回答用户 |
+| **Deliver** | 须 (a)(b)(c) | Plan 授权后允许 | Shape 确认后允许 |
+
+Explore 下「设计方案 / 优化体验 / 我希望 / 聊聊」**≠** 授权改码；也**≠**「只能写 product 文档」。  
+应直接完成用户 Job（见 explore-deliver **实质闸**）；用户说落盘/给 PM/确认方案 才转 Deliver。
+
+## 人闸（Deliver · 质量两钉 + 生产另钉）
 
 | 闸 | 人做什么 | 未过之前禁止 |
 |----|----------|--------------|
@@ -22,8 +33,8 @@
 | **(b)** | 本轮明确指令做具体事（开始做 / 实现 / 修复 / 确认方案 / 就按这个做…），范围可辨 |
 | **(c)** | 本轮明示 Polish（polish / 抛光 / 前端小改 / 按 refinement 修），且 **非 material** |
 
-皆无 → 只写 `docs/product/` + 只读调查。  
-愿望/探讨（「我希望」「聊聊」「设计方案」「优化体验」）≠ 授权。  
+皆无 → **Explore**：只读调查 + 直接回答（实质闸见 explore-deliver）；**禁止**改业务代码。  
+**Deliver** 才走方案闸 / Plan 落盘 / 编排。  
 (b)「确认方案」= 方案闸通过 → 自动编排；**≠** Deploy。  
 谁动手仍按下方「施工通道」。material / Polish 细则：[`change-control.md`](./design-standards/change-control.md)。
 
@@ -52,7 +63,7 @@ eligible 片可 `override: 用户要求自写`；ineligible 写 `executor: condu
 多 Spec / 多 D → 先出 DAG+波次；禁止单聊默默 for-loop。  
 暂停仅限：产品互斥、不可逆、外部阻塞、Verified 事实与已确认方案冲突。
 
-## 阶段闸门（摘要）
+## 阶段闸门（摘要 · Deliver）
 
-- **许愿路径：** Shape → 指挥侧 Plan → eligible 派 Codex → Verify → 关版（Deploy 须 P4）
+- **许愿路径：** Shape（卡片 opt-in）→ 指挥侧 Plan → eligible 派 Codex → Verify → 关版（Deploy 须 P4）
 - **经典路径：** 用户逐步批准；Deploy 遵 P0–P6；一聊一个 edit-wave

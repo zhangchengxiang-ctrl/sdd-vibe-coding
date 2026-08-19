@@ -215,7 +215,9 @@ SPEC_ID=<SPEC_ID>
 
 ## 对人前台
 
-只用「我理解的目标 / 当前进展 / 交付结果 / 需要你决定」。  
+**Explore**（用户未进 Deliver）：直接答问题 + 证据/命令摘要；**不用**固定四段卡片。  
+**Deliver**：用「交付结果 / 需要你决定」；Build/Verify 可附进展。  
 默认可说：「过边界的切片用 Codex；Plan/UI/判断力任务我这边做。」  
+Explore/Deliver 真源：[`explore-deliver.md`](../vibe-coding/references/explore-deliver.md)。  
 默认不展示 sandbox、model id、dispatch log；用户追问再放「技术详情（可选）」。  
 超时中断且仓库已达标时，对人只说结果与证据。

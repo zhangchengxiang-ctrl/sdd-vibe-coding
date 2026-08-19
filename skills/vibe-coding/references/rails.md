@@ -38,5 +38,6 @@
 
 - 切 Spec / 走 Plan / 拆解实施 / 做到可以编码 / 按产品设计切版 / 重切 Spec
 - 就按这个做 / 确认方案 / 按这个方案做（许愿：确认后直接落盘并继续编排）
+- 明确提出 infra/平台机制设计（kill/timeout/取消传播/RG/resource group/capacity/cancel/query gateway/中止 等）且任务本质是“可机检的机制与失败语义”（contract/tests 里写清 success 与 failure/permission 对应 T-xxx）：允许直接落盘 Plan 五件套，不要求先经历“确认方案”。
 
 许愿路径：`check_spec` 通过后直接 Build 编排；经典路径：结束时出进入 Build 的批准卡。

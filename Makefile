@@ -62,6 +62,8 @@ help:
 		'  make host-drift           可选：外部宿主仓漂移（不进 public-gates）' \
 		'  make phase3-negative      Phase0–2 负向验收（规则投影/写码闸/dispatch）' \
 		'  make eval-skill-load      cursor-agent 探测：UX/Shape 是否 Read product-judgment/LOAD-MAP' \
+		'  make eval-explore-substance  cursor-agent 探测：Explore 产出实质 vs 表演卡片' \
+		'  make verify-explore-deliver  静态+ship+phase3+skill-load+substance 一键验收' \
 		'' \
 		'Maintainer (本地私有 · 需本机有 evals/)' \
 		'  make verify               一键：布局 + templates docs + routing + check_spec fixtures + scaffold' \
@@ -270,6 +272,12 @@ phase3-negative:
 
 eval-skill-load:
 	python3 scripts/eval-skill-load-cursor.py --matrix
+
+eval-explore-substance:
+	python3 scripts/eval-explore-substance.py
+
+verify-explore-deliver:
+	bash scripts/verify-explore-deliver.sh
 
 verify:
 	@if [ ! -f evals/verify.sh ]; then \
