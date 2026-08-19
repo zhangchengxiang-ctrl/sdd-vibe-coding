@@ -46,8 +46,8 @@ help:
 		'  make close-spec HOST=路径 SPEC=id   关版收口：verify-deliver→archived→搬入 archive/→journey' \
 		'  make codex-preflight HOST=路径  Codex 派发环境门（trust 登记 / AGENTS 32KiB 上限 / 档位 profile）' \
 		'  make preflight-rail HOST=路径 [AUTHORIZED=1]  Shape 写码闸（业务 dirty 则失败）' \
-		'  make codex-dispatch HOST=路径 UNIT=plan|build PROMPT_FILE=文件' \
-		'                            派 Codex（唯一通道；never + 墙钟；Build/Goal 需 SPEC=；Build 需 SLICE=）' \
+		'  make codex-dispatch HOST=路径 UNIT=build PROMPT_FILE=文件' \
+		'                            派 eligible 切片（越界禁派；never + 墙钟；需 SPEC= SLICE=）' \
 		'  make context-pack HOST=路径 SPEC=id SLICE=S1   生成 Codex Context Pack（stdout）' \
 		'  make wish-orchestrate HOST=路径 SPEC=id [SLICE=S1]  许愿：打包 D→edit-wave Codex（可并行；幂等+锁）' \
 		'  make ship HOST=路径 SPEC=id [SLICE=S1] META=…  红绿 replay（基线红→改后绿）' \
@@ -98,7 +98,7 @@ scaffold:
 # Example: make codex-dispatch HOST=/path/to/repo UNIT=build PROMPT_FILE=prompt.txt SPEC=spec-id
 codex-dispatch:
 	@if [ -z "$(PROMPT_FILE)" ]; then \
-		echo 'Usage: make codex-dispatch HOST=<repo> UNIT=plan|build PROMPT_FILE=<file>'; \
+		echo 'Usage: make codex-dispatch HOST=<repo> UNIT=build PROMPT_FILE=<file>'; \
 		echo 'Optional: EFFORT=medium|high TIMEOUT=<sec>'; \
 		exit 2; \
 	fi
