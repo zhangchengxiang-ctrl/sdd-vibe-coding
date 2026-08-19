@@ -8,7 +8,7 @@
 
 - SDD docs root: docs（技能里的 `docs/product`、`docs/specs` 均相对本值）
 - **入口：** 仅显式 SDD 意图（`/vibe-coding`、许愿、确认方案、切 Spec、关版、polish、冷启动、人类验收、生产发布、派 Codex 等）→ 先加载插件 skill **`vibe-coding`**，再读本文件。普通调研 / 排障 / 实现问答 **不要**因此加载。
-- 写码授权、施工通道（指挥侧 Build = `codex-dispatch` 派发）、关版（`make close-spec`）、
+- 写码授权、施工通道（eligible Build 才 `codex-dispatch`；越界指挥侧，见插件 `codex-boundary.md`）、关版（`make close-spec`）、
   状态词、Deploy 门：真源 = 插件 `gates.md` / `states.md`，本文件不复制。
 - **Build ≠ Deploy**：「批准 Build / 确认方案 / 关版」**不得**上生产；生产须 Deploy P2+P3 → 本轮 P4。
 - 关键技术判断未经证据 → `Unverified`；仅 `Verified` 进 P0 / Lock / 可实施宣称。
