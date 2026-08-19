@@ -35,7 +35,7 @@ disable-model-invocation: true
    有 UI 时按 LOAD-MAP 字段门控补 Job Brief / `UI surface` / Design Read / `page_kind|motif` / `anchor` 等。齐套后再请求 Build。
 10. **机检**：宣称 Plan 可实施或派 Build 前，运行
     `python3 <plugin>/skills/spec/scripts/check_spec.py <host> <spec-id>`
-   （见 [`scripts/check_spec.py`](./scripts/check_spec.py)）。通过后再进 Build / 派 Codex。
+   （见 [`scripts/check_spec.py`](./scripts/check_spec.py)）。通过后：eligible 切片才派 Codex，否则指挥侧实现。
 
 ## 核心工件
 

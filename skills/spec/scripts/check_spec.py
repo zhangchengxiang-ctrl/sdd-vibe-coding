@@ -13,6 +13,7 @@ Exit: 0 ok, 1 errors, 2 usage.
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import re
 import sys
@@ -1132,6 +1133,7 @@ OVERRIDE_SELF_RE = re.compile(
     r")",
     re.I,
 )
+EXECUTOR_CONDUCTOR_RE = re.compile(r"(?i)executor\s*:\s*conductor")
 _FIXTURE_SPEC_NAMES = frozenset(
     {
         "demo",
@@ -1253,6 +1255,34 @@ def _resolve_dispatch_jsonl(run_id_or_name: str, start: Path | None = None) -> P
     return None
 
 
+def _host_from_spec_dir(spec_dir: Path) -> Path | None:
+    if spec_dir.parent.name != "specs":
+        return None
+    return spec_dir.parent.parent.parent
+
+
+def _codex_eligible_slice_ids(spec_dir: Path) -> list[str] | None:
+    """Slice ids Codex may implement. None = cannot classify (keep jsonl/override)."""
+    host = _host_from_spec_dir(spec_dir)
+    if host is None or not host.is_dir():
+        return None
+    path = (
+        Path(__file__).resolve().parents[2]
+        / "dispatch-codex"
+        / "scripts"
+        / "assert_codex_eligible.py"
+    )
+    if not path.is_file():
+        return None
+    try:
+        spec = importlib.util.spec_from_file_location("sdd_codex_eligible", path)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        return mod.eligible_slice_ids(host, spec_dir.name)
+    except Exception:
+        return None
+
+
 def dispatch_evidence_valid(
     run: str,
     spec_dir: Path,
@@ -1263,9 +1293,29 @@ def dispatch_evidence_valid(
 
     All cited run-ids must be valid. Spec id match uses token boundaries
     (good-spec must not match inside good-spec-v2).
+    Codex-ineligible Specs use `executor: conductor` instead of jsonl.
+    Eligible slices cannot hide behind conductor (need jsonl or override).
     """
     if allow_override and OVERRIDE_SELF_RE.search(run):
         return True, "override"
+
+    eligible = _codex_eligible_slice_ids(spec_dir)
+    conductor = bool(EXECUTOR_CONDUCTOR_RE.search(run))
+    if eligible is not None and not eligible:
+        if conductor:
+            return True, "executor-conductor"
+        run_ids_pre = [m.group(1) for m in DISPATCH_RUN_ID_RE.finditer(run)]
+        if not run_ids_pre:
+            return False, (
+                "missing executor: conductor "
+                "(Codex-ineligible Spec; dispatch-run-id not required)"
+            )
+
+    if eligible and conductor and not DISPATCH_RUN_ID_RE.search(run):
+        return False, (
+            "eligible slices cannot use executor: conductor "
+            "(need dispatch-run-id or override: 用户要求自写)"
+        )
 
     run_ids = [m.group(1) for m in DISPATCH_RUN_ID_RE.finditer(run)]
     if not run_ids:
