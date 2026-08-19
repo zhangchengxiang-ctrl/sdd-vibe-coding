@@ -37,13 +37,14 @@ make verify-deliver HOST=<repo> SPEC=<id>
 ```text
 oracle-freeze: intact
 红绿证据: red `<cmd>` exit=<n> · green `<cmd>` exit=0
-dispatch-run-id: <id>   # 或路径 `.codex-dispatch-logs/<id>.jsonl`
-# 自写/Polish：override: 用户要求自写 | polish · 用户本轮明示
+dispatch-run-id: <id>   # eligible 片
+# ineligible：executor: conductor
+# 本可派但人强制自写：override: 用户要求自写 | polish · 用户本轮明示
 ```
 
 有自动化 → **先红后绿**，两态命令+退出码写入上式。  
 Polish / trivial / 无自动化 → `红绿证据: N/A · polish|trivial|无自动化`（仍禁甩用户发现）。  
-缺 dispatch 证据且无 override → `check_spec` Fail（诚实声明派生，非散文禁令）。  
+缺 dispatch 证据且无 `executor: conductor` / override → `check_spec` Fail（诚实声明派生，非散文禁令）。  
 指挥侧 diff：不得含 `tests.md` / 验收矩阵；见 `dispatch-codex` 验收清单。
 
 ### 3. Maker ≠ grader（验收不派 Codex）

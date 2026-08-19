@@ -29,30 +29,30 @@
 
 ## 施工通道（谁动手）
 
-| 宿主 | 施工方式 |
-|---|---|
-| Cursor / Claude（指挥侧） | **派发**：`codex-dispatch.sh` / `wish-orchestrate.sh`；一聊一个 edit-wave |
-| Codex 会话 | 实现当前切片；**一次 exec = 一个切片**（A == D；禁止 compact 续跑） |
-| **禁用** | Codex Desktop 交互长会话做交付（实测 >200 动作场次 100% 被压缩;exec 派单 0 场） |
+先判切片是否 **Codex eligible**（真源 [`codex-boundary.md`](../../dispatch-codex/references/codex-boundary.md)）。越界 **禁止派 Codex**（含用户口头「派 Codex」）。
 
-指挥侧例外（仅）：① Polish/trivial (c)；② Repair 小缺口（≤2 文件、不新增行为面）；③ 用户明文「你自己写 / 不用 Codex」。  
-改文档 / `check_spec` / 锁决策 / 验收 → 指挥侧自做;无 `codex` → `blocked`。Verify 主验收禁派（[`verification-loop`](./verification-loop.md) 钉 3）。  
-**声明派生（机检）：** 「实现完成」→ `dispatch-run-id:` 已完成 jsonl，或 `override: 用户要求自写` / `polish · 用户本轮明示`（裸 polish 无效）
+| 宿主 / 判定 | 施工方式 |
+|---|---|
+| Cursor / Claude · **eligible** Build/Repair 单切片 | 派发：`codex-dispatch.sh --unit build` / `wish-orchestrate.sh`；一聊一个 edit-wave |
+| Cursor / Claude · **ineligible** / Plan / Shape / Verify | **指挥侧自做**；`run.md` 写 `executor: conductor` |
+| Codex 会话 | 仅实现当前 **eligible** 切片；一次 exec = 一个切片（A == D；禁止 compact 续跑） |
+| **禁用** | `--unit plan`；Codex Desktop 交互长会话做交付；Verify 主验收 |
+
+eligible 片可 `override: 用户要求自写`；ineligible 写 `executor: conductor`。无 codex 且 eligible → `blocked`。Verify 禁派 Codex。
 
 ## 方案确认后的自动编排
 
 确认后连续执行至关版分叉——**不含 Deploy**：
 
-1. Plan 落盘（事实映射、纵向切片、强 Oracle、`check_spec`）；禁止中途「待批准」
-2. Build/Repair 按施工通道派发；edit-wave 后 verify-wave 红绿 replay（`ship.sh --from-meta`）
+1. Plan 落盘（指挥侧；事实映射、纵向切片、强 Oracle、`check_spec`）；禁止中途「待批准」
+2. Build/Repair：仅 **eligible** 切片派 Codex；其余指挥侧；edit-wave 后 verify-wave 红绿 replay（`ship.sh --from-meta`，仅 Codex 片）
 3. 全部 D 收口 → Agent Verify → 证据卡或人类验收包
-4. Fail → 统一 Repair（fresh exec）→ 回验
+4. Fail → 统一 Repair（eligible：fresh exec；ineligible：指挥侧）→ 回验
 
 多 Spec / 多 D → 先出 DAG+波次；禁止单聊默默 for-loop。  
 暂停仅限：产品互斥、不可逆、外部阻塞、Verified 事实与已确认方案冲突。
 
 ## 阶段闸门（摘要）
 
-- **许愿路径：** Shape 等人确认 → 自动 Plan→Build→Verify→关版分叉 → 询问是否 Deploy（须本轮 P4）
-- **经典路径：** 用户说 Rail 名时逐步跨阶段批准；Deploy 遵 P0–P6
-- **一聊一个 edit-wave**；同区二次修复仍失败 → fresh exec / 新对话 Diagnose
+- **许愿路径：** Shape → 指挥侧 Plan → eligible 派 Codex → Verify → 关版（Deploy 须 P4）
+- **经典路径：** 用户逐步批准；Deploy 遵 P0–P6；一聊一个 edit-wave

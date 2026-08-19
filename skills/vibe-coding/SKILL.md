@@ -14,7 +14,7 @@ description: >-
 # Vibe Coding
 
 **北极星：** 人定方案 → AI 按质量条交付 → 关版（无 UI 机器 / 有 UI 人点验）→（另批）Deploy。  
-指挥侧 Build = 派发（Skill [`dispatch-codex`](../dispatch-codex/SKILL.md)）。
+指挥侧 Build = 先判 Codex eligible（[`codex-boundary.md`](../dispatch-codex/references/codex-boundary.md)）；合格片走 [`dispatch-codex`](../dispatch-codex/SKILL.md)。
 
 ## FIRST ACTION
 
@@ -34,10 +34,10 @@ description: >-
 |---|---|
 | 初始化 / 接入存量 / 基线空 | 冷启动 → Skill `design` → `project-init` |
 | 我希望 / 我想要（基线已齐） | Shape → Skill `design`（产品方案） |
-| 就按这个做 / 确认方案 | 许愿编排：Plan→打包 D→edit-wave Codex→Verify→证据卡或验收包 |
-| 派 Codex / 用 Codex 做 | 同 Build（派发是默认通道） |
+| 就按这个做 / 确认方案 | 指挥侧 Plan → eligible 派 Codex → Verify |
+| 派 Codex / 用 Codex 做 | 仅 eligible；越界仍指挥侧 |
 | 切 Spec / Plan | Plan → Skill `spec` |
-| Spec 批准 / 开始做 / 实现 | Build：打包 D → 派发 |
+| Spec 批准 / 开始做 / 实现 | Build：eligible 切片打包派发；其余指挥侧 |
 | polish / 抛光 / 前端小改 / 按 refinement 修 | **Polish**（非 material；material → Shape） |
 | 验收 / UX 走查 | Verify → Skill `testing` |
 | 通过了 / 关版 / 归档 | 关版授权 → `make close-spec`；再问是否 Deploy |
@@ -50,7 +50,7 @@ description: >-
 |----|------|
 | 产品正确 | 方案闸：Job / In-Out / 主路径；人确认前不施工 |
 | 合同正确 | 事实映射 → 纵向切片 → Spec 五件套 → 强 Oracle |
-| 实现正确 | 一 D 一次 exec（272K）；Context Pack→Codex；Oracle 冻结 |
+| 实现正确 | 一 D 一次 exec（272K）；eligible → Context Pack→Codex；否则指挥侧；Oracle 冻结 |
 | 验证正确 | 先证伪；maker ≠ grader |
 | 发布正确 | 关版后另批 Deploy P4；自动段禁生产 |
 
