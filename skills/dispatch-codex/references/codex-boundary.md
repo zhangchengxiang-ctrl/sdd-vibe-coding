@@ -12,6 +12,12 @@ Build/Repair **单切片**（A==D）；全部 T-xxx 为 **machine** Oracle；all
 
 Plan/Spec/Oracle/拆片（`--unit plan`）、Shape、Verify、UI/产品判断、弱/人工 Oracle、宽 allowlist、多片一 exec、compact 续跑、Desktop 长会话、无 Spec 许愿实现。
 
+## 负控 / 保留项 Oracle
+
+`ship.sh` 要求每条 Oracle 在基线上为红（基线即绿 = `nondiscriminating`，什么都没量）。这是设计，不是缺陷。
+所以「保留项仍存在」这类负控**必须与本切片的变更合取**（`保留项仍在 && 目标已删`），让它在基线上红、改后绿；
+单独的保留检查基线必绿，会让下一波被 replay 门拦下。
+
 ## 谁动手
 
 eligible → `codex-dispatch --unit build` / wish；否则指挥侧 + `run.md` 写 `executor: conductor`。eligible 片仅可用 `override: 用户要求自写` 逃派，不可用 conductor。

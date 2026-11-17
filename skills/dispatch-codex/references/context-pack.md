@@ -3,7 +3,7 @@
 > 给 Codex 的 Outcome-first 派单载荷。真源：OpenAI Codex Best practices  
 > （Goal · Context · Constraints · Done when）。一个切片 = 一个派发单元。  
 > 生成：`skills/dispatch-codex/scripts/build_context_pack.py`（可一次多 A）。  
-> 打包：`pack_dispatch_units.py`。派发：`codex-dispatch.sh --unit build` / `wish-orchestrate.sh`。
+> 一个切片 = 一个派发单元（无独立打包器；`wish-orchestrate.sh --units` 列出单元）。派发：`codex-dispatch.sh --unit build` / `wish-orchestrate.sh`。
 
 ## 1. 为什么要 Pack
 
@@ -14,7 +14,7 @@ Codex 有效窗约 258K，过线会 **auto-compact**（有损）。指挥侧不�
 
 | 字段 | 含义 | 来源 |
 |------|------|------|
-| `DISPATCH_ID` | 派发单元 id（如 D1） | `pack_dispatch_units.py` |
+| `DISPATCH_ID` | 派发单元 id（等于切片 id，如 S1） | `build_context_pack.py` |
 | `SLICE_IDS` | 本 D 含有的 A 切片（可多个） | 打包结果 |
 | `SLICE_ID` | 主切片（兼容旧解析，取第一个） | `SLICE_IDS[0]` |
 | `Goal` | 本 D 用户可观察结果 | 各 A「入口」+ `T-xxx` |

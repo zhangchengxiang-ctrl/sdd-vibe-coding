@@ -477,6 +477,28 @@ check "auth-block-in-dispatch" 0 \
 check "oracle-replay-runner-present" 0 \
   test -f "$ROOT/skills/dispatch-codex/scripts/ship.sh"
 
+# --- conductor slices need no allowlist; extensionless known files are files ---
+# Regression: a real run died with "incomplete allowlist on slices: S0 S3" for slices that
+# were never going to be dispatched (--dry-run skipped the check, so it only showed live).
+CHOST="$TMP/conductorhost"
+mkdir -p "$CHOST/docs/specs/c1"
+cat >"$CHOST/docs/specs/c1/plan.md" <<'EOF'
+| 切片 ID | 入口 | 完成定义（链 T-xxx） | 触及路径 | 依赖 | 备注 |
+|---|---|---|---|---|---|
+| S0 | 指挥侧复验 | — | — | | executor: conductor |
+| S1 | 删 a | T-001 | src/a.py | S0 | oracle:unit |
+| S2 | 指挥侧回归 | — | — | S1 | executor: conductor |
+EOF
+fill_spec "$CHOST/docs/specs/c1"
+check "waves-conductor-slices-not-incomplete" 0 \
+  bash -c 'python3 "$1" "$2" c1 --waves 2>/dev/null | python3 -c "import sys,json; sys.exit(1 if json.load(sys.stdin)[\"incomplete_allowlist\"] else 0)"' _ \
+    "$ROOT/skills/dispatch-codex/scripts/build_context_pack.py" "$CHOST"
+check "allowlist-makefile-is-a-file" 0 \
+  python3 -c "
+import importlib.util,sys
+s=importlib.util.spec_from_file_location('e','$ELIGIBLE');m=importlib.util.module_from_spec(s);s.loader.exec_module(m)
+sys.exit(0 if (not m.is_directory_allowlist('Makefile')) and m.is_directory_allowlist('src') and m.is_directory_allowlist('scripts/') else 1)"
+
 echo "--- codex lifecycle (mock CLI, isolated tmp; no host repos) ---"
 bash "$ROOT/skills/dispatch-codex/scripts/selftest-codex-lifecycle.sh"
 

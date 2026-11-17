@@ -11,6 +11,12 @@ from pathlib import Path
 
 MAX_ALLOWLIST_PATHS = 8
 
+EXTENSIONLESS_FILES = frozenset({
+    "Makefile", "GNUmakefile", "Dockerfile", "Containerfile", "Jenkinsfile",
+    "Procfile", "Gemfile", "Rakefile", "Vagrantfile", "justfile", "LICENSE",
+    "CODEOWNERS",
+})
+
 UI_PATH_RE = re.compile(
     r"\.(tsx|jsx|vue|svelte|css|scss|sass|less|html)$", re.I
 )
@@ -39,6 +45,9 @@ def is_directory_allowlist(path: str) -> bool:
     base = p.rsplit("/", 1)[-1]
     if not base or base in {".", ".."}:
         return True
+    # Well-known files with no extension: a Makefile is a file, not a directory.
+    if base in EXTENSIONLESS_FILES:
+        return False
     if base.startswith(".") and "." not in base[1:]:
         return False
     return "." not in base

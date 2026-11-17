@@ -46,7 +46,7 @@ disable-model-invocation: true
    - 多 Spec：一聊一个 edit-wave。
 2. **Build 必带 Context Pack**（见 [`context-pack.md`](./references/context-pack.md)）;一个切片 = 一次 exec，不再打包
    ```bash
-   python3 skills/dispatch-codex/scripts/pack_dispatch_units.py <HOST> <SPEC_ID> --list
+   bash skills/dispatch-codex/scripts/wish-orchestrate.sh --cwd <HOST> --spec <SPEC_ID> --units
    python3 skills/dispatch-codex/scripts/build_context_pack.py <HOST> <SPEC_ID> S1 \
      > /tmp/pack.txt
    bash skills/dispatch-codex/scripts/wish-orchestrate.sh --cwd <HOST> --spec <SPEC_ID>

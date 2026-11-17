@@ -574,8 +574,12 @@ def main() -> None:
 
     if args.waves:
         waves, unknown, cycle = slice_waves(rows, args.parallel)
+        # A conductor slice is never dispatched, so it has no allowlist to be incomplete:
+        # requiring 触及路径 there made a real run fail where --dry-run passed.
+        conductor = re.compile(r"(?i)executor\s*:\s*conductor\b")
         incomplete = [r["slice_id"] for r in rows
-                      if not extract_paths(r.get("paths_raw", ""), r.get("note", ""))]
+                      if not conductor.search(r.get("note", "") or "")
+                      and not extract_paths(r.get("paths_raw", ""), r.get("note", ""))]
         for sid, bad in sorted(unknown.items()):
             print(f"build_context_pack: WARN {sid} depends on {', '.join(bad)}, which no slice "
                   "row defines — scheduled as if unblocked; fix plan.md", file=sys.stderr)

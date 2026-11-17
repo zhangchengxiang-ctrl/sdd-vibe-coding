@@ -66,9 +66,13 @@ cap="$(grep -oE '^[[:space:]]*project_doc_max_bytes[[:space:]]*=[[:space:]]*[0-9
 cap="${cap:-32768}"
 total=0
 chain=""
+# project_doc_max_bytes caps the PROJECT docs (repo root → cwd) only. The global
+# $CODEX_HOME/AGENTS.md is loaded separately and is NOT counted against it — measured on
+# data-sage: a 32,287B project AGENTS.md + 3,188B global loaded untruncated by default
+# config. Summing them gave a false FAIL, so the global file is listed for information only.
 for g in "$CODEX_HOME/AGENTS.override.md" "$CODEX_HOME/AGENTS.md"; do
   if [[ -f "$g" ]]; then
-    n=$(wc -c <"$g"); total=$((total+n)); chain="$chain\n  $n  $g"; break
+    n=$(wc -c <"$g"); chain="$chain\n  $n  $g (global, not counted against the cap)"; break
   fi
 done
 # One file per directory, repo root → cwd. HOST is normally the repo root.
