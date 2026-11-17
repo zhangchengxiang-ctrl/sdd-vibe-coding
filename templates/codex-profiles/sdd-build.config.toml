@@ -1,7 +1,10 @@
 # SDD Build tier. Layered onto the user config with `codex exec -p sdd-build`.
-# Terra, not Sol: tier is a subscription-quota lever. Pinning every dispatch to Sol
-# is what exhausted the credit window (6 of 75 real dispatches died on `usage limit`
-# before reaching the model). Capability was never the constraint.
-model = "gpt-5.6-terra"
-model_reasoning_effort = "medium"
+# Default moved to gpt-6.1-sol / low (2026-11-17 matrix, see references/delegation-policy.md):
+# solved 3/3 real mypy-strict tasks with the best blind-review score; terra/low and luna/low
+# fail the hardest task and effort above `low` did not improve quality.
+# Tier is still a subscription-quota lever: pinning every dispatch to Sol once exhausted the
+# credit window (6 of 75 died on `usage limit`). Quota burn per tier is not readable, so the
+# ladder stays: exit 75 -> gpt-6.1-terra / medium.
+model = "gpt-6.1-sol"
+model_reasoning_effort = "low"
 approval_policy = "never"

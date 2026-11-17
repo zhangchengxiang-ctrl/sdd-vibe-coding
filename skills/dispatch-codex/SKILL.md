@@ -1,7 +1,7 @@
 ---
 name: dispatch-codex
 description: >-
-  Cursor/Claude 指挥侧把 **Codex-eligible** 完成单元派给 Codex CLI（Build 默认 gpt-5.6-terra × medium）。
+  Cursor/Claude 指挥侧把 **Codex-eligible** 完成单元派给 Codex CLI（Build 默认 gpt-6.1-sol × low；路由/阶梯/验收见 references/delegation-policy.md）。
   仅当切片过 [`codex-boundary.md`](references/codex-boundary.md)：机验 Oracle、文件级 allowlist、无 UI/Plan。
   许愿「确认方案」与经典「开始做」命中后先判边界；越界禁止派（含用户明示「派 Codex」）。
   须 Context Pack；一次一个切片（A == D）。
@@ -14,6 +14,7 @@ disable-model-invocation: true
 本 Skill 只跑在 **Cursor / Claude Code** 指挥侧。先读宿主 `AGENTS.md` 与
 [`gates.md`](../vibe-coding/references/gates.md)（施工通道）、
 [`codex-boundary.md`](./references/codex-boundary.md)、
+[`delegation-policy.md`](./references/delegation-policy.md)（路由 / 档位阶梯 / 成本与验收协议）、
 [`context-pack.md`](./references/context-pack.md)、
 [`cli-authorization.md`](./references/cli-authorization.md)。
 
@@ -33,10 +34,12 @@ disable-model-invocation: true
 
 | 完成单元 | 模型 | effort |
 |---|---|---|
-| Build 单 D（eligible） | **`gpt-5.6-terra`** | **medium**（默认） |
+| Build 单 D（eligible） | **`gpt-6.1-sol`** | **low**（默认；2026-11-17 矩阵） |
 | 机械改（rename / 格式 / 文档同步） | `gpt-5.6-luna` | **low** |
 
-口诀：**Build 默认 terra×medium**，真难再升 sol。升档**不**修 Oracle 可执行性（terra×high 3/8 < medium 3/6）——靠机检门。
+口诀：**Build 默认 sol×low**；配额耗尽（exit 75）降 `gpt-6.1-terra medium`；验收红一轮后同档补修一次，再红升 `gpt-6-astra medium` 一次，仍红指挥侧自做。
+**升 effort 不换质量**（2026-07：terra×high 3/8 < medium 3/6；2026-11-17：sol×low ≥ sol×medium，terra×low 与 luna×low 在最难任务上做不成）——杠杆是**模型档位**，不是深度。
+`luna` 任何档位都不用于非机械任务。完整路由（含 Haiku 子代理、DeepSeek 通道、成本协议、行为评审）见 [`delegation-policy.md`](./references/delegation-policy.md)。
 
 ## 流程（一次一个切片）
 

@@ -10,8 +10,8 @@
 # --unit plan is refused (Codex boundary) unless SKIP_CODEX_BOUNDARY=1.
 # Env overrides:
 #   CODEX_DISPATCH_TIMEOUT_SEC   default: plan=900, build=1200
-#   CODEX_DISPATCH_MODEL         default: gpt-5.6-sol
-#   CODEX_DISPATCH_EFFORT        default: medium
+#   CODEX_DISPATCH_MODEL         default: gpt-6.1-sol  (2026-11-17 matrix; ladder in references/delegation-policy.md)
+#   CODEX_DISPATCH_EFFORT        default: low
 #   CODEX_DISPATCH_SANDBOX       default: plan=workspace-write, else danger-full-access
 #   CODEX_DISPATCH_LOG_DIR       default: <cwd>/.codex-dispatch-logs
 set -euo pipefail
@@ -25,9 +25,10 @@ Required:
   --unit plan|build      build = eligible slice; plan refused unless SKIP_CODEX_BOUNDARY=1
 
 Options:
-  --effort LEVEL         minimal|low|medium|high|xhigh|max (default: medium)
-  --model NAME           gpt-5.6-sol|terra|luna
-                         (default: build/audit→terra, else sol — tier is a quota lever)
+  --effort LEVEL         minimal|low|medium|high|xhigh|max (default: low)
+  --model NAME           gpt-6.1-sol|gpt-6.1-terra|gpt-6-astra|gpt-6-luna (and gpt-5.6-*)
+                         (default: gpt-6.1-sol — tier is a quota lever; on exit 75 drop to
+                          gpt-6.1-terra medium, see references/delegation-policy.md)
   --profile NAME         Codex config profile (-p NAME); tier presets live in
                          $CODEX_HOME/<name>.config.toml, not in this script
   --sandbox MODE         read-only|workspace-write|danger-full-access
@@ -119,23 +120,28 @@ fi
 # Tier is a subscription-quota lever, not a quality lever. Rejecting the cheaper
 # tiers here is what pinned all 75 real dispatches to Sol and burned the credit
 # window (6 of them died on `usage limit` before reaching the model at all).
+# 2026-11-17 matrix (3 real mypy-strict tasks x 4 gpt-6 tiers x low/medium): gpt-6.1-sol/low
+# solved 3/3 with the best blind-review score and fewer tokens than terra/medium; terra/low and
+# luna/low fail the hardest task. Quota burn per tier is NOT measurable from the CLI, so the
+# quota ladder (exit 75 -> gpt-6.1-terra medium) stays in force.
 if [[ -z "$MODEL" ]]; then
   case "$UNIT" in
-    build|audit) MODEL="gpt-5.6-terra" ;;
-    *)           MODEL="gpt-5.6-sol" ;;
+    build|audit) MODEL="gpt-6.1-sol" ;;
+    *)           MODEL="gpt-6.1-sol" ;;
   esac
 fi
 case "$MODEL" in
-  gpt-5.6-sol|gpt-5.6-terra|gpt-5.6-luna) ;;
+  gpt-6.1-sol|gpt-6.1-terra|gpt-6-astra|gpt-6-sol|gpt-6-luna|gpt-5.6-sol|gpt-5.6-terra|gpt-5.6-luna) ;;
   *)
-    echo "codex-dispatch: warning: non-default model '$MODEL' (known tiers: gpt-5.6-sol|terra|luna)" >&2
+    echo "codex-dispatch: warning: non-default model '$MODEL' (known tiers: gpt-6.1-sol|gpt-6.1-terra|gpt-6-astra|gpt-6-luna|gpt-5.6-*)" >&2
     ;;
 esac
 
-# One default tier for every unit: the `goal` unit that wanted `high` is gone, and escalating
-# effort was measured to make Oracle executability worse (3/6 at medium vs 3/8 at high).
+# One default tier for every unit. Escalating effort did not buy quality in either measurement:
+# 3/6 at medium vs 3/8 at high (Oracle executability, 2026-07) and sol/low >= sol/medium
+# in blind review (2026-11-17). The lever is the model tier, not the effort.
 if [[ -z "$EFFORT" ]]; then
-  EFFORT="${CODEX_DISPATCH_EFFORT:-medium}"
+  EFFORT="${CODEX_DISPATCH_EFFORT:-low}"
 fi
 case "$EFFORT" in
   minimal|low|medium|high|xhigh|max) ;;
