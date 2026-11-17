@@ -307,7 +307,14 @@ missing_judge() {   # $1 tree root, $2 command → prints the first missing path
       *test*|*spec*|*.sh|*.py) ;;
       *) continue ;;
     esac
-    if [[ ! -e "$root/$tok" ]]; then printf '%s' "$tok"; return 0; fi
+    # An absolute path points outside the tree (an isolated runner, a system tool): the
+    # implementer cannot create it there, so test the path itself. Joining it to $root
+    # produced "<root>//tmp/x", which never exists, and flagged every external judge.
+    if [[ "$tok" == /* ]]; then
+      [[ -e "$tok" ]] || { printf '%s' "$tok"; return 0; }
+    elif [[ ! -e "$root/$tok" ]]; then
+      printf '%s' "$tok"; return 0
+    fi
   done
   return 1
 }

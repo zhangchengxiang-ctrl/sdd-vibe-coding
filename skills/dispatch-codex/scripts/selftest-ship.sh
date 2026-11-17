@@ -200,6 +200,20 @@ BASE9="$(git -C "$H9" rev-parse HEAD)"
 implement "$H9"
 check "ship-output-path-is-not-a-judge" 0 bash "$SHIP" --host "$H9" --spec s1 --slice S1 --from-meta "$(mk_meta "$H9" "$BASE9")"
 
+# An absolute-path judge outside the repo (isolated runner) is judged by that path itself.
+# Regression: it was joined to the tree root, so every external runner read as "missing".
+printf '#!/usr/bin/env bash\nexit 0\n' >"$TMP/ext-judge.sh"
+H9B="$TMP/h9b"
+mk_host "$H9B" "bash -c \"grep -q IMPLEMENTED src/feature.txt && bash $TMP/ext-judge.sh\""
+BASE9B="$(git -C "$H9B" rev-parse HEAD)"
+implement "$H9B"
+check "ship-external-absolute-judge-passes" 0 bash "$SHIP" --host "$H9B" --spec s1 --slice S1 --from-meta "$(mk_meta "$H9B" "$BASE9B")"
+H9C="$TMP/h9c"
+mk_host "$H9C" 'bash -c "grep -q IMPLEMENTED src/feature.txt && bash /nonexistent-dir/judge.sh"'
+BASE9C="$(git -C "$H9C" rev-parse HEAD)"
+implement "$H9C"
+check "ship-missing-absolute-judge-still-fails" 1 bash "$SHIP" --host "$H9C" --spec s1 --slice S1 --from-meta "$(mk_meta "$H9C" "$BASE9C")"
+
 # --- refusals ---------------------------------------------------------------
 check "ship-refuses-without-base" 2 bash "$SHIP" --host "$H" --spec s1 --slice S1
 saw "ship-explains-base-refusal" 'guessing which tree predates the change'
