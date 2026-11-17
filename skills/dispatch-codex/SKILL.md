@@ -5,7 +5,7 @@ description: >-
   仅当切片过 [`codex-boundary.md`](references/codex-boundary.md)：机验 Oracle、文件级 allowlist、无 UI/Plan。
   许愿「确认方案」与经典「开始做」命中后先判边界；越界禁止派（含用户明示「派 Codex」）。
   须 Context Pack；一次一个切片（A == D）。
-  禁止因改文档 / check_spec / 非 SDD 日常请求加载。通道：codex-dispatch.sh / wish-orchestrate.sh。
+  禁止因改文档 / check_spec / 非 SDD 日常请求加载。通道：codex-dispatch.sh / wish-orchestrate.sh。亦覆盖派发链路的配额检测、完成信号、多切片并行隔离、preflight 环境门。
 disable-model-invocation: true
 ---
 
@@ -15,6 +15,7 @@ disable-model-invocation: true
 [`gates.md`](../vibe-coding/references/gates.md)（施工通道）、
 [`codex-boundary.md`](./references/codex-boundary.md)、
 [`delegation-policy.md`](./references/delegation-policy.md)（路由 / 档位阶梯 / 成本与验收协议）、
+[`dispatch-hardening.md`](./references/dispatch-hardening.md)（配额分类 / 完成信号 / worktree 隔离 / preflight）、
 [`context-pack.md`](./references/context-pack.md)、
 [`cli-authorization.md`](./references/cli-authorization.md)。
 
