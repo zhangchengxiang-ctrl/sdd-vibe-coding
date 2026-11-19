@@ -23,6 +23,16 @@
 - 改 docs root 时同步改 `AGENTS.md` 盖章行；全仓只认这一套根；
 - 默认根保持 `docs`；只有探测 `BLOCK` 或用户明确要求时才用备用根。
 
+## 归档目录名
+
+默认归档目录是 `<SDD docs root>/specs/archive/<id>/`。存量宿主若已用别的名字（例如 `_archive`），在 `AGENTS.md` 里声明，写法与 `SDD docs root` 相同：
+
+```text
+- SDD archive dir: _archive
+```
+
+`close-spec`、`check_spec`（含 `--all`）、`oracle-migration` 都读这一行；未声明则回退到 `archive`。以 `_` 开头的目录一律不被当作活跃 Spec。
+
 ## 与保留路径
 
 保留名（`product/`、`specs/`、…）是 **相对 SDD docs root** 的，不是相对仓库根的绝对约定。  

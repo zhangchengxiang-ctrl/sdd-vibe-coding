@@ -43,7 +43,7 @@ for r in roots:
     for d in sorted(r.iterdir()):
         if d.is_dir() and d.name != "_template" and (d / "contract.md").is_file():
             spec_dirs.append(d)
-        if archived and d.is_dir() and d.name == "archive":
+        if archived and d.is_dir() and d.name in ("archive", "_archive"):
             spec_dirs += [a for a in sorted(d.iterdir()) if (a / "contract.md").is_file()]
 
 def why(cmd: str) -> str:

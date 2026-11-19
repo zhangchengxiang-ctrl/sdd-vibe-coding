@@ -248,7 +248,8 @@ HEAD_SHA="$(git -C "$HOST" rev-parse HEAD)"
 # committed tree that was never tested: leave HEAD at the baseline, edit the file without
 # committing, and both rows carry the same SHA while measuring different trees.
 VERIFY_TREE="$HEAD_SHA"; DIRTY=0
-_st="$(git -C "$HOST" status --porcelain 2>/dev/null | grep -vE "^\?\? ($(links_re))/?$" || true)"
+# .sdd-evidence/ is this script's own output; counting it would stamp every run "+dirty".
+_st="$(git -C "$HOST" status --porcelain 2>/dev/null | grep -vE "^\?\? (($(links_re))|\.sdd-evidence)/?$" || true)"
 if [[ -n "$_st" ]]; then
   DIRTY=1
   _dsha="$( { git -C "$HOST" diff HEAD; printf '%s\n' "$_st"; } | sha256sum | cut -d' ' -f1)"

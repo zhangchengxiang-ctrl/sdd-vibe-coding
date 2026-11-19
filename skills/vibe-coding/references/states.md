@@ -9,8 +9,10 @@
 | 状态 | 目录 | 含义 |
 |---|---|---|
 | 施工态（`draft`…`blocked`） | `docs/specs/<id>/` | 施工队列；`check_spec --all` 只扫这里 |
-| `archived` | `docs/specs/archive/<id>/` | 关版即搬入；勿只改状态位留原地 |
+| `archived` | `docs/specs/archive/<id>/`（目录名可由 `SDD archive dir` 声明，见 [`docs-root.md`](./docs-root.md)） | 关版即搬入；勿只改状态位留原地 |
 | `cancelled` | `archive/` 或删除 | 明确不做 |
+
+**状态写法**：`VERSION.md` 的状态单元格必须以词表词开头，词后可跟注释，例如 ``| **状态** | `verifying`（已上线 main=abc，待复测） |``；`check_spec` 对不以词表词开头的状态给出警告。`close-spec` 会整格替换为 `archived`，并把原单元格文字写进变更记录行。
 
 ### 关版归档（一条命令，同回合必做）
 
@@ -18,7 +20,7 @@
 
 ```bash
 make close-spec HOST=<repo> SPEC=<id>
-# = verify-deliver → VERSION=archived → git mv 到 specs/archive/<id>/ → journey 收口
+# = verify-deliver → VERSION=archived → git mv 到 specs/<archive dir>/<id>/ → 改写指向它的链接 → journey 收口
 ```
 
 Agent 另做：更新宿主索引；询问是否 Deploy（**不**自动上生产）。

@@ -168,6 +168,9 @@ preflight-rail:
 
 
 # Offline hard-gate selftest (no Codex): Plan artifacts + Oracle replay + wish status.
+close-spec-selftest:
+	bash scripts/selftest-close-spec.sh
+
 dispatch-gates-selftest:
 	bash skills/dispatch-codex/scripts/selftest-gates.sh
 

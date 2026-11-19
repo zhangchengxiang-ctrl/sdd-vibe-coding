@@ -106,6 +106,22 @@ def resolve_sdd_root(host: Path) -> Path:
     return (host / "docs").resolve()
 
 
+def resolve_archive_names(host: Path) -> frozenset[str]:
+    """Directory names under specs/ that hold archived Specs, never active ones.
+
+    `archive` is the plugin default; a host may declare its own with
+    `- SDD archive dir: _archive` in AGENTS.md (same convention as `SDD docs root`).
+    """
+    names = {"archive"}
+    agents = host / "AGENTS.md"
+    if agents.is_file():
+        for line in agents.read_text(encoding="utf-8").splitlines():
+            m = re.match(r"^\s*-\s*SDD archive dir:\s*(.+?)\s*$", line)
+            if m:
+                names.add(m.group(1).strip().strip("`").strip("/"))
+    return frozenset(names)
+
+
 def is_table_line(line: str) -> bool:
     """Markdown makes the outer pipes optional, so do we."""
     s = line.strip()
@@ -1679,35 +1695,51 @@ def check_agents_readiness(host: Path, report: Report) -> None:
 SKIP_SPEC_DIR_NAMES = {"_template", "archive"}
 
 
-def resolve_spec_dir(specs_root: Path, spec_arg: str) -> Path:
-    """Resolve id or path; prefer active specs/<id>, then specs/archive/<id>."""
+def is_non_spec_dir(name: str, archive_names: frozenset[str] = frozenset()) -> bool:
+    """Template, archive and any `_`-prefixed housekeeping dir are not active Specs."""
+    return (
+        name in SKIP_SPEC_DIR_NAMES
+        or name in archive_names
+        or name.startswith("_")
+        or name.startswith(".")
+    )
+
+
+def resolve_spec_dir(
+    specs_root: Path, spec_arg: str, archive_names: frozenset[str] = frozenset()
+) -> Path:
+    """Resolve id or path; prefer active specs/<id>, then specs/<archive>/<id>."""
     p = Path(spec_arg)
     if p.is_absolute():
         return p.resolve()
     cand = specs_root / spec_arg
-    if cand.is_dir() and spec_arg not in SKIP_SPEC_DIR_NAMES:
+    if cand.is_dir() and not is_non_spec_dir(spec_arg, archive_names):
         return cand.resolve()
-    archived = specs_root / "archive" / Path(spec_arg).name
-    if archived.is_dir():
-        return archived.resolve()
+    for arch in sorted(archive_names | {"archive"}):
+        archived = specs_root / arch / Path(spec_arg).name
+        if archived.is_dir():
+            return archived.resolve()
     cwd_cand = Path.cwd() / spec_arg
     if cwd_cand.is_dir():
         return cwd_cand.resolve()
     return p.resolve()
 
 
-def find_spec_dirs(docs: Path, spec_arg: str | None, all_specs: bool) -> list[Path]:
+def find_spec_dirs(
+    docs: Path,
+    spec_arg: str | None,
+    all_specs: bool,
+    archive_names: frozenset[str] = frozenset(),
+) -> list[Path]:
     specs_root = docs / "specs"
     if spec_arg:
-        return [resolve_spec_dir(specs_root, spec_arg)]
+        return [resolve_spec_dir(specs_root, spec_arg, archive_names)]
     if not specs_root.is_dir():
         return []
     dirs = sorted(
         d
         for d in specs_root.iterdir()
-        if d.is_dir()
-        and not d.name.startswith(".")
-        and d.name not in SKIP_SPEC_DIR_NAMES
+        if d.is_dir() and not is_non_spec_dir(d.name, archive_names)
     )
     if all_specs:
         return dirs
@@ -1716,6 +1748,42 @@ def find_spec_dirs(docs: Path, spec_arg: str | None, all_specs: bool) -> list[Pa
         return dirs
     tmpl = specs_root / "_template"
     return [tmpl] if tmpl.is_dir() else []
+
+
+STATUS_VOCAB = ("draft", "ready", "in-progress", "verifying", "blocked", "archived", "cancelled")
+_STATUS_ROWS = (
+    re.compile(r"^\|\s*\*{0,2}状态\*{0,2}\s*\|\s*(.*?)\s*\|?\s*$", re.M),
+    re.compile(r"^\s*-\s*(?:Status|状态)\s*[:：]\s*(.*?)\s*$", re.M),
+)
+
+
+def parse_version_status(text: str) -> tuple[str, str] | None:
+    """Return (cell, token): the raw 状态 cell and its leading status word, or None."""
+    m = next((mm for rx in _STATUS_ROWS if (mm := rx.search(text))), None)
+    if not m:
+        return None
+    cell = m.group(1).strip()
+    t = re.match(r"`([A-Za-z-]+)`", cell) or re.match(r"([A-Za-z-]+)", cell)
+    return cell, (t.group(1) if t else "")
+
+
+def check_version_status(spec_dir: Path, report: Report, *, structure_only: bool) -> None:
+    """Warn (never fail) when VERSION.md 状态 does not start with a vocabulary word.
+
+    states.md owns the vocabulary. Annotations are fine AFTER the word —
+    `verifying（已上线 …）` — which close-spec preserves in the change log.
+    """
+    if structure_only:
+        return
+    parsed = parse_version_status(read_text(spec_dir / "VERSION.md"))
+    if parsed is None:
+        return
+    cell, token = parsed
+    if token not in STATUS_VOCAB:
+        report.warn(
+            f"{spec_dir.name}/VERSION.md: 状态 {cell[:40]!r} 不以词表词开头 "
+            f"({'|'.join(STATUS_VOCAB)})；注释请写在状态词之后"
+        )
 
 
 def check_spec_dir(
@@ -1730,6 +1798,7 @@ def check_spec_dir(
     print(f"== Spec {label} ==")
     check_legacy_skeleton(spec_dir, report)
     texts = check_core_files(spec_dir, report, structure_only=structure_only)
+    check_version_status(spec_dir, report, structure_only=structure_only)
     contract, tests, plan, run = (
         texts.get("contract.md", ""),
         texts.get("tests.md", ""),
@@ -1784,7 +1853,7 @@ def main() -> int:
     parser.add_argument(
         "spec",
         nargs="?",
-        help="Spec id under <SDD root>/specs/ or specs/archive/, or path to Spec dir",
+        help="Spec id under <SDD root>/specs/ or its archive dir (default specs/archive/, see `SDD archive dir`), or path to Spec dir",
     )
     parser.add_argument("--all", action="store_true", help="Check all non-template Specs")
     parser.add_argument(
@@ -1828,7 +1897,7 @@ def main() -> int:
         return 1
 
     print(f"== SDD docs root: {docs} ==")
-    spec_dirs = find_spec_dirs(docs, args.spec, args.all)
+    spec_dirs = find_spec_dirs(docs, args.spec, args.all, resolve_archive_names(host))
     if not spec_dirs:
         report.warn("no Spec dirs to check (only _template empty tree?)")
     for d in spec_dirs:
