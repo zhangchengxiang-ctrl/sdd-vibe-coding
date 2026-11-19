@@ -7,23 +7,26 @@
 #                  「这份文档该放哪」 section (host extensions must be declared)      -> WARN
 #   2. metadata    docs under iterations/, operations/requests|runbooks, reports/
 #                  carry front matter: title, type, status, owner, updated            -> WARN
+#                  --since YYYY-MM-DD: only docs first added to git on/after that date (or not
+#                  yet in git) are checked, so existing documents are not retro-fitted
 #   3. links       relative markdown links that point at nothing                      -> count;
 #                  with --max-broken N the run FAILS when the count exceeds N (ratchet)
 #
-# Usage: bash scripts/check-docs.sh <host-root> [--max-broken N]
+# Usage: bash scripts/check-docs.sh <host-root> [--max-broken N] [--since YYYY-MM-DD]
 # Exit:  0 ok (warnings allowed) · 1 broken-link ceiling exceeded · 2 usage
 set -euo pipefail
 
-HOST=""; MAX_BROKEN=""
+HOST=""; MAX_BROKEN=""; SINCE=""
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --max-broken) MAX_BROKEN="${2:-}"; shift 2 ;;
-    -h|--help) sed -n '2,15p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    --since) SINCE="${2:-}"; shift 2 ;;
+    -h|--help) sed -n '2,17p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     -*) echo "check-docs: unknown option $1" >&2; exit 2 ;;
     *) HOST="$1"; shift ;;
   esac
 done
-[[ -n "$HOST" && -d "$HOST" ]] || { echo "usage: check-docs.sh <host-root> [--max-broken N]" >&2; exit 2; }
+[[ -n "$HOST" && -d "$HOST" ]] || { echo "usage: check-docs.sh <host-root> [--max-broken N] [--since YYYY-MM-DD]" >&2; exit 2; }
 HOST="$(cd "$HOST" && pwd)"
 
 docs_root="docs"
@@ -34,12 +37,13 @@ fi
 DOCS="$HOST/$docs_root"
 [[ -d "$DOCS" ]] || { echo "check-docs: docs root not found: $DOCS" >&2; exit 2; }
 
-python3 - "$DOCS" "${MAX_BROKEN:-}" <<'PY'
-import os, re, sys
+python3 - "$DOCS" "${MAX_BROKEN:-}" "${SINCE:-}" <<'PY'
+import os, re, subprocess, sys
 from pathlib import Path
 from urllib.parse import unquote
 
 docs = Path(sys.argv[1]); max_broken = int(sys.argv[2]) if sys.argv[2] else None
+since = sys.argv[3] or None
 warns = 0
 
 # ---- 1. placement coverage ------------------------------------------------------------
@@ -63,6 +67,15 @@ for rel in ("iterations", "operations/requests", "operations/runbooks", "reports
     if base.is_dir():
         typed += [p for p in base.rglob("*.md")
                   if not p.name.startswith("_template") and "_template" not in p.parts]
+def added_on(p: Path) -> str | None:
+    """Committer date (YYYY-MM-DD) of the commit that first added `p`; None if not in git yet."""
+    out = subprocess.run(["git", "-C", str(docs), "log", "--diff-filter=A", "--format=%cs", "--", str(p)],
+                         capture_output=True, text=True).stdout.split()
+    return out[-1] if out else None
+
+
+if since:
+    typed = [p for p in typed if (added_on(p) or "9999-12-31") >= since]
 missing = []
 for p in typed:
     head = p.read_text(encoding="utf-8", errors="replace")

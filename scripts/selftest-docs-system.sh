@@ -49,6 +49,18 @@ bash "$CHECK" "$F" --max-broken 5 >"$TMP/c5.log" 2>&1; rc5=$?
 expect "dead link fails when above --max-broken"   test "$rc0" -eq 1
 expect "dead link passes when within --max-broken" test "$rc5" -eq 0
 
+# ---- 3b. --since: existing documents are not retro-fitted ----------------------------------------
+S="$TMP/since"; mk "$S"; bash "$SCAFFOLD" "$S" >/dev/null 2>&1
+printf '# old report, no metadata\n' > "$S/docs/reports/old-20200101.md"
+git -C "$S" add -A
+GIT_COMMITTER_DATE="2020-01-01T00:00:00" git -C "$S" -c user.email=t@t -c user.name=t commit -q --date="2020-01-01T00:00:00" -m old
+printf '# new report, no metadata\n' > "$S/docs/reports/new-20261119.md"
+bash "$CHECK" "$S" >"$TMP/s0.log" 2>&1
+bash "$CHECK" "$S" --since 2026-01-01 >"$TMP/s1.log" 2>&1
+expect "without --since the old doc is flagged"          grep -q 'old-20200101.md' "$TMP/s0.log"
+expect "--since skips a doc added before the date"       bash -c "grep -q 'check-docs: warnings=' '$TMP/s1.log' && ! grep -q 'old-20200101.md' '$TMP/s1.log'"
+expect "--since still flags a doc that is not in git yet" grep -q 'new-20261119.md' "$TMP/s1.log"
+
 # ---- 4. minimal stays minimal; gap-register binding --------------------------------------------
 M="$TMP/min"; mk "$M"; bash "$SCAFFOLD" "$M" --profile minimal >"$TMP/min.log" 2>&1
 expect "minimal does not create iterations/" test ! -e "$M/docs/iterations"
