@@ -113,5 +113,26 @@ expect "file and file::symbol entries do not warn"      bash -c "! grep -q '触�
 expect "a shipped (verifying) Spec is not retro-fitted" bash -c "! grep -q '触及路径' '$TMP/w-done.log'"
 expect "the write-set check never raises an ERROR"      bash -c "! grep -hE '^ERROR.*触及路径' '$TMP'/w-*.log"
 
+# ---- 7. overlap: same iteration across Specs, and across slices inside one Spec --------------------------
+setiter() { printf '\n| **iteration** | %s |\n' "$2" >> "$W/docs/specs/$1/VERSION.md"; }
+ws() { echo "| S1 | | T-001 | $1 | | |"; }
+mkspec x1 draft "t.replace('$ROW','$(ws 'backend/e.py::execute_query')')"; setiter x1 it1
+mkspec x2 draft "t.replace('$ROW','$(ws 'backend/e.py::execute_query')')"; setiter x2 it1
+mkspec x3 draft "t.replace('$ROW','$(ws 'backend/e.py::other_fn')')";      setiter x3 it1
+mkspec x4 draft "t.replace('$ROW','$(ws 'backend/e.py::execute_query')')"; setiter x4 it2
+mkspec x5 verifying "t.replace('$ROW','$(ws 'backend/e.py')')";            setiter x5 it1
+mkspec y1 draft "t.replace('$ROW','| S1 | | T-001 | backend/f.py | | |\\n| S2 | | T-002 | backend/f.py | — | |')"
+mkspec y2 draft "t.replace('$ROW','| S1 | | T-001 | backend/f.py | | |\\n| S2 | | T-002 | backend/f.py | S1 | |')"
+python3 "$CHECK_SPEC" "$W" --all --skip-agents >"$TMP/ov-all.log" 2>&1
+expect "same iteration, same symbol: warns"                    grep -q '迭代 it1: x1 与 x2 的触及路径相交' "$TMP/ov-all.log"
+expect "same iteration, different symbols: no warning"         bash -c "! grep -E '迭代 it1: x(1|2) 与 x3|迭代 it1: x3 与 x(1|2)' '$TMP/ov-all.log'"
+expect "different iteration: no warning"                       bash -c "! grep -E '迭代 it2' '$TMP/ov-all.log'"
+expect "a shipped (verifying) Spec does not compete"           bash -c "! grep -E '迭代 it1:.*x5' '$TMP/ov-all.log'"
+expect "inside one Spec: overlap without dependency warns"     grep -q 'y1/plan.md: 切片 S1 与 S2 的触及路径相交且互无依赖' "$TMP/ov-all.log"
+expect "inside one Spec: overlap with a dependency is fine"    bash -c "! grep -q 'y2/plan.md: 切片 S1 与 S2' '$TMP/ov-all.log'"
+python3 "$CHECK_SPEC" "$W" x1 --skip-agents >"$TMP/ov-one.log" 2>&1
+expect "checking ONE Spec still finds its iteration peers"     grep -q '迭代 it1: x1 与 x2' "$TMP/ov-one.log"
+expect "overlap is a warning, never an ERROR"                  bash -c "! grep -hE '^ERROR.*(相交|串行)' '$TMP'/ov-*.log"
+
 echo "--- selftest-docs-system: pass=$pass fail=$fail ---"
 [[ $fail -eq 0 ]]

@@ -1788,6 +1788,91 @@ def check_write_set(spec_dir: Path, plan: str, report: Report, *, structure_only
     )
     if as_dirs:
         report.warn(f"{name}: `触及路径` 写了目录而不是文件：{', '.join(as_dirs)}")
+    # Two slices that touch the same code must be ordered, otherwise they cannot be dispatched together.
+    dep_col = "依赖" if "依赖" in headers else None
+    sl = [(r[headers[0]], write_set_entries(r["触及路径"]), r[dep_col] if dep_col else "") for r in rows]
+    for i, (id1, e1, d1) in enumerate(sl):
+        for id2, e2, d2 in sl[i + 1 :]:
+            hit = entries_overlap(e1, e2)
+            if hit and not (depends_on(d1, id2) or depends_on(d2, id1)):
+                report.warn(
+                    f"{name}: 切片 {id1} 与 {id2} 的触及路径相交且互无依赖，不能同时派发：{', '.join(sorted(hit))}"
+                )
+
+
+_WS_ENTRY = re.compile(r"[\w./-]+\.[A-Za-z0-9]{1,6}(?:::[\w.]+)?")
+
+
+def write_set_entries(cell: str) -> set[str]:
+    """`文件` / `文件::符号` entries of a 触及路径 cell (anything without a path separator is ignored)."""
+    return {e for e in _WS_ENTRY.findall(cell) if "/" in e.split("::")[0]}
+
+
+def entries_overlap(a: set[str], b: set[str]) -> set[str]:
+    """Entries of `a` colliding with `b`: same file and either side names no symbol, or the same symbol."""
+    hit: set[str] = set()
+    for x in a:
+        fx, _, sx = x.partition("::")
+        for y in b:
+            fy, _, sy = y.partition("::")
+            if fx == fy and (not sx or not sy or sx == sy):
+                hit.add(x if (not sx or not sy) else f"{fx}::{sx}")
+    return hit
+
+
+def depends_on(dep_cell: str, other_id: str) -> bool:
+    return re.search(rf"(?<![\w]){re.escape(other_id)}(?![\w])", dep_cell) is not None
+
+
+_ITERATION = re.compile(r"^\|?\s*(?:\*\*iteration\*\*\s*\|\s*|-?\s*iteration:\s*)`?([\w.\-]+)`?", re.M)
+
+
+def spec_iteration(spec_dir: Path) -> str | None:
+    m = _ITERATION.search(read_text(spec_dir / "VERSION.md"))
+    return m.group(1) if m else None
+
+
+def spec_write_set(spec_dir: Path) -> set[str] | None:
+    """Union of a Spec's declared 触及路径; None unless it is still in planning / build."""
+    parsed = parse_version_status(read_text(spec_dir / "VERSION.md"))
+    if parsed is None or parsed[1] not in NEW_SPEC_STATUSES:
+        return None
+    headers, rows = parse_md_table_after(read_text(spec_dir / "plan.md"), "纵向切片")
+    if "触及路径" not in headers:
+        return None
+    out: set[str] = set()
+    for r in rows:
+        out |= write_set_entries(r["触及路径"])
+    return out
+
+
+def check_iteration_overlaps(
+    specs_root: Path, checked: list[Path], archive_names: frozenset[str], report: Report
+) -> None:
+    """Warn when two in-flight Specs of the SAME iteration declare overlapping write sets.
+
+    They must share a serial lane (ADR / spec skill「切分互斥与并行」). Only pairs that include at
+    least one Spec being checked are reported; shipped and archived Specs do not compete.
+    """
+    if not specs_root.is_dir():
+        return
+    peers: dict[str, list[tuple[Path, set[str]]]] = {}
+    for d in sorted(p for p in specs_root.iterdir() if p.is_dir() and not is_non_spec_dir(p.name, archive_names)):
+        it = spec_iteration(d)
+        ws = spec_write_set(d)
+        if it and not it.startswith("<") and ws:
+            peers.setdefault(it, []).append((d, ws))
+    checked_names = {c.name for c in checked}
+    for it, items in peers.items():
+        for i, (d1, w1) in enumerate(items):
+            for d2, w2 in items[i + 1 :]:
+                if d1.name not in checked_names and d2.name not in checked_names:
+                    continue
+                hit = entries_overlap(w1, w2)
+                if hit:
+                    report.warn(
+                        f"迭代 {it}: {d1.name} 与 {d2.name} 的触及路径相交，须同车道串行、不得同时 Build：{', '.join(sorted(hit))}"
+                    )
 
 
 STATUS_VOCAB = ("draft", "ready", "in-progress", "verifying", "blocked", "archived", "cancelled")
@@ -1951,6 +2036,8 @@ def main() -> int:
             checklist_dir,
             closing=args.closing,
         )
+
+    check_iteration_overlaps(docs / "specs", spec_dirs, resolve_archive_names(host), report)
 
     print(f"---\nerrors={report.errors} warnings={report.warnings}")
     return 1 if report.errors else 0
