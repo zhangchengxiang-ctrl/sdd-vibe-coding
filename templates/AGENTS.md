@@ -7,6 +7,7 @@
 ## SDD
 
 - SDD docs root: docs（技能里的 `docs/product`、`docs/specs` 均相对本值）
+- SDD archive dir: archive
 - **入口：** 仅显式 SDD 意图（`/vibe-coding`、许愿、确认方案、切 Spec、关版、polish、冷启动、人类验收、生产发布、派 Codex 等）→ 先加载插件 skill **`vibe-coding`**，再读本文件。普通调研 / 排障 / 实现问答 **不要**因此加载。
 - 写码授权、施工通道（eligible Build 才 `codex-dispatch`；越界指挥侧，见插件 `codex-boundary.md`）、关版（`make close-spec`）、
   状态词、Deploy 门：真源 = 插件 `gates.md` / `states.md`，本文件不复制。

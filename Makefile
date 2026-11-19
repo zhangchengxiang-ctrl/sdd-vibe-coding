@@ -171,6 +171,14 @@ preflight-rail:
 close-spec-selftest:
 	bash scripts/selftest-close-spec.sh
 
+# Read-only docs consistency check of a host: make check-docs HOST=/path [MAX_BROKEN=N]
+check-docs:
+	@if [ -z "$(HOST)" ]; then echo 'Usage: make check-docs HOST=<repo> [MAX_BROKEN=N]'; exit 2; fi
+	bash scripts/check-docs.sh "$(HOST)" $(if $(MAX_BROKEN),--max-broken $(MAX_BROKEN))
+
+docs-system-selftest:
+	bash scripts/selftest-docs-system.sh
+
 dispatch-gates-selftest:
 	bash skills/dispatch-codex/scripts/selftest-gates.sh
 

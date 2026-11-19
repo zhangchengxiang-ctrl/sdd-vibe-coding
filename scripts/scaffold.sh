@@ -241,10 +241,28 @@ if ((${#BLOCK_REASONS[@]})); then
   done
 fi
 
+# `- SDD gap register: <path>` in an existing AGENTS.md means the host already keeps its gap
+# register there; do not scaffold a second one at product/gap-register.md (that is the double
+# source of truth the docs map forbids). Honoured only when the declared file exists.
+declared_gap_register() {
+  local agents="$TARGET/AGENTS.md" v
+  [[ -f "$agents" ]] || return 0
+  v="$(sed -nE 's/^[[:space:]]*-[[:space:]]*SDD gap register:[[:space:]]*`?([^`[:space:]]+)`?[[:space:]]*$/\1/p' "$agents" | head -1)"
+  [[ -n "$v" && -f "$TARGET/$v" ]] && printf '%s\n' "$v"
+  return 0
+}
+
 plan_copy_docs() {
   local rel="$1"
   if [[ "$EFFECTIVE_PROFILE" == "minimal" ]] && ! is_minimal_rel "$rel"; then
     return 1
+  fi
+  if [[ "$rel" == "product/gap-register.md" ]]; then
+    local declared
+    declared="$(declared_gap_register)"
+    if [[ -n "$declared" && "$declared" != "$SDD_ROOT/product/gap-register.md" ]]; then
+      return 1
+    fi
   fi
   return 0
 }
