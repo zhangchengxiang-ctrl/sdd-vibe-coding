@@ -85,5 +85,33 @@ expect "spec skill defines 文件::符号"       grep -q '文件::符号' "$ROOT
 expect "spec skill names the 独立开关 axis"  grep -q '独立开关' "$ROOT/skills/spec/SKILL.md"
 expect "plan template explains 触及路径"     grep -q '触及路径. 写 .文件. 或 .文件::符号.' "$ROOT/templates/docs/specs/_template/plan.md"
 
+# ---- 6. check_spec warns when a new Spec does not declare its write set ---------------------------------
+CHECK_SPEC="$ROOT/skills/spec/scripts/check_spec.py"
+W="$TMP/ws"; mk "$W"; bash "$SCAFFOLD" "$W" >/dev/null 2>&1
+mkspec() {  # $1 = id, $2 = VERSION status, $3 = python expr rewriting plan text `t`
+  local d="$W/docs/specs/$1"; cp -r "$ROOT/templates/docs/specs/_template" "$d"
+  sed -i "s/^| \*\*状态\*\* | .*/| **状态** | \`$2\` |/" "$d/VERSION.md"
+  python3 - "$d/plan.md" "$3" <<'PY'
+import sys
+p, expr = sys.argv[1], sys.argv[2]
+t = open(p, encoding="utf-8").read()
+t = eval(expr)
+open(p, "w", encoding="utf-8").write(t)
+PY
+}
+ROW='| S1 | | T-001, T-002 | | | |'
+mkspec v1-empty draft "t"                                                             # untouched template
+mkspec v1-nocol draft "t.replace('| 切片 ID | 入口 | 完成定义（链 T-xxx） | 触及路径 | 依赖 | 备注 |','| 切片 ID | 入口 | 完成定义 | 依赖 | 备注 |').replace('|---|---|---|---|---|---|','|---|---|---|---|---|').replace('$ROW','| S1 | | T-001 | | |')"
+mkspec v1-dir   draft "t.replace('$ROW','| S1 | | T-001 | backend/x/ | | |')"
+mkspec v1-ok    draft "t.replace('$ROW','| S1 | | T-001 | backend/x/a.py、backend/x/b.py::fn | | |')"
+mkspec v1-done  verifying "t.replace('| 切片 ID | 入口 | 完成定义（链 T-xxx） | 触及路径 | 依赖 | 备注 |','| 切片 ID | 入口 | 完成定义 | 依赖 | 备注 |').replace('|---|---|---|---|---|---|','|---|---|---|---|---|').replace('$ROW','| S1 | | T-001 | | |')"
+for s in empty nocol dir ok done; do python3 "$CHECK_SPEC" "$W" "v1-$s" --skip-agents >"$TMP/w-$s.log" 2>&1; done
+expect "untouched template: empty 触及路径 warns"       grep -q 'WARN.*v1-empty/plan.md: 切片 S1 的 `触及路径` 为空' "$TMP/w-empty.log"
+expect "slice table without the column warns"           grep -q 'WARN.*v1-nocol/plan.md: 切片表缺 `触及路径` 列' "$TMP/w-nocol.log"
+expect "a directory instead of a file warns"            grep -q 'WARN.*写了目录而不是文件：backend/x/' "$TMP/w-dir.log"
+expect "file and file::symbol entries do not warn"      bash -c "! grep -q '触及路径' '$TMP/w-ok.log'"
+expect "a shipped (verifying) Spec is not retro-fitted" bash -c "! grep -q '触及路径' '$TMP/w-done.log'"
+expect "the write-set check never raises an ERROR"      bash -c "! grep -hE '^ERROR.*触及路径' '$TMP'/w-*.log"
+
 echo "--- selftest-docs-system: pass=$pass fail=$fail ---"
 [[ $fail -eq 0 ]]

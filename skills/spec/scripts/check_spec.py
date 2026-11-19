@@ -1750,6 +1750,46 @@ def find_spec_dirs(
     return [tmpl] if tmpl.is_dir() else []
 
 
+NEW_SPEC_STATUSES = ("draft", "ready", "in-progress")
+
+
+def check_write_set(spec_dir: Path, plan: str, report: Report, *, structure_only: bool) -> None:
+    """Warn (never fail) when a Spec still being planned or built does not declare its write set.
+
+    Parallel dispatch and Codex allowlists depend on the slice table's 触及路径 column
+    (`文件` or `文件::符号`, never a directory); see the spec skill「切分互斥与并行」.
+    Only Specs in NEW_SPEC_STATUSES are checked — shipped or archived Specs are not retro-fitted.
+    """
+    if structure_only:
+        return
+    parsed = parse_version_status(read_text(spec_dir / "VERSION.md"))
+    if parsed is None or parsed[1] not in NEW_SPEC_STATUSES:
+        return
+    headers, rows = parse_md_table_after(plan, "纵向切片")
+    if not rows:
+        return  # a missing slice table is reported by the existing structure checks
+    name = f"{spec_dir.name}/plan.md"
+    if "触及路径" not in headers:
+        report.warn(
+            f"{name}: 切片表缺 `触及路径` 列——并行与派发靠它判断写入面（spec skill「切分互斥与并行」）"
+        )
+        return
+    placeholder = {"", "—", "-", "–", "N/A", "n/a", "待定", "TBD"}
+    empty = [r[headers[0]] or "?" for r in rows if r["触及路径"].strip() in placeholder]
+    if empty:
+        report.warn(f"{name}: 切片 {', '.join(empty)} 的 `触及路径` 为空——请写 `文件` 或 `文件::符号`")
+    as_dirs = sorted(
+        {
+            tok
+            for r in rows
+            for tok in re.split(r"[,，、;\s]+", r["触及路径"])
+            if tok.endswith("/")
+        }
+    )
+    if as_dirs:
+        report.warn(f"{name}: `触及路径` 写了目录而不是文件：{', '.join(as_dirs)}")
+
+
 STATUS_VOCAB = ("draft", "ready", "in-progress", "verifying", "blocked", "archived", "cancelled")
 _STATUS_ROWS = (
     re.compile(r"^\|\s*\*{0,2}状态\*{0,2}\s*\|\s*(.*?)\s*\|?\s*$", re.M),
@@ -1805,6 +1845,7 @@ def check_spec_dir(
         texts.get("plan.md", ""),
         texts.get("run.md", ""),
     )
+    check_write_set(spec_dir, plan, report, structure_only=structure_only)
     check_fact_mapping(spec_dir, contract, report, structure_only=structure_only)
     req_rows = check_requirements_unverified(
         spec_dir, contract, report, structure_only=structure_only
