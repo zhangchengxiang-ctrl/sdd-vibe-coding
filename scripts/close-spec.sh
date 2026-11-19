@@ -51,6 +51,29 @@ if [[ ! -d "$SPEC_DIR" ]]; then
   exit 1
 fi
 
+# Closing replays the frozen Oracles from evidence that is NOT committed (.codex-dispatch-logs/,
+# .sdd-evidence/). On a checkout that lacks it, say so up front instead of letting the replay fail
+# halfway with a page of unrelated errors.
+if [[ "$SKIP_VD" != "1" && -f "$SPEC_DIR/run.md" ]]; then
+  missing_runs=""
+  while IFS= read -r rid; do
+    [[ -n "$rid" ]] || continue
+    if [[ ! -f "$HOST/.codex-dispatch-logs/$rid.jsonl" && ! -f "$HOST/.codex-dispatch-logs/$rid.meta.txt" ]]; then
+      missing_runs+="  - $rid"$'\n'
+    fi
+  done < <(sed -nE 's/^[-*[:space:]]*dispatch-run-id:[[:space:]]*`?([A-Za-z0-9_.-]+)`?.*/\1/p' "$SPEC_DIR/run.md")
+  if [[ -n "$missing_runs" ]]; then
+    {
+      echo "close-spec: FAIL this checkout has no local evidence for the dispatch run(s) named in run.md:"
+      printf '%s' "$missing_runs"
+      echo "  Closing replays Oracles from .codex-dispatch-logs/ and .sdd-evidence/, which are not committed."
+      echo "  Close from the machine that holds them, or restore them first. (--skip-verify-deliver only if"
+      echo "  the caller asserts the Spec is already verified.)"
+    } >&2
+    exit 1
+  fi
+fi
+
 echo "== close-spec 1/5: verify-deliver =="
 if [[ "$SKIP_VD" == "1" ]]; then
   echo "close-spec: skip verify-deliver (caller asserts already closed)"

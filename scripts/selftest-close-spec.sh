@@ -74,5 +74,20 @@ python3 "$CHECK" "$C" v1-annotated --skip-agents >"$TMP/c1.log" 2>&1
 expect "non-vocabulary status produces a WARN"   grep -q 'VERSION.md: 状态' "$TMP/c1.log"
 expect "...and not an ERROR on that account"     bash -c "! grep -E '^ERROR.*VERSION.md: 状态' '$TMP/c1.log'"
 
+# ---- no local evidence: fail early and say why ------------------------------------------------------------
+E="$TMP/e"; mkdir -p "$E"; mk_host "$E" '- SDD archive dir: _archive'
+printf '# Run\n\n- dispatch-run-id: build_20260101T000000Z_1\n' > "$E/docs/specs/v1-annotated/run.md"
+git -C "$E" add -A && git -C "$E" -c user.email=t@t -c user.name=t commit -qm run
+bash "$ROOT/scripts/close-spec.sh" "$E" v1-annotated >"$TMP/e1.log" 2>&1; erc=$?
+expect "missing local evidence: exits non-zero"          test "$erc" -ne 0
+expect "...and names the missing dispatch run"           grep -q 'build_20260101T000000Z_1' "$TMP/e1.log"
+expect "...and explains the evidence is not committed"   grep -q 'not committed' "$TMP/e1.log"
+expect "...before touching anything (spec still active)" test -d "$E/docs/specs/v1-annotated"
+mkdir -p "$E/.codex-dispatch-logs" && : > "$E/.codex-dispatch-logs/build_20260101T000000Z_1.jsonl"
+bash "$ROOT/scripts/close-spec.sh" "$E" v1-annotated >"$TMP/e2.log" 2>&1
+expect "with the evidence present the preflight passes"   bash -c "! grep -q 'no local evidence' '$TMP/e2.log'"
+bash "$ROOT/scripts/close-spec.sh" "$E" v2-bullet --skip-verify-deliver >"$TMP/e3.log" 2>&1
+expect "--skip-verify-deliver bypasses the preflight"     grep -q 'close-spec: DONE' "$TMP/e3.log"
+
 echo "--- selftest-close-spec: pass=$pass fail=$fail ---"
 [[ $fail -eq 0 ]]
