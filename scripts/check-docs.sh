@@ -68,8 +68,8 @@ for rel in ("iterations", "operations/requests", "operations/runbooks", "reports
         typed += [p for p in base.rglob("*.md")
                   if not p.name.startswith("_template") and "_template" not in p.parts]
 def added_on(p: Path) -> str | None:
-    """Committer date (YYYY-MM-DD) of the commit that first added `p`; None if not in git yet."""
-    out = subprocess.run(["git", "-C", str(docs), "log", "--diff-filter=A", "--format=%cs", "--", str(p)],
+    """Committer date (YYYY-MM-DD) of the commit that first added `p`, following renames; None if not in git yet."""
+    out = subprocess.run(["git", "-C", str(docs), "log", "--follow", "--diff-filter=A", "--format=%cs", "--", str(p)],
                          capture_output=True, text=True).stdout.split()
     return out[-1] if out else None
 

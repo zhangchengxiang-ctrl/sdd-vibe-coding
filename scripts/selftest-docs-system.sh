@@ -60,6 +60,11 @@ bash "$CHECK" "$S" --since 2026-01-01 >"$TMP/s1.log" 2>&1
 expect "without --since the old doc is flagged"          grep -q 'old-20200101.md' "$TMP/s0.log"
 expect "--since skips a doc added before the date"       bash -c "grep -q 'check-docs: warnings=' '$TMP/s1.log' && ! grep -q 'old-20200101.md' '$TMP/s1.log'"
 expect "--since still flags a doc that is not in git yet" grep -q 'new-20261119.md' "$TMP/s1.log"
+# a document moved today is still an old document
+mkdir -p "$S/docs/operations/requests" && git -C "$S" mv docs/reports/old-20200101.md docs/operations/requests/old-moved.md
+git -C "$S" -c user.email=t@t -c user.name=t commit -q -m move
+bash "$CHECK" "$S" --since 2026-01-01 >"$TMP/s2.log" 2>&1
+expect "--since follows renames: a moved old doc is not new" bash -c "grep -q 'check-docs: warnings=' '$TMP/s2.log' && ! grep -q 'old-moved.md' '$TMP/s2.log'"
 
 # ---- 4. minimal stays minimal; gap-register binding --------------------------------------------
 M="$TMP/min"; mk "$M"; bash "$SCAFFOLD" "$M" --profile minimal >"$TMP/min.log" 2>&1
