@@ -21,6 +21,10 @@
 # Exit 0 every machine Oracle red-then-green · 1 a replay verdict failed · 2 refused
 set -uo pipefail
 
+# Oracles run inside the reusable baseline worktree; Python bytecode written there would make it look
+# dirty on the next run ("stale baseline worktree ... is dirty") and abort the replay.
+export PYTHONDONTWRITEBYTECODE=1
+
 HOST=""; SPEC=""; SLICE=""; BASE=""; META=""; PHASE="both"; EVIDENCE=""
 RESUME=0; DRY=0; TIMEOUT_SEC="${SHIP_TIMEOUT_SEC:-900}"
 # `:-` here would make SHIP_LINK= mean "use the default", so an operator who switched
@@ -397,6 +401,8 @@ if [[ "$PHASE" != "verify" ]]; then
     dirty=""
     while IFS= read -r line; do
       [[ -n "$line" ]] || continue
+      # Leftover bytecode from an earlier oracle run is not a change to the baseline.
+      [[ "$line" == *__pycache__* ]] && continue
       if [[ "$line" == '??'* ]]; then
         entry="${line#\?\? }"; entry="${entry%/}"
         if [[ -L "$WT/$entry" && "$(readlink "$WT/$entry")" == "$HOST/$entry" ]]; then

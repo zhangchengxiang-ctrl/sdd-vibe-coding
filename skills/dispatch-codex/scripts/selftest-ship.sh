@@ -214,6 +214,16 @@ BASE9C="$(git -C "$H9C" rev-parse HEAD)"
 implement "$H9C"
 check "ship-missing-absolute-judge-still-fails" 1 bash "$SHIP" --host "$H9C" --spec s1 --slice S1 --from-meta "$(mk_meta "$H9C" "$BASE9C")"
 
+# Bytecode an oracle leaves in the reusable baseline worktree is not dirt. Regression: the second run
+# died with "stale baseline worktree ... is dirty" and the operator had to rm -rf it by hand.
+H10="$TMP/h10"
+mk_host "$H10" 'bash -c "mkdir -p src/__pycache__ && : > src/__pycache__/m.cpython-311.pyc && grep -q IMPLEMENTED src/feature.txt"'
+BASE10="$(git -C "$H10" rev-parse HEAD)"
+implement "$H10"
+M10="$(mk_meta "$H10" "$BASE10")"
+check "ship-first-run-with-bytecode-oracle" 0 bash "$SHIP" --host "$H10" --spec s1 --slice S1 --from-meta "$M10"
+check "ship-second-run-ignores-bytecode-in-baseline" 0 bash "$SHIP" --host "$H10" --spec s1 --slice S1 --from-meta "$M10"
+
 # --- refusals ---------------------------------------------------------------
 check "ship-refuses-without-base" 2 bash "$SHIP" --host "$H" --spec s1 --slice S1
 saw "ship-explains-base-refusal" 'guessing which tree predates the change'
