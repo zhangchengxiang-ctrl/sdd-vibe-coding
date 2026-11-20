@@ -33,7 +33,7 @@ Options:
                          $CODEX_HOME/<name>.config.toml, not in this script
   --sandbox MODE         read-only|workspace-write|danger-full-access
   --timeout SEC          Wall clock limit (kills process on expiry)
-  --spec ID              Spec id under SDD docs/specs (required for build unless SKIP)
+  --spec ID              Spec id (lives under <SDD root>/iterations/<yyyy-mm>/<w>/<version>/<id>; required for build unless SKIP)
   --slice ID             Build: slice or comma list S1,S2 (one dispatch unit)
   --dispatch-id ID       Optional D id (also accept DISPATCH_ID= in prompt)
   --run-id-file PATH     Write RUN_ID here as soon as it is assigned (no log scan)
@@ -208,9 +208,10 @@ if [[ "$UNIT" == "plan" ]]; then
   PLAN_PREAMBLE="$(cat <<'PREAMBLE'
 ## Plan unit Done when (disk)
 - Product scheme is already confirmed upstream.
-- MUST write Spec files now: docs/specs/<SPEC_ID>/{VERSION.md,contract.md,tests.md,plan.md,run.md}
+- MUST write Spec files now: docs/iterations/<YYYY-MM>/<W>/<VERSION>/<SPEC_ID>/{VERSION.md,contract.md,tests.md,plan.md,run.md}
+  (the version dir is named in the task; if it is not, stop and report — never create docs/specs/<SPEC_ID>/)
 - Chat-only plans are a FAILURE (conductor will assert_plan_artifacts and fail this dispatch).
-- After writing: `ls -la docs/specs/<SPEC_ID>/`
+- After writing: `ls -la docs/iterations/<YYYY-MM>/<W>/<VERSION>/<SPEC_ID>/`
 PREAMBLE
 )"
   if [[ -n "$SPEC_ID" ]]; then

@@ -19,6 +19,9 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import spec_paths  # noqa: E402  (sibling module: where a Spec lives)
+
 LEGACY_NAMES = {
     "context.md",
     "requirements.md",
@@ -1272,9 +1275,8 @@ def _resolve_dispatch_jsonl(run_id_or_name: str, start: Path | None = None) -> P
 
 
 def _host_from_spec_dir(spec_dir: Path) -> Path | None:
-    if spec_dir.parent.name != "specs":
-        return None
-    return spec_dir.parent.parent.parent
+    docs = spec_paths.docs_root_of(spec_dir)
+    return docs.parent if docs is not None else None
 
 
 def _codex_eligible_slice_ids(spec_dir: Path) -> list[str] | None:
@@ -1398,6 +1400,9 @@ def _host_root(spec_dir: Path) -> Path:
     for anc in [spec_dir, *spec_dir.parents]:
         if (anc / ".git").exists():
             return anc
+    docs = spec_paths.docs_root_of(spec_dir)
+    if docs is not None:
+        return docs.parent if docs.name in {"docs", ".sdd"} else docs
     for anc in spec_dir.parents:
         if anc.name == "specs":
             return anc.parent.parent if anc.parent.name in {"docs", ".sdd"} else anc.parent
@@ -1706,19 +1711,16 @@ def is_non_spec_dir(name: str, archive_names: frozenset[str] = frozenset()) -> b
 
 
 def resolve_spec_dir(
-    specs_root: Path, spec_arg: str, archive_names: frozenset[str] = frozenset()
+    docs: Path, spec_arg: str, archive_names: frozenset[str] = frozenset()
 ) -> Path:
-    """Resolve id or path; prefer active specs/<id>, then specs/<archive>/<id>."""
+    """Resolve an id or a path. Ids go through spec_paths: in-flight iteration first, then the
+    legacy `specs/<id>`, then the archives (see spec_paths for the full order)."""
     p = Path(spec_arg)
     if p.is_absolute():
         return p.resolve()
-    cand = specs_root / spec_arg
-    if cand.is_dir() and not is_non_spec_dir(spec_arg, archive_names):
-        return cand.resolve()
-    for arch in sorted(archive_names | {"archive"}):
-        archived = specs_root / arch / Path(spec_arg).name
-        if archived.is_dir():
-            return archived.resolve()
+    found = spec_paths.find_spec_dir(docs, spec_arg, archive_names | {"archive"})
+    if found is not None:
+        return found
     cwd_cand = Path.cwd() / spec_arg
     if cwd_cand.is_dir():
         return cwd_cand.resolve()
@@ -1731,22 +1733,13 @@ def find_spec_dirs(
     all_specs: bool,
     archive_names: frozenset[str] = frozenset(),
 ) -> list[Path]:
-    specs_root = docs / "specs"
     if spec_arg:
-        return [resolve_spec_dir(specs_root, spec_arg, archive_names)]
-    if not specs_root.is_dir():
-        return []
-    dirs = sorted(
-        d
-        for d in specs_root.iterdir()
-        if d.is_dir() and not is_non_spec_dir(d.name, archive_names)
-    )
-    if all_specs:
-        return dirs
-    # default: active (non-template, non-archive); if none, check template structure-only
+        return [resolve_spec_dir(docs, spec_arg, archive_names)]
+    dirs = spec_paths.active_spec_dirs(docs, archive_names | {"archive"})
     if dirs:
         return dirs
-    tmpl = specs_root / "_template"
+    # nothing in flight: check the template's structure only
+    tmpl = docs / "specs" / "_template"
     return [tmpl] if tmpl.is_dir() else []
 
 
@@ -1828,8 +1821,36 @@ _ITERATION = re.compile(r"^\|?\s*(?:\*\*iteration\*\*\s*\|\s*|-?\s*iteration:\s*
 
 
 def spec_iteration(spec_dir: Path) -> str | None:
+    """The directory decides; the legacy `iteration:` field only speaks for a legacy specs/<id>."""
+    it = spec_paths.iteration_of(spec_dir)
+    if it:
+        return it
     m = _ITERATION.search(read_text(spec_dir / "VERSION.md"))
     return m.group(1) if m else None
+
+
+def check_placement(spec_dir: Path, report: Report, *, structure_only: bool) -> None:
+    """A Spec is cut from a version (iteration), so it lives in it: iterations/<yyyy-mm>/<w>/<版本>/<id>/.
+
+    Warn (never fail) for a Spec still being planned or built that sits in the legacy
+    `specs/<id>/`, and for an `iteration:` field that names another iteration than the dir.
+    Shipped and archived legacy Specs are records and are not moved.
+    """
+    if structure_only:
+        return
+    text = read_text(spec_dir / "VERSION.md")
+    in_dir = spec_paths.iteration_of(spec_dir)
+    m = _ITERATION.search(text)
+    field = m.group(1) if m and not m.group(1).startswith("<") else None
+    if in_dir and field and field != in_dir:
+        report.warn(f"{spec_dir.name}: VERSION 的 iteration 写的是 {field}，目录却在版本 {in_dir} 下；以目录为准，删掉或改正该字段")
+    if in_dir is None and spec_dir.parent.name == "specs":
+        parsed = parse_version_status(text)
+        if parsed is not None and parsed[1] in NEW_SPEC_STATUSES:
+            report.warn(
+                f"{spec_dir.name}: 在途 Spec 应放在 iterations/<yyyy-mm>/<w>/<版本>/{spec_dir.name}/ 下（Spec 是版本拆出的工作包）；"
+                "`specs/` 只放模板与版本层之前的历史 Spec"
+            )
 
 
 def spec_write_set(spec_dir: Path) -> set[str] | None:
@@ -1847,17 +1868,15 @@ def spec_write_set(spec_dir: Path) -> set[str] | None:
 
 
 def check_iteration_overlaps(
-    specs_root: Path, checked: list[Path], archive_names: frozenset[str], report: Report
+    docs: Path, checked: list[Path], archive_names: frozenset[str], report: Report
 ) -> None:
     """Warn when two in-flight Specs of the SAME iteration declare overlapping write sets.
 
     They must share a serial lane (ADR / spec skill「切分互斥与并行」). Only pairs that include at
     least one Spec being checked are reported; shipped and archived Specs do not compete.
     """
-    if not specs_root.is_dir():
-        return
     peers: dict[str, list[tuple[Path, set[str]]]] = {}
-    for d in sorted(p for p in specs_root.iterdir() if p.is_dir() and not is_non_spec_dir(p.name, archive_names)):
+    for d in spec_paths.active_spec_dirs(docs, archive_names | {"archive"}):
         it = spec_iteration(d)
         ws = spec_write_set(d)
         if it and not it.startswith("<") and ws:
@@ -1931,6 +1950,7 @@ def check_spec_dir(
         texts.get("run.md", ""),
     )
     check_write_set(spec_dir, plan, report, structure_only=structure_only)
+    check_placement(spec_dir, report, structure_only=structure_only)
     check_fact_mapping(spec_dir, contract, report, structure_only=structure_only)
     req_rows = check_requirements_unverified(
         spec_dir, contract, report, structure_only=structure_only
@@ -1979,7 +1999,7 @@ def main() -> int:
     parser.add_argument(
         "spec",
         nargs="?",
-        help="Spec id under <SDD root>/specs/ or its archive dir (default specs/archive/, see `SDD archive dir`), or path to Spec dir",
+        help="Spec id (looked up in every version under <SDD root>/iterations/, then legacy <SDD root>/specs/, then its archive; see spec_paths.py), or path to Spec dir",
     )
     parser.add_argument("--all", action="store_true", help="Check all non-template Specs")
     parser.add_argument(
@@ -2037,7 +2057,7 @@ def main() -> int:
             closing=args.closing,
         )
 
-    check_iteration_overlaps(docs / "specs", spec_dirs, resolve_archive_names(host), report)
+    check_iteration_overlaps(docs, spec_dirs, resolve_archive_names(host), report)
 
     print(f"---\nerrors={report.errors} warnings={report.warnings}")
     return 1 if report.errors else 0

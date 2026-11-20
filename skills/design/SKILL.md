@@ -65,7 +65,7 @@ Explore 下讨论机制 → 读码 + 实质闸即可，不必 Shape 卡片。
 - 首个可交付价值切片；
 - 只需用户决定的互斥或不可逆事项。
 
-Shape 产出（**Deliver 且用户确认后**）：`docs/product/` 产品方案 / 切片。  
+Shape 产出（**Deliver 且用户确认后**）：这一次许愿落成一个版本目录 `docs/iterations/<yyyy-mm>/<w>/<版本>/`——原话进 `quote.md`、需求与待裁定进 `requirements.md`、用户拍板进 `decisions.md`；长期有效的产品定义（能力、IA、产品模型）写回 `docs/product/`。  
 **硬门：** 本轨不创建实施 Spec、不改业务代码、不部署。  
 写码授权：见 [`gates.md`](../vibe-coding/references/gates.md)。
 
@@ -83,7 +83,7 @@ Deliver Shape 结构化路径：
 
 1. 读代码、文档、真实界面（as-built）；
 2. 理解卡 → 必要决策卡（1–3 个，有推荐与代价）；
-3. 用户确认后写 `docs/product/`；
+3. 用户确认后写该版本的 `requirements.md` / `decisions.md`（原话先落 `quote.md`），长期产品定义写回 `docs/product/`；
 4. 内部 `design-ready`；前台请「确认方案」。
 
 Explore 路径：**跳过 2–4**，除非用户转 Deliver。  

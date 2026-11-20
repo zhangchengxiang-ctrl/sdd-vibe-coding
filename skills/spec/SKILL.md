@@ -27,7 +27,7 @@ disable-model-invocation: true
 3. 仅 `Verified` 进 P0 / Lock / 实施阻断；
 4. `tests.md` 每个 P0 至少 1 success + 1 failure/permission，完整 Given/When/Then；
 5. 本阶段只落盘 Spec（不改业务代码）；
-6. 用户已说切 Spec/Plan，**或**许愿路径下方案已确认 → **直接写入** `docs/specs/<id>/`；
+6. 用户已说切 Spec/Plan，**或**许愿路径下方案已确认 → **直接写入** `docs/iterations/<yyyy-mm>/<w>/<版本>/<id>/`（Spec 是版本拆出的工作包；还没有版本就先按 `templates/docs/iterations/_template/` 建一个，只有一个 Spec 也一样；不要再建 `docs/specs/<id>/`）。切之前读该版本的 `quote.md`、`requirements.md`、`decisions.md`：`requirements.md` 的待裁定项未在 `decisions.md` 有结论时不切；
 7. 齐套后：许愿路径 → 直接进入 Build 编排；经典路径 → 批准卡（可附 Build 提示词）；
 8. **骨架**：落盘 `VERSION` / `contract` / `tests` / `plan` / `run`；
 9. **架构与设计边界轻门**：触及新入口 / 跨层 / 新存储 / 新权限模型 / 新部署单元时，
@@ -44,7 +44,7 @@ disable-model-invocation: true
 ## 核心工件
 
 ```text
-docs/specs/<id>/
+docs/iterations/<yyyy-mm>/<w>/<版本>/<id>/      # 模板：docs/specs/_template/
 ├── VERSION.md
 ├── contract.md   # 目标、事实映射、Requirements、In/Out
 ├── tests.md      # TDD 测试合同：索引 + Given/When/Then
@@ -120,7 +120,7 @@ Verify 执行证伪见 testing [`falsify-checklist.md`](../testing/references/fa
 | 读方 | 改共享数据形状（labels 键、API 字段、事件、表列）时，把仓内所有读方列入触及路径，或由前序切片先改。推荐：依赖未满足时，依赖方的 Oracle 必须为红 |
 | 合并与下限 | 同文件且必须串行的切片合并为一片（除非 Oracle 需独立冻结）；目标约 50～200 行、1～3 个源文件；低于约 50 行不建议单独派发，可 `executor: conductor` 合并执行并写明理由 |
 | 热点 | 同一文件在一个迭代内被 ≥ 3 个切片修改：进同一串行车道，或先开拆文件的前置 Spec |
-| 迭代矩阵 | 同迭代的多个 Spec，在迭代文档里放并行矩阵（见 `templates/docs/iterations/README.md`） |
+| 迭代矩阵 | 同一版本的多个 Spec（即该版本目录下的全部 Spec），在版本 README 里放并行矩阵（见 `templates/docs/iterations/README.md`）；`check_spec` 按目录判同版本并检查触及路径重叠 |
 
 阈值（50 / 200 行、1～3 文件）是起点，来自有限样本，以真实使用校准。
 

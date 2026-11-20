@@ -52,7 +52,18 @@ def main() -> int:
             if cand.is_dir():
                 docs_root = cand
 
-    spec_dir = docs_root / "specs" / args.spec_id
+    import importlib.util
+    sp_path = Path(__file__).resolve().parents[2] / "spec" / "scripts" / "spec_paths.py"
+    sp_spec = importlib.util.spec_from_file_location("spec_paths_apa", sp_path)
+    sp = importlib.util.module_from_spec(sp_spec)
+    sp_spec.loader.exec_module(sp)
+    try:
+        found = sp.find_spec_dir(docs_root, args.spec_id, sp.archive_names(host) | {"archive"})
+    except sp.AmbiguousSpec as e:
+        print(f"assert_plan_artifacts: {e}", file=sys.stderr)
+        return 1
+    # A Spec that does not exist yet is expected under an iteration; the error names that place.
+    spec_dir = found if found is not None else docs_root / "iterations" / "<yyyy-mm>" / "<w>" / "<版本>" / args.spec_id
     errors: list[str] = []
     for name in REQUIRED:
         path = spec_dir / name
@@ -79,7 +90,7 @@ def main() -> int:
         for e in errors:
             print(f"  - {e}", file=sys.stderr)
         print(
-            "  Wish-path: no 待批准停点; write VERSION/contract/tests/plan/run under docs/specs/<id>/",
+            "  Wish-path: no 待批准停点; write VERSION/contract/tests/plan/run under docs/iterations/<yyyy-mm>/<w>/<版本>/<spec-id>/",
             file=sys.stderr,
         )
         return 1

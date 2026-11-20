@@ -2,7 +2,7 @@
 # Run `make` or `make help` for the command list.
 
 .PHONY: help install install-dev install-cursor install-claude install-codex \
-	scaffold codex-dispatch wish-orchestrate context-pack verify check-docs check-spec verify-deliver close-spec \
+	scaffold codex-dispatch wish-orchestrate context-pack verify check-docs check-spec verify-deliver close-spec close-iteration iteration-layout-selftest check-host-docs \
 	preflight-rail codex-preflight ship oracle-migration dispatch-gates-selftest public-gates contract-sync \
 	dispatch-live-lifecycle dispatch-live-scenario \
 	phase3-negative eval-live eval-skill-load wish-journey \
@@ -43,7 +43,8 @@ help:
 		'  make wish-journey HOST=路径 SPEC=id [STATUS=1|SET=phase|TRANSITION=phase]' \
 		'  make check-spec HOST=路径 SPEC=id   Spec 静态门（事实映射/tests/架构节/run 诚实性）' \
 		'  make verify-deliver HOST=路径 SPEC=id  Verify 关版门（check_spec --closing）' \
-		'  make close-spec HOST=路径 SPEC=id   关版收口：verify-deliver→archived→搬入 archive/→journey' \
+		'  make close-spec HOST=路径 SPEC=id   关版收口：verify-deliver→archived（版本内原地不动；历史 Spec 搬入 archive/）→journey' \
+		'  make close-iteration HOST=路径 ITERATION=id   版本关闭：成员全关 + 复盘已写 → README 状态 archived' \
 		'  make codex-preflight HOST=路径  Codex 派发环境门（trust 登记 / AGENTS 32KiB 上限 / 档位 profile）' \
 		'  make preflight-rail HOST=路径 [AUTHORIZED=1]  Shape 写码闸（业务 dirty 则失败）' \
 		'  make codex-dispatch HOST=路径 UNIT=build PROMPT_FILE=文件' \
@@ -158,6 +159,16 @@ close-spec:
 	if [ "$(SKIP_VD)" = "1" ]; then extra="--skip-verify-deliver"; fi; \
 	bash scripts/close-spec.sh "$(HOST)" "$(SPEC)" $$extra
 
+close-iteration:
+	@if [ -z "$(ITERATION)" ]; then \
+		echo 'Usage: make close-iteration HOST=<repo> ITERATION=<id>'; \
+		exit 2; \
+	fi
+	bash scripts/close-iteration.sh "$(HOST)" "$(ITERATION)"
+
+iteration-layout-selftest:
+	bash scripts/selftest-iteration-layout.sh
+
 codex-preflight:
 	bash scripts/codex-preflight.sh --cwd "$(HOST)"
 
@@ -171,9 +182,10 @@ preflight-rail:
 close-spec-selftest:
 	bash scripts/selftest-close-spec.sh
 
-# Read-only docs consistency check of a host: make check-docs HOST=/path [MAX_BROKEN=N]
-check-docs:
-	@if [ -z "$(HOST)" ]; then echo 'Usage: make check-docs HOST=<repo> [MAX_BROKEN=N]'; exit 2; fi
+# Read-only docs consistency check of a host: make check-host-docs HOST=/path [MAX_BROKEN=N]
+# (named apart from the maintainer target `check-docs` below, which it used to shadow silently)
+check-host-docs:
+	@if [ -z "$(HOST)" ]; then echo 'Usage: make check-host-docs HOST=<repo> [MAX_BROKEN=N]'; exit 2; fi
 	bash scripts/check-docs.sh "$(HOST)" $(if $(MAX_BROKEN),--max-broken $(MAX_BROKEN))
 
 docs-system-selftest:

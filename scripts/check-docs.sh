@@ -5,8 +5,8 @@
 # from templates/docs/README.md):
 #   1. placement   every top-level dir under the docs root is explained in README's
 #                  「这份文档该放哪」 section (host extensions must be declared)      -> WARN
-#   2. metadata    docs under iterations/, operations/requests|runbooks, reports/
-#                  carry front matter: title, type, status, owner, updated            -> WARN
+#   2. metadata    docs under iterations/ (except the Specs inside a version), operations/requests|runbooks,
+#                  reports/ carry front matter: title, type, status, owner, updated   -> WARN
 #                  --since YYYY-MM-DD: only docs first added to git on/after that date (or not
 #                  yet in git) are checked, so existing documents are not retro-fitted
 #   3. links       relative markdown links that point at nothing                      -> count;
@@ -65,8 +65,10 @@ typed = []
 for rel in ("iterations", "operations/requests", "operations/runbooks", "reports"):
     base = docs / rel
     if base.is_dir():
+        # Spec dirs inside a version (they hold VERSION.md) are five-piece Specs, not typed docs
         typed += [p for p in base.rglob("*.md")
-                  if not p.name.startswith("_template") and "_template" not in p.parts]
+                  if not p.name.startswith("_template") and "_template" not in p.parts
+                  and not any((a / "VERSION.md").is_file() for a in p.parents if base in a.parents or a == base)]
 def added_on(p: Path) -> str | None:
     """Committer date (YYYY-MM-DD) of the commit that first added `p`, following renames; None if not in git yet."""
     out = subprocess.run(["git", "-C", str(docs), "log", "--follow", "--diff-filter=A", "--format=%cs", "--", str(p)],

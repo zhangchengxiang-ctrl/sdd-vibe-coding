@@ -43,7 +43,7 @@ def resolve_sdd_root(host: Path) -> Path:
                 if root.is_dir():
                     return root
     for cand in (host / "docs", host / "docs" / "sdd"):
-        if (cand / "specs").is_dir():
+        if (cand / "specs").is_dir() or (cand / "iterations").is_dir():
             return cand.resolve()
     return (host / "docs").resolve()
 
@@ -173,7 +173,7 @@ def extract_paths(paths_raw: str, note: str) -> list[str]:
 
 
 def rel_spec_files(sdd_root: Path, host: Path, spec_id: str) -> list[str]:
-    spec_dir = sdd_root / "specs" / spec_id
+    spec_dir = spec_dir_of(sdd_root, spec_id)
     files = []
     for name in ("VERSION.md", "contract.md", "tests.md", "plan.md", "run.md"):
         p = spec_dir / name
@@ -184,6 +184,22 @@ def rel_spec_files(sdd_root: Path, host: Path, spec_id: str) -> list[str]:
                 files.append(str(p))
     return files
 
+
+
+def spec_dir_of(sdd: Path, spec_id: str) -> Path:
+    """Where the Spec lives (iterations/<yyyy-mm>/<w>/<版本>/<id>, legacy specs/<id>, or its archive)."""
+    import importlib.util
+    sp_path = Path(__file__).resolve().parents[2] / "spec" / "scripts" / "spec_paths.py"
+    spec = importlib.util.spec_from_file_location("spec_paths_pack", sp_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    host = next((a for a in [sdd, *sdd.parents] if (a / "AGENTS.md").is_file()), sdd.parent)
+    try:
+        found = mod.find_spec_dir(sdd, spec_id, mod.archive_names(host) | {"archive"})
+    except mod.AmbiguousSpec as e:
+        print(f"build_context_pack: {e}", file=sys.stderr)
+        sys.exit(1)
+    return found if found is not None else spec_dir_of(sdd, spec_id)
 
 
 def _load_check_spec():
@@ -204,7 +220,7 @@ def classify_oracles(sdd: Path, spec_id: str, t_ids: list[str]) -> list[dict[str
     block labelled "frozen Oracle, the runner replays this" would be a second lie of
     the same kind, so invalid ones stop the pack instead.
     """
-    tests_path = sdd / "specs" / spec_id / "tests.md"
+    tests_path = spec_dir_of(sdd, spec_id) / "tests.md"
     if not tests_path.is_file() or not t_ids:
         return []
     try:
@@ -251,7 +267,7 @@ def user_visible_gap(host: Path, sdd: Path, spec_id: str,
         cs = _load_check_spec()
     except Exception:
         return ""
-    contract = read_text_maybe(sdd / "specs" / spec_id / "contract.md")
+    contract = read_text_maybe(spec_dir_of(sdd, spec_id) / "contract.md")
     if not contract:
         return ""
     _, rows = cs.parse_md_table_after(contract, "Requirements")
@@ -285,7 +301,7 @@ def all_p0_oracles(sdd: Path, spec_id: str) -> tuple[list[dict[str, str]], list[
     t-ids no slice names).
     """
     cs = _load_check_spec()
-    contract = read_text_maybe(sdd / "specs" / spec_id / "contract.md")
+    contract = read_text_maybe(spec_dir_of(sdd, spec_id) / "contract.md")
     _, rows = cs.parse_md_table_after(contract, "Requirements")
     t_ids: list[str] = []
     unmapped: list[str] = []
@@ -298,7 +314,7 @@ def all_p0_oracles(sdd: Path, spec_id: str) -> tuple[list[dict[str, str]], list[
         for t in ids:
             if t not in t_ids:
                 t_ids.append(t)
-    plan = read_text_maybe(sdd / "specs" / spec_id / "plan.md")
+    plan = read_text_maybe(spec_dir_of(sdd, spec_id) / "plan.md")
     in_slices = set(re.findall(r"T-\d+", plan))
     unsliced = [t for t in t_ids if t not in in_slices]
     return classify_oracles(sdd, spec_id, t_ids), unmapped, unsliced
@@ -375,7 +391,7 @@ def render_prompt(pack: dict, docs_hint: str) -> str:
     else:
         paths = "  - (MISSING allowlist — conductor must not dispatch)"
         allow_note = "ALLOWLIST missing: refuse to wander the repo; fail if conductor still sent this."
-    pointers = "\n".join(f"  - {p}" for p in pack["pointers"]) if pack["pointers"] else f"  - {docs_hint}/specs/{pack['spec_id']}/"
+    pointers = "\n".join(f"  - {p}" for p in pack["pointers"]) if pack["pointers"] else f"  - {docs_hint}/iterations/<yyyy-mm>/<w>/<版本>/{pack['spec_id']}/"
     machine = [o for o in pack.get("oracles", []) if o.get("kind") == "machine"]
     human = [o for o in pack.get("oracles", []) if o.get("kind") == "human"]
     if machine:
@@ -559,7 +575,7 @@ def main() -> None:
         die(f"host not a directory: {host}", 2)
 
     sdd = resolve_sdd_root(host)
-    plan_path = sdd / "specs" / args.spec_id / "plan.md"
+    plan_path = spec_dir_of(sdd, args.spec_id) / "plan.md"
     if not plan_path.is_file():
         die(f"plan.md not found: {plan_path}")
 

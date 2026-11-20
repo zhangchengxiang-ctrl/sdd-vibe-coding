@@ -10,11 +10,11 @@
 | 社区设计底线（系统架构 / UX / 视觉） | 插件 `design-standards/`（AGENTS 可覆盖） |
 | 可选 as-built 边界与 ADR | 仓库 `docs/architecture/`（非 SDD 保留路径） |
 | 产品愿望与长期蓝图 | `product/` |
-| 当前版本实施合同 | `specs/<id>/`（`contract` + `tests` + `plan` + `run`） |
+| 当前版本实施合同 | `iterations/<yyyy-mm>/<w>/<版本>/<id>/`（`contract` + `tests` + `plan` + `run`） |
 | 活跃任务、Workspace、PR 和下一步 | `reference/handoff.md`（索引，不复制合同正文） |
 | 并行互斥 Claim | `reference/claims.md` |
 | 实际实现 | 代码、迁移和配置 |
-| 验收证据 | `specs/<id>/run.md`（附件路径写在 Evidence 列） |
+| 验收证据 | `iterations/<yyyy-mm>/<w>/<版本>/<id>/run.md`（附件路径写在 Evidence 列） |
 | 一轮迭代的目标、含哪些 Spec、并行矩阵、何时算关 | `iterations/<id>/`（只链接 Spec，不抄状态） |
 | 跨团队请求：找谁、要对方做什么、做没做 | `operations/requests/` |
 | 生产事故 | `operations/incidents/` |
@@ -30,7 +30,7 @@
 | 路径 | 语义 |
 |---|---|
 | `product/` | 愿望、蓝图、gap（含 `modules/`、`foundation/`） |
-| `specs/` | 实施合同与 `_template/` |
+| `specs/` | Spec 模板 `_template/`；版本层之前的历史 Spec（只读） |
 | `reference/handoff.md` · `reference/claims.md` | 交付索引与 Claim |
 | `planning/roadmap.md` | 排期（full scaffold；minimal 可后补） |
 | `iterations/` | 迭代层：一轮 = 多个 Spec；目标、成功指标、并行矩阵、关闭条件 |
@@ -47,9 +47,10 @@
 
 | 这份文档回答什么 | 放哪 |
 |---|---|
-| 要做什么、做到什么程度 | `product/`；落到版本后进 `specs/` |
+| 要做什么、做到什么程度 | `product/`；排进一轮后建版本（`iterations/`），再拆 Spec |
 | 这一轮要达成什么、含哪些 Spec、何时算关 | `iterations/<id>/` |
-| 一个可验收切片怎么做、怎么验 | `specs/<id>/` |
+| 一个可验收切片怎么做、怎么验 | `iterations/<yyyy-mm>/<w>/<版本>/<id>/`（Spec 是版本拆出的工作包） |
+| 新 Spec 从哪复制；版本层之前的历史 Spec | `specs/_template/`；`specs/<id>/`（只读） |
 | 活跃任务、PR、下一步（索引） | `reference/handoff.md` |
 | 先做哪些、排期 | `planning/roadmap.md` |
 | 找谁、要对方做什么、做没做 | `operations/requests/` |
@@ -65,7 +66,7 @@
 
 ### 文档元数据与生命周期
 
-除 `specs/<id>/` 的五件套外，本节所列类型的文档头部用同一组元数据：
+除 Spec 的五件套外，本节所列类型的文档头部用同一组元数据：
 
 ```yaml
 ---
@@ -94,13 +95,13 @@ updated: YYYY-MM-DD
 | 声明 | 默认 | 作用 |
 |---|---|---|
 | `- SDD docs root: <相对路径>` | `docs` | SDD 文档树的根 |
-| `- SDD archive dir: <目录名>` | `archive` | `specs/` 下放已关版 Spec 的目录；`close-spec`、`check_spec` 读它 |
+| `- SDD archive dir: <目录名>` | `archive` | `specs/` 下放版本层之前的已关版 Spec 的目录（版本内的 Spec 关版不搬动）；`close-spec`、`check_spec` 读它 |
 | `- SDD gap register: <相对宿主根的路径>` | `<root>/product/gap-register.md` | 宿主已有等价的缺口登记时声明；脚手架据此不再另建一份 |
 
 ### 真源优先级（冲突时）
 
 ```text
-specs/<id>/（执行合同）+ 代码/运行环境
+Spec 五件套（执行合同）+ 代码/运行环境
   ≫ reference/handoff.md
   ≫ product/modules/（产品蓝图）
   ≫ product/demand-pool.md（愿望）
@@ -129,8 +130,9 @@ Shape → Plan → Build(Spec) → Verify
 ## Spec 布局与读序
 
 ```text
-docs/specs/<id>/              # 施工中
-docs/specs/<archive dir>/<id>/  # 人验关版后搬入（默认 archive，可用 SDD archive dir 改名）；勿重开
+docs/iterations/<yyyy-mm>/<w>/<版本>/<id>/   # 施工中；关版后状态改 archived，原地不动（close-spec）；勿重开
+docs/specs/_template/                        # 模板；docs/specs/<id>/ 只剩版本层之前的历史 Spec
+<Spec 目录>
 ├── VERSION.md
 ├── contract.md   # WHAT
 ├── tests.md      # TEST

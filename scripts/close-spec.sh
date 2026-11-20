@@ -4,12 +4,15 @@
 # Does, in order:
 #   1. verify-deliver (ship.sh red-green replay, then check_spec --closing)
 #   2. VERSION.md 状态 -> archived (+ 变更记录 row)
-#   3. git mv docs/specs/<id> -> docs/specs/<archive dir>/<id> (plain mv without git);
+#   3. A Spec inside a version (docs/iterations/<yyyy-mm>/<w>/<version>/<id>) STAYS where it is:
+#      the time-bucketed path is permanent and the status word says it is closed, so nothing
+#      moves and no link breaks. Only a legacy docs/specs/<id> (written before the version layer)
+#      is moved: git mv docs/specs/<id> -> docs/specs/<archive dir>/<id> (plain mv without git);
 #      <archive dir> defaults to `archive`, override with `- SDD archive dir: _archive` in AGENTS.md
-#      3b. rewrite markdown links that pointed at the old location (and the moved files' own
-#          relative links, one level deeper now)
+#      3b. (legacy only) rewrite markdown links that pointed at the old location (and the moved
+#          files' own relative links, one level deeper now)
 #   4. wish-journey phase -> acceptance-passed (best-effort)
-#   5. List host docs still pointing at the old path (index update is the
+#   5. (legacy only) List host docs still pointing at the old path (index update is the
 #      agent's remaining duty; this script never edits host indexes)
 #
 # It does NOT deploy. 关版 ≠ 上线.
@@ -39,16 +42,37 @@ if [[ -f "$HOST/AGENTS.md" ]]; then
   found_arch="$(sed -n 's/.*SDD archive dir:[[:space:]]*`\{0,1\}\([^`[:space:]/]\{1,\}\)`\{0,1\}.*/\1/p' "$HOST/AGENTS.md" | head -1 || true)"
   [[ -n "$found_arch" ]] && ARCH_NAME="$found_arch"
 fi
-SPEC_DIR="$HOST/$docs_root/specs/$SPEC"
-ARCH_DIR="$HOST/$docs_root/specs/$ARCH_NAME/$SPEC"
-
-if [[ -d "$ARCH_DIR" && ! -d "$SPEC_DIR" ]]; then
-  echo "close-spec: already archived at $ARCH_DIR"
-  exit 0
-fi
-if [[ ! -d "$SPEC_DIR" ]]; then
-  echo "close-spec: FAIL spec dir not found: $SPEC_DIR" >&2
+SPEC_PATHS="$ROOT/skills/spec/scripts/spec_paths.py"
+set +e
+found="$(python3 "$SPEC_PATHS" find "$HOST" "$SPEC")"; fst=$?
+set -e
+if [[ "$fst" -eq 3 ]]; then
+  echo "close-spec: FAIL Spec id $SPEC is not unique (see above); rename one of them first" >&2
   exit 1
+fi
+if [[ "$fst" -ne 0 || -z "$found" ]]; then
+  echo "close-spec: FAIL spec dir not found for $SPEC (looked in every version under $docs_root/iterations/, in $docs_root/specs/ and its archive)" >&2
+  exit 1
+fi
+SPEC_DIR="$found"
+ITER="$(python3 "$SPEC_PATHS" iteration "$SPEC_DIR")"
+ARCH_DIR="$HOST/$docs_root/specs/$ARCH_NAME/$SPEC"
+HOST_REAL="$(cd "$HOST" && pwd -P)"
+
+case "$SPEC_DIR" in
+  "$HOST_REAL/$docs_root/specs/$ARCH_NAME/"*)
+    echo "close-spec: already archived at $SPEC_DIR"
+    exit 0 ;;
+esac
+if [[ -n "$ITER" ]] && python3 - "$SPEC_DIR/VERSION.md" <<'PYST'
+import re, sys
+t = open(sys.argv[1], encoding="utf-8").read()
+m = re.search(r"^\|\s*\*{0,2}状态\*{0,2}\s*\|\s*`?([A-Za-z-]+)|^\s*-\s*(?:Status|状态)\s*[:：]\s*`?([A-Za-z-]+)", t, re.M)
+sys.exit(0 if m and (m.group(1) or m.group(2)) == "archived" else 1)
+PYST
+then
+  echo "close-spec: already closed (archived in version $ITER): $SPEC_DIR"
+  exit 0
 fi
 
 # Closing replays the frozen Oracles from evidence that is NOT committed (.codex-dispatch-logs/,
@@ -87,12 +111,12 @@ if [[ ! -f "$VERSION_MD" ]]; then
   echo "close-spec: FAIL missing $VERSION_MD" >&2
   exit 1
 fi
-python3 - "$VERSION_MD" "$SPEC" "$docs_root" "$ARCH_NAME" <<'PY'
+python3 - "$VERSION_MD" "$SPEC" "$docs_root" "$ARCH_NAME" "$ITER" <<'PY'
 import re, sys
 from datetime import date
 from pathlib import Path
 
-path, spec, docs_root, arch = Path(sys.argv[1]), sys.argv[2], sys.argv[3], sys.argv[4]
+path, spec, docs_root, arch, it = Path(sys.argv[1]), sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5]
 text = path.read_text(encoding="utf-8")
 
 # The whole cell is replaced, so an annotated cell such as "`verifying`（已上线 …）" works too;
@@ -116,13 +140,17 @@ if old is None:
 
 shown = old.replace("|", "/")
 shown = shown if len(shown) <= 120 else shown[:117] + "…"
-row = f"| {date.today().isoformat()} | 关版：{shown} → `archived`，搬入 `{docs_root}/specs/{arch}/{spec}/` | close-spec |"
+where = (f"留在版本 `{it}` 目录内（不搬动）" if it else f"搬入 `{docs_root}/specs/{arch}/{spec}/`")
+row = f"| {date.today().isoformat()} | 关版：{shown} → `archived`，{where} | close-spec |"
 if re.search(r"^## 变更记录", text, re.M):
     text = text.rstrip() + "\n" + row + "\n"
 path.write_text(text, encoding="utf-8")
 print(f"close-spec: VERSION status {old} -> archived")
 PY
 
+if [[ -n "$ITER" ]]; then
+  echo "== close-spec 3/5: stays in version $ITER (path is permanent; no move, no link rewrite) =="
+else
 echo "== close-spec 3/5: move to $ARCH_NAME/ =="
 mkdir -p "$(dirname "$ARCH_DIR")"
 if git -C "$HOST" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
@@ -192,6 +220,7 @@ for base, dirs, files in os.walk(os.path.join(host, docs_root)):
             changed += 1
 print(f"close-spec: rewrote links in {changed} file(s)")
 PY
+fi
 
 echo "== close-spec 4/5: journey -> acceptance-passed =="
 if bash "$ROOT/scripts/wish-journey.sh" --cwd "$HOST" --spec "$SPEC" \
@@ -202,6 +231,9 @@ else
 fi
 
 echo "== close-spec 5/5: stale references (agent must update indexes) =="
+if [[ -n "$ITER" ]]; then
+  echo "close-spec: nothing moved, no stale references"
+else
 stale="$(grep -rIl --exclude-dir="$ARCH_NAME" --exclude-dir=.git \
   -e "specs/$SPEC" -e "](\./$SPEC/" -e "](\.\./$SPEC/" "$HOST/$docs_root" 2>/dev/null || true)"
 if [[ -n "$stale" ]]; then
@@ -209,6 +241,7 @@ if [[ -n "$stale" ]]; then
   echo "$stale" | sed 's/^/  - /'
 else
   echo "close-spec: no stale references found"
+fi
 fi
 
 echo "close-spec: DONE — 剩余人工步骤：更新宿主索引（如上）；询问是否 Deploy（不自动上生产）"
