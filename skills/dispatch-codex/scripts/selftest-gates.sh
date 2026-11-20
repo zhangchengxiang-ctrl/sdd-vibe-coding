@@ -499,6 +499,62 @@ import importlib.util,sys
 s=importlib.util.spec_from_file_location('e','$ELIGIBLE');m=importlib.util.module_from_spec(s);s.loader.exec_module(m)
 sys.exit(0 if (not m.is_directory_allowlist('Makefile')) and m.is_directory_allowlist('src') and m.is_directory_allowlist('scripts/') else 1)"
 
+# --- Audit and explicit user override: offline mock CLI ---
+mkdir -p "$TMP/audit-bin" "$TMP/audit-host"
+cat >"$TMP/audit-bin/codex" <<'MOCK'
+#!/usr/bin/env bash
+printf '%s\n' "$@" >"$MOCK_ARGS"
+cat >"$MOCK_PROMPT"
+case "${MOCK_AUDIT_MODE:-complete}" in
+  complete) echo '{"type":"turn.completed"}' ;;
+  no-turn) echo '{"type":"turn.started"}' ;;
+  quota) echo '{"type":"error","message":"usage limit reached; try again at 10:00"}'; exit 1 ;;
+esac
+MOCK
+chmod +x "$TMP/audit-bin/codex"
+audit_dispatch() {
+  env -u CODEX_DISPATCH_SANDBOX -u CODEX_DISPATCH_TIMEOUT_SEC \
+    -u CODEX_DISPATCH_SPEC -u CODEX_DISPATCH_SLICE \
+    PATH="$TMP/audit-bin:$PATH" MOCK_ARGS="$TMP/audit-args" MOCK_PROMPT="$TMP/audit-prompt" \
+    "$@"
+}
+check "audit-no-spec-defaults" 0 audit_dispatch bash "$DISPATCH" \
+  --cwd "$TMP/audit-host" --unit audit --log-dir "$TMP/audit-log" -- inspect
+check "audit-cli-read-only" 0 grep -qx 'read-only' "$TMP/audit-args"
+check "audit-prompt-read-only" 0 grep -q 'read-only audit/inventory/check only' "$TMP/audit-prompt"
+audit_meta() { grep -qx "$1" "$TMP"/audit-log/*.meta.txt; }
+check "audit-meta-read-only" 0 audit_meta sandbox=read-only
+check "audit-default-timeout" 0 audit_meta timeout_sec=1200
+check "audit-run-finished" 0 audit_meta run_state=finished
+for mode in workspace-write danger-full-access; do
+  check "audit-reject-cli-$mode" 2 audit_dispatch bash "$DISPATCH" \
+    --cwd "$TMP/audit-host" --unit audit --sandbox "$mode" -- inspect
+  saw_gates "audit-cli-refusal-$mode" 'audit requires --sandbox read-only'
+  check "audit-reject-env-$mode" 2 audit_dispatch env CODEX_DISPATCH_SANDBOX="$mode" \
+    bash "$DISPATCH" --cwd "$TMP/audit-host" --unit audit -- inspect
+  saw_gates "audit-env-refusal-$mode" 'audit requires CODEX_DISPATCH_SANDBOX=read-only'
+done
+check "audit-timeout-override" 0 audit_dispatch bash "$DISPATCH" \
+  --cwd "$TMP/audit-host" --unit audit --sandbox read-only --timeout 7 \
+  --log-dir "$TMP/audit-timeout-log" -- inspect
+check "audit-timeout-meta" 0 grep -qx timeout_sec=7 "$TMP"/audit-timeout-log/*.meta.txt
+check "audit-requires-turn" 2 audit_dispatch env MOCK_AUDIT_MODE=no-turn bash "$DISPATCH" \
+  --cwd "$TMP/audit-host" --unit audit --log-dir "$TMP/audit-noturn-log" -- inspect
+saw_gates "audit-turn-refusal" 'did not finish cleanly'
+check "audit-quota-class" 75 audit_dispatch env MOCK_AUDIT_MODE=quota bash "$DISPATCH" \
+  --cwd "$TMP/audit-host" --unit audit --log-dir "$TMP/audit-quota-log" -- inspect
+check "audit-quota-meta" 0 grep -qx failure_class=quota "$TMP"/audit-quota-log/*.meta.txt
+check "build-no-spec-still-refused" 2 audit_dispatch bash "$DISPATCH" \
+  --cwd "$TMP/audit-host" --unit build --slice S1 -- inspect
+saw_gates "build-no-spec-reason" 'build requires --spec'
+check "override-keeps-spec-gate" 2 audit_dispatch env CODEX_DISPATCH_OVERRIDE=user-command \
+  bash "$DISPATCH" --cwd "$TMP/audit-host" --unit build --slice S1 -- inspect
+saw_gates "override-spec-reason" 'build requires --spec'
+check "override-bypasses-eligible" 0 audit_dispatch env CODEX_DISPATCH_OVERRIDE=user-command \
+  SKIP_SPEC_CHECK=1 bash "$DISPATCH" --cwd "$HOSTX" --unit build --spec x1 --slice S1 \
+  --log-dir "$TMP/override-log" -- inspect
+check "override-meta" 0 grep -qx override=user-command "$TMP"/override-log/*.meta.txt
+
 echo "--- codex lifecycle (mock CLI, isolated tmp; no host repos) ---"
 bash "$ROOT/skills/dispatch-codex/scripts/selftest-codex-lifecycle.sh"
 

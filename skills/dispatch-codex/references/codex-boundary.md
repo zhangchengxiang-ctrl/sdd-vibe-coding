@@ -2,9 +2,11 @@
 
 > 唯一允许/禁止表。摘要见 [`gates.md`](../../vibe-coding/references/gates.md)。机检：`assert_codex_eligible.py`。
 
-越界 **exit 2**；口头「派 Codex」无豁免。维护者：`SKIP_CODEX_BOUNDARY=1`。
+越界 exit 2。用户明确命令派发即放行（全局 redline instruction-priority）：设 `CODEX_DISPATCH_OVERRIDE=user-command`，meta 记 `override=user-command`，事后在 run 记录说明偏离；维护者旁路仍为 `SKIP_CODEX_BOUNDARY=1`。
 
 ## 允许（须同时）
+
+只读审计 / 盘点 / 核对走 `--unit audit`（sandbox 固定 read-only），不需要 Spec 与 Oracle，不属于越界。
 
 Build/Repair **单切片**（A==D）；全部 T-xxx 为 **machine** Oracle；allowlist 非空、**文件级**（禁 `src/`）、≤8 路径；无 UI/`page_kind`/视觉/`user_visible_gap`；备注非 `oracle:human|lab`、非架构差量；非 `executor:conductor`。
 

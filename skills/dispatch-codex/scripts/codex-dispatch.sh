@@ -9,20 +9,20 @@
 #
 # --unit plan is refused (Codex boundary) unless SKIP_CODEX_BOUNDARY=1.
 # Env overrides:
-#   CODEX_DISPATCH_TIMEOUT_SEC   default: plan=900, build=1200
+#   CODEX_DISPATCH_TIMEOUT_SEC   default: plan=900, build/audit=1200
 #   CODEX_DISPATCH_MODEL         default: gpt-6.1-sol  (2026-11-17 matrix; ladder in references/delegation-policy.md)
 #   CODEX_DISPATCH_EFFORT        default: low
-#   CODEX_DISPATCH_SANDBOX       default: plan=workspace-write, else danger-full-access
+#   CODEX_DISPATCH_SANDBOX       default: plan=workspace-write, build=danger-full-access, audit=read-only
 #   CODEX_DISPATCH_LOG_DIR       default: <cwd>/.codex-dispatch-logs
 set -euo pipefail
 
 usage() {
   cat <<'EOF'
-Usage: codex-dispatch.sh --cwd DIR --unit plan|build [options] [-- PROMPT]
+Usage: codex-dispatch.sh --cwd DIR --unit plan|build|audit [options] [-- PROMPT]
 
 Required:
   --cwd DIR              Host repo root (Codex -C)
-  --unit plan|build      build = eligible slice; plan refused unless SKIP_CODEX_BOUNDARY=1
+  --unit plan|build|audit      build = eligible slice; plan refused unless SKIP_CODEX_BOUNDARY=1
 
 Options:
   --effort LEVEL         minimal|low|medium|high|xhigh|max (default: low)
@@ -46,6 +46,7 @@ Prompt: remaining args after --, or stdin if no args.
 Always sets approval_policy=never (cannot be overridden).
 Plan: injects wish-path hard gates (no mid-flow 待批准); requires --spec;
   after Codex ok runs assert_plan_artifacts.py (SKIP_PLAN_ARTIFACT_CHECK=1 bypass).
+Audit: read-only audit/inventory/check; no Spec or slice required (default: 1200s).
 Build runs skills/spec/scripts/check_spec.py first (SKIP_SPEC_CHECK=1 to bypass).
 Build: one dispatch unit == one plan.md slice (A == D).
 Several slices in one exec → fail. A == D: one slice per exec.
@@ -103,14 +104,14 @@ done
 [[ -d "$CWD" ]] || die "cwd is not a directory: $CWD"
 CWD="$(cd "$CWD" && pwd)"
 
-[[ -n "$UNIT" ]] || die "--unit plan|build is required"
+[[ -n "$UNIT" ]] || die "--unit plan|build|audit is required"
 case "$UNIT" in
-  plan|build) ;;
+  plan|build|audit) ;;
   # `goal` is gone: it existed so a whole Spec could be pushed through one exec when the
   # packer judged it small enough by an estimated token peak. A == D now — one slice, one
   # exec — and the estimate was never computable in the first place.
   goal) die "--unit goal is gone (A == D): dispatch one slice per exec with --unit build --slice S<n>" ;;
-  *) die "--unit must be plan|build (got: $UNIT)" ;;
+  *) die "--unit must be plan|build|audit (got: $UNIT)" ;;
 esac
 if [[ "$UNIT" == "plan" && "${SKIP_CODEX_BOUNDARY:-0}" != "1" ]]; then
   die "unit plan is outside the Codex boundary (conductor owns Plan). See \
@@ -150,6 +151,13 @@ case "$EFFORT" in
     ;;
 esac
 
+if [[ "$UNIT" == "audit" ]]; then
+  [[ -z "$SANDBOX" || "$SANDBOX" == "read-only" ]] \
+    || die "audit requires --sandbox read-only"
+  [[ -z "${CODEX_DISPATCH_SANDBOX:-}" || "$CODEX_DISPATCH_SANDBOX" == "read-only" ]] \
+    || die "audit requires CODEX_DISPATCH_SANDBOX=read-only"
+  SANDBOX="read-only"
+fi
 if [[ -z "$SANDBOX" ]]; then
   if [[ -n "${CODEX_DISPATCH_SANDBOX:-}" ]]; then
     SANDBOX="$CODEX_DISPATCH_SANDBOX"
@@ -170,7 +178,7 @@ if [[ -z "$TIMEOUT_SEC" ]]; then
   else
     case "$UNIT" in
       plan) TIMEOUT_SEC=900 ;;
-      build) TIMEOUT_SEC=1200 ;;
+      build|audit) TIMEOUT_SEC=1200 ;;
     esac
   fi
 fi
@@ -199,6 +207,11 @@ You are running under `codex exec` with `approval_policy=never`. There is NO hum
 5. **Success = disk/repo change** matching Done when — not a chat plan.
 AUTH
 )"
+if [[ "$UNIT" == "audit" ]]; then
+  AUTH_BLOCK='## CLI dispatch authorization (HARD · non-interactive audit)
+This unit authorizes read-only audit/inventory/check only. Do not modify files or ask questions.
+Success = a concise report of findings and evidence; no disk/repo change is required.'
+fi
 PROMPT="${AUTH_BLOCK}
 
 ${PROMPT}"
@@ -311,7 +324,8 @@ if [[ "$UNIT" == "build" ]]; then
 fi
 
 ELIGIBLE_PY="$PLUGIN_ROOT/skills/dispatch-codex/scripts/assert_codex_eligible.py"
-if [[ "$UNIT" == "build" && "${SKIP_CODEX_BOUNDARY:-0}" != "1" ]]; then
+if [[ "$UNIT" == "build" && "${SKIP_CODEX_BOUNDARY:-0}" != "1" \
+  && "${CODEX_DISPATCH_OVERRIDE:-}" != "user-command" ]]; then
   [[ -f "$ELIGIBLE_PY" ]] || die "assert_codex_eligible.py not found at $ELIGIBLE_PY"
   _el_slice="${SLICE_ID%%,*}"
   _el_slice="${_el_slice%% *}"
@@ -388,6 +402,9 @@ fi
 {
   echo "cwd=$CWD"
   echo "unit=$UNIT"
+  if [[ "$UNIT" == "build" && "${CODEX_DISPATCH_OVERRIDE:-}" == "user-command" ]]; then
+    echo "override=user-command"
+  fi
   echo "model=$MODEL"
   echo "effort=$EFFORT"
   echo "sandbox=$SANDBOX"

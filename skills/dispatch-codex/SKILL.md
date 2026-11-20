@@ -3,7 +3,7 @@ name: dispatch-codex
 description: >-
   Cursor/Claude 指挥侧把 **Codex-eligible** 完成单元派给 Codex CLI（Build 默认 gpt-6.1-sol × low；路由/阶梯/验收见 references/delegation-policy.md）。
   仅当切片过 [`codex-boundary.md`](references/codex-boundary.md)：机验 Oracle、文件级 allowlist、无 UI/Plan。
-  许愿「确认方案」与经典「开始做」命中后先判边界；越界禁止派（含用户明示「派 Codex」）。
+  许愿「确认方案」与经典「开始做」命中后先判边界；越界禁止自动派；用户明确命令派发即放行（CODEX_DISPATCH_OVERRIDE=user-command）。只读审计/盘点走 --unit audit。
   须 Context Pack；一次一个切片（A == D）。
   禁止因改文档 / check_spec / 非 SDD 日常请求加载。通道：codex-dispatch.sh / wish-orchestrate.sh。亦覆盖派发链路的配额检测、完成信号、多切片并行隔离、preflight 环境门。
 disable-model-invocation: true
@@ -29,7 +29,7 @@ disable-model-invocation: true
 
 ## 何时用
 
-真源 [`codex-boundary.md`](./references/codex-boundary.md)：先 `assert_codex_eligible.py`；eligible → Pack + `--unit build`；否则指挥侧 + `executor: conductor`。口头「派 Codex」不打开越界。`--unit plan` 默认拒绝。钉 3：禁 Codex 主验收。
+真源 [`codex-boundary.md`](./references/codex-boundary.md)：先 `assert_codex_eligible.py`；eligible → Pack + `--unit build`；否则指挥侧 + `executor: conductor`。用户明确命令派发 = 放行（override 留痕）。`--unit plan` 默认拒绝。钉 3：禁 Codex 主验收。
 
 ## 模型与思考深度
 
@@ -69,6 +69,8 @@ disable-model-invocation: true
 
 ## 工具（正路径）
 
+只读审计/盘点：`codex-dispatch.sh --cwd <DIR> --unit audit -- <prompt>`（固定 read-only，无需 Spec）。
+
 **硬门：** 派发只经下方 CLI；不经 `user-codex` / `CallMcpTool`（`codex` / `codex-reply`）。模型 `gpt-5.6-sol|terra|luna`，effort `minimal|low|medium|high|xhigh|max`。
 
 优先顺序：
@@ -76,7 +78,7 @@ disable-model-invocation: true
 1. **CLI 包装（默认）**  
    `skills/dispatch-codex/scripts/codex-dispatch.sh`  
    （或 `make codex-dispatch`）— `approval_policy=never` + 墙钟 `timeout` + 默认 JSONL 日志
-2. 包装缺失或 `codex` 不在 PATH → 状态 `blocked`，对人如实说。**没有裸命令兜底**（见下）。
+2. 包装缺失或 `codex` 不在 PATH → 状态 `blocked`，对人如实说。**不裸跑 codex exec：只读任务用 --unit audit，用户命令越界用 override；包装缺失才是 blocked。**（见下）。
 
 ### 必传参数
 
@@ -164,7 +166,7 @@ bash skills/dispatch-codex/scripts/wish-orchestrate.sh \
 - **动作计数不是估峰**：meta 记 `actions=`，≥150 警告。实测悬崖 200（≤50 → 3%、51–200 → 64%、200+ → 100% 被压缩）
 - 墙钟到点 `SIGTERM`/`SIGKILL` + exit `124`;`--json` **必需**（完成信号=`turn.completed`），`--no-json` 被拒
 
-**无裸 `codex exec` 兜底。** 手搓命令会丢掉配额分类、`run_state`、`turn.completed` 判定
+**不裸跑 codex exec：只读任务用 --unit audit，用户命令越界用 override；包装缺失才是 blocked。** 手搓命令会丢掉配额分类、`run_state`、`turn.completed` 判定
 与 worktree 隔离（四个已修失效一次复原）。包装缺失 → `blocked`。
 
 ## 薄派单模板
