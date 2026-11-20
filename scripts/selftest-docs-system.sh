@@ -134,5 +134,32 @@ python3 "$CHECK_SPEC" "$W" x1 --skip-agents >"$TMP/ov-one.log" 2>&1
 expect "checking ONE Spec still finds its iteration peers"     grep -q '迭代 it1: x1 与 x2' "$TMP/ov-one.log"
 expect "overlap is a warning, never an ERROR"                  bash -c "! grep -hE '^ERROR.*(相交|串行)' '$TMP'/ov-*.log"
 
+# ---- 8. the version layer is part of the docs standard ---------------------------------------------------
+STD="$ROOT/templates/docs/README.md"; ITR="$ROOT/templates/docs/iterations/README.md"
+for f in quote.md requirements.md decisions.md; do
+  expect "full scaffold writes the version's $f"            test -f "$F/docs/iterations/_template/$f"
+done
+expect "authority: user's words have one source"            grep -q '用户原话（逐字）.*quote\.md' "$STD"
+expect "authority: user rulings have one source"            grep -q '用户裁定.*decisions\.md' "$STD"
+expect "authority row for a round uses the version path"    bash -c "! grep -q '\`iterations/<id>/\`' '$STD'"
+expect "reserved path explains the version layer"           grep -q '^| `iterations/` | 版本层' "$STD"
+expect "placement: where the user's words go"               grep -q '^| 用户说的原话 |' "$STD"
+expect "placement: where requirements and 待裁定 go"         grep -q '^| 这一轮要满足什么、待用户拍板什么 |' "$STD"
+expect "placement: closing moves nothing"                   grep -q '版本与其中的 Spec 关闭后原地不动' "$STD"
+expect "metadata: iteration closes as archived (= close-iteration)" grep -q '^| iteration | `draft → active → archived \\| cancelled`' "$STD"
+grep -q 'status: archived' "$ROOT/scripts/close-iteration.sh"; ci=$?
+expect "...and close-iteration really writes archived"      test "$ci" -eq 0
+expect "precedence: what the user wants is ruled by quote.md" grep -q '需求冲突' "$STD"
+expect "standard has a 版本布局与读序 section"                grep -q '^## 版本布局与读序' "$STD"
+expect "read order starts at the version's quote"           grep -q 'README → quote → requirements → decisions' "$STD"
+expect "Shape lands a version"                              grep -q 'Shape 产出一个版本' "$STD"
+expect "closing flow names close-iteration"                 grep -q 'close-iteration' "$STD"
+expect "version index lists no status column"               bash -c "! grep -q '^| 迭代 | 目标 | 状态 |' '$ITR'"
+F8="$TMP/full8"; mk "$F8"; bash "$SCAFFOLD" "$F8" >/dev/null 2>&1
+mkdir -p "$F8/docs/iterations/2026-11/w3/demo" && cp "$F8/docs/iterations/_template/"*.md "$F8/docs/iterations/2026-11/w3/demo/"
+cp -r "$F8/docs/specs/_template" "$F8/docs/iterations/2026-11/w3/demo/s1"
+bash "$CHECK" "$F8" >"$TMP/c8.log" 2>&1
+expect "a scaffolded version with a Spec inside passes check-docs (0 warnings)" grep -q 'warnings=0' "$TMP/c8.log"
+
 echo "--- selftest-docs-system: pass=$pass fail=$fail ---"
 [[ $fail -eq 0 ]]
