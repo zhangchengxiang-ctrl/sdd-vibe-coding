@@ -244,4 +244,4 @@ else
 fi
 fi
 
-echo "close-spec: DONE — 剩余人工步骤：更新宿主索引（如上）；询问是否 Deploy（不自动上生产）"
+echo "close-spec: DONE — 剩余人工步骤：确认已把仍成立的结论晋升到常青文档或 ADR；历史 Spec 搬动时更新宿主索引（如上）；询问是否 Deploy（不自动上生产）"

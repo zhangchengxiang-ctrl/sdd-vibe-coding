@@ -38,7 +38,7 @@ Explore / Deliver 合同 → [`explore-deliver.md`](./references/explore-deliver
 | 用户说「先别走 SDD / 不要卡片 / 直接给方案 / 这轮 Explore」 | **Explore**（强制；见 explore-deliver） |
 | 机制/平台（kill/timeout/取消传播/RG/capacity/cancel/query gateway/中止 等）且要 **落盘/实施** | Deliver → Plan → Skill `spec` |
 | 初始化 / 接入存量 / 基线空 | 冷启动 → Skill `design` → `project-init` |
-| 我希望 / 我想要（基线已齐） | 默认 **Explore** → `design`；用户要「产品方案/给 PM」→ Deliver Shape 卡片 |
+| 我希望 / 我想要（基线已齐） | 默认 **Explore** → `design`；用户要「产品方案/给 PM」→ Deliver Shape 卡片；确认后落成一个版本 `docs/iterations/<yyyy-mm>/<w>/<版本>/`（原话 → 需求 → 裁定），Spec 在其下切 |
 | 就按这个做 / 确认方案 | **Deliver** → Plan → eligible 派 Codex → Verify |
 | 派 Codex / 用 Codex 做 | 仅 eligible；越界仍指挥侧 |
 | 切 Spec / Plan | **Deliver** → Plan → Skill `spec` |

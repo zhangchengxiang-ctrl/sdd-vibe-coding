@@ -2,6 +2,20 @@
 
 这些文档是 Agent 跨任务的交付记忆。用户只需确认产品方向、单向门和真实结果。
 
+## 三类文档
+
+每份文档只属于一类。类决定它放哪、怎么维护、要不要写状态。顶层目录按类划分，不按主题、不按读者场景划分。
+
+| 类 | 是什么 | 怎么维护 | 状态 | 结束后 |
+|---|---|---|---|---|
+| **常青** | 现在是什么样 / 要做成什么样 | 原地改，永远是当前 | 不写状态，只链接在途文档 | 不归档；过时就改 |
+| **在途** | 一件会结束的事 | 推进中可改，结束后冻结 | 有，**只写在它自己里面** | 原地改为关闭状态，不搬目录 |
+| **记录** | 某个时刻的事实 | 写完不改，只追加 | 不写状态，日期就是身份 | 原地保留 |
+
+判定顺序：这件事会结束吗？会 → 在途。不会，但内容会变吗？会 → 常青。都不会 → 记录。
+
+术语：**版本** = `iterations/` 下的一次许愿（也叫迭代），它是在途文档；Spec 是从版本切出的工作包。Spec 目录里的 `VERSION.md` 是 Spec 的状态卡（名字沿用历史），不是「版本」本身。
+
 ## 权威来源
 
 | 事实 | 唯一真源 |
@@ -48,29 +62,40 @@
 
 先按「它回答什么」判断，不要默认放进某个宿主自有目录：
 
-| 这份文档回答什么 | 放哪 |
-|---|---|
-| 要做什么、做到什么程度（长期） | `product/`；排进一轮后建版本，再拆 Spec |
-| 用户说的原话 | `iterations/<yyyy-mm>/<w>/<版本>/quote.md`（没有版本就先建版本；逐字、只追加） |
-| 这一轮要满足什么、待用户拍板什么 | `iterations/<yyyy-mm>/<w>/<版本>/requirements.md` |
-| 用户怎么拍板的 | `iterations/<yyyy-mm>/<w>/<版本>/decisions.md`（待裁定在此有结论之前不切 Spec） |
-| 这一轮要达成什么、含哪些 Spec、何时算关 | `iterations/<yyyy-mm>/<w>/<版本>/README.md` |
-| 一个可验收切片怎么做、怎么验 | `iterations/<yyyy-mm>/<w>/<版本>/<id>/`（Spec 是版本拆出的工作包） |
-| 新 Spec 从哪复制；版本层之前的历史 Spec | `specs/_template/`；`specs/<id>/`（只读） |
-| 活跃任务、PR、下一步（索引） | `reference/handoff.md` |
-| 先做哪些、排期 | `planning/roadmap.md` |
-| 找谁、要对方做什么、做没做 | `operations/requests/` |
-| 出了什么事、怎么恢复 | `operations/incidents/` |
-| 遇到某症状怎么办（可重复步骤） | `operations/runbooks/` |
-| 某次调查 / 评审 / 审计 / 基准得出什么结论 | `reports/` |
-| 系统现状、设计缘由（可选） | 宿主自有，如 `architecture/` |
-| 不再维护但需可查 | 版本与其中的 Spec 关闭后原地不动（状态词标明 `archived`）；版本层之前的历史 Spec 在 `specs/<archive>/`；其余进宿主 `_archive/` |
+| 这份文档回答什么 | 类 | 放哪 |
+|---|---|---|
+| 要做什么、做到什么程度（长期） | 常青 | `product/`；排进一轮后建版本，再拆 Spec |
+| 还没排期的愿望 | 在途 | `product/demand-pool.md`；排进一轮即建版本，原话移入该版本的 `quote.md` |
+| 用户说的原话 | 记录 | `iterations/<yyyy-mm>/<w>/<版本>/quote.md`（没有版本就先建版本；逐字、只追加） |
+| 这一轮要满足什么、待用户拍板什么 | 在途 | `iterations/<yyyy-mm>/<w>/<版本>/requirements.md` |
+| 用户怎么拍板的 | 在途 | `iterations/<yyyy-mm>/<w>/<版本>/decisions.md`（待裁定在此有结论之前不切 Spec） |
+| 这一轮要达成什么、含哪些 Spec、何时算关 | 在途 | `iterations/<yyyy-mm>/<w>/<版本>/README.md` |
+| 一个可验收切片怎么做、怎么验 | 在途 | `iterations/<yyyy-mm>/<w>/<版本>/<id>/`（Spec 是版本拆出的工作包） |
+| 新 Spec 从哪复制；版本层之前的历史 Spec | 模板 · 归档 | `specs/_template/`；`specs/<id>/`、`specs/<archive>/<id>/`（只读） |
+| 谁正占着哪个文件 | 在途 | `reference/claims.md` |
+| 会话流水：做了什么、下一步 | 记录 | `reference/handoff.md`（只追加；按月切到宿主归档） |
+| 先做哪些、排期 | 常青 | `planning/roadmap.md`（只排优先级，不写进度） |
+| 还没做的差距 | 常青 | `product/gap-register.md`（或宿主声明的 `SDD gap register`）；已关闭的进 `gap-closed.md`（记录） |
+| 找谁、要对方做什么、做没做 | 在途 | `operations/requests/` |
+| 出了什么事、怎么恢复 | 在途 | `operations/incidents/` |
+| 遇到某症状怎么办（可重复步骤） | 常青 | `operations/runbooks/` |
+| 某次调查 / 评审 / 审计 / 基准得出什么结论 | 记录 | `reports/` |
+| 系统现状、设计缘由（可选） | 常青 | 宿主自有，如 `architecture/`；已拍板的技术决定是 ADR（记录，只追加） |
+| 不再维护但需可查 | 归档 | 版本与其中的 Spec 关闭后原地不动（状态词标明 `archived`）；版本层之前的历史 Spec 在 `specs/<archive>/`；其余进宿主 `_archive/` |
 
 `reference/handoff.md` 是**会话与任务索引**，`operations/requests/` 是**跨团队请求单**，二者不是一回事，不要混用名字。
 
 **宿主扩展必须声明。** 宿主增加的每个顶层目录，都要在本表里加一行写明「它回答什么」；没有对应一行的目录，`scripts/check-docs.sh` 会警告。
 
-### 文档元数据与生命周期
+## 五条规则
+
+1. **主题不建目录，只建枢纽页。** 一个主题在产品侧（`product/modules/<slug>/README.md`，或宿主的能力页）、系统侧（宿主自有，如 `architecture/` 的模块页）各至多一页，链出它的版本、Spec、ADR、报告、请求单。不建把常青、在途、记录装在一起的主题目录。
+2. **状态只写在在途文档里。** 版本 README 头部、Spec 的 `VERSION.md` / `run.md`、请求单、事故单写状态；枢纽页、各级 README 与索引、`roadmap.md` 只放链接。
+3. **关闭必须晋升。** Spec 关版（`close-spec`）与版本关闭（`close-iteration`）之前，把仍然成立的结论写回常青文档（产品页、系统页），或新开 ADR。不晋升，结论就只留在一个已关闭的版本里。
+4. **关闭不搬目录。** 版本与其中的 Spec 关闭只改状态词；归档目录只放版本层之前的历史 Spec（`specs/<archive>/`）与宿主其余已结束文件（宿主 `_archive/`）。子目录里不另建 `_archive/`。
+5. **一处一份。** 同一内容只在一处维护，别处只链接；`AGENTS.md` 已写的规则不复制到文档开头；被代码、脚本或 `AGENTS.md` 引用的路径，移动时在同一提交里改引用。
+
+## 文档元数据与生命周期
 
 除 Spec 的五件套外，本节所列类型的文档头部用同一组元数据：
 
@@ -94,7 +119,7 @@ updated: YYYY-MM-DD
 
 `updated` 必填；有「基于某版本核对」含义的文档另写 `verified_against`。
 
-### 宿主绑定
+## 宿主绑定
 
 宿主用 `AGENTS.md` 里**固定格式的一行**声明与插件的绑定（值后面不要再跟注释，工具按整行读取）：
 
@@ -104,7 +129,7 @@ updated: YYYY-MM-DD
 | `- SDD archive dir: <目录名>` | `archive` | `specs/` 下放版本层之前的已关版 Spec 的目录（版本内的 Spec 关版不搬动）；`close-spec`、`check_spec` 读它 |
 | `- SDD gap register: <相对宿主根的路径>` | `<root>/product/gap-register.md` | 宿主已有等价的缺口登记时声明；脚手架据此不再另建一份 |
 
-### 真源优先级（冲突时）
+## 真源优先级（冲突时）
 
 需求冲突（用户要什么）：
 
@@ -126,9 +151,8 @@ Spec 五件套（执行合同）+ 代码/运行环境
   ≫ product/demand-pool.md（愿望池）
 ```
 
-状态词汇（Version / Delivery Target / Spec Run / 完成声明）以插件
-`skills/vibe-coding/references/workflow-contract.md`「状态词汇」为**唯一真源**；
-本目录不复述枚举。
+状态词汇（Spec 的 `VERSION.md` / Delivery Target / Spec Run / 完成声明）以插件
+`skills/vibe-coding/references/states.md` 为准；本目录不复述枚举。版本（迭代）与请求单、事故单等文档的状态词见上文「文档元数据与生命周期」。
 
 ## 工作轨
 
@@ -190,6 +214,6 @@ bash <plugin>/scripts/check-docs.sh <host> [--max-broken N]
 
 检查：宿主每个顶层目录是否在「这份文档该放哪」里有一行；本节所列类型的文档是否带元数据（版本目录里的 Spec 五件套除外）；相对链接的死链数（`--max-broken N` 超过则失败，用于「只增不减」的棘轮）。
 
-Spec 的位置由 `check_spec` 检查：在途 Spec 留在 `specs/<id>/`、或 `VERSION.md` 的 `iteration:` 字段与所在版本不一致时给出警告。
+Spec 的位置由 `check_spec` 检查：在途 Spec 还在历史位置 `specs/<id>/`、或 `VERSION.md` 的 `iteration:` 字段与所在版本不一致时给出警告。
 
 脚手架只在用户明确要求时运行，不因缺少目录自动写入宿主仓库。

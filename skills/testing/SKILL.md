@@ -101,7 +101,7 @@ Matrix、commit、Workspace 等工程术语。正式报告仍保存完整工程�
 
 所有适用 Test 有终态 → `matrix-accounted`；有 UI 验收包已交 → `awaiting-human-acceptance`；
 无 UI 机器关版或人确认通过且关版条件满足 → `acceptance-passed`
-（均不是 Delivery Target，见 workflow-contract「状态词汇」）。
+（均不是 Delivery Target，见 vibe-coding `references/states.md`）。
 正式结果写入当前 Spec 的 `run.md`（结构见 scaffold 模板；说明见
 [Validation Report](./references/validation-report.md)），同时写通过证据、失败、
 Blocked、未覆盖项和限制。报告先写 **人类验收包 + PM 摘要**，再写工程矩阵。

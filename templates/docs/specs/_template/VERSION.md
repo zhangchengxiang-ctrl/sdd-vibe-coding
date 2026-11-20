@@ -13,11 +13,11 @@
 
 状态只使用：
 `draft | ready | in-progress | verifying | blocked | archived | cancelled`。  
-关版用 `make close-spec HOST=<repo> SPEC=<id>`（一条命令：验闸 → `archived` → 搬入
-`docs/specs/archive/<id>/`）；勿只改状态位留在施工队列。
+关版用 `make close-spec HOST=<repo> SPEC=<id>`（一条命令：验闸 → `archived`）；Spec 留在所属版本目录下原地不动。
+关版前把仍然成立的结论写回常青文档或新开 ADR（晋升）。
 
 Delivery Target 只使用：
-`code-ready | dev-effective | production-delivered`（见插件 workflow-contract「状态词汇」）。
+`code-ready | dev-effective | production-delivered`（见插件 vibe-coding `references/states.md`）。
 `matrix-accounted` / `design-ready` / `production-restored` 不是本字段。
 
 Requirements Lock 只使用：`open | locked | reopened`（本文为权威；Decision Cards 在

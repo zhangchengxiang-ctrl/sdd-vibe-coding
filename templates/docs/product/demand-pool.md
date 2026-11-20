@@ -1,7 +1,7 @@
 # 需求池
 
 用户愿望、普通故障和体验反馈先记录在这里；生产事故另见
-`docs/operations/incidents/`。入池 → Shape；实施以 `docs/specs/<id>/` 为准。
+`docs/operations/incidents/`。入池 → Shape；排进一轮即建版本 `docs/iterations/<yyyy-mm>/<w>/<版本>/`，实施以其中的 Spec 为准。
 
 ## 状态（条目态）
 
@@ -15,7 +15,7 @@
 | `parked` | 暂不处理，附理由 |
 
 与能力地图态区分：本表跟踪单条愿望；`product/README` 能力地图跟踪成块能力。  
-`design-ready` 语义见插件 `workflow-contract.md`「状态词汇」。
+`design-ready` 语义见插件 vibe-coding `references/states.md`。
 
 ## 条目
 

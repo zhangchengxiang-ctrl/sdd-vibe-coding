@@ -8,9 +8,9 @@
 
 | 状态 | 目录 | 含义 |
 |---|---|---|
-| 施工态（`draft`…`blocked`） | `docs/specs/<id>/` | 施工队列；`check_spec --all` 只扫这里 |
-| `archived` | `docs/specs/archive/<id>/`（目录名可由 `SDD archive dir` 声明，见 [`docs-root.md`](./docs-root.md)） | 关版即搬入；勿只改状态位留原地 |
-| `cancelled` | `archive/` 或删除 | 明确不做 |
+| 施工态（`draft`…`blocked`） | `docs/iterations/<yyyy-mm>/<w>/<版本>/<id>/`（Spec 在所属版本目录下） | 施工队列；`check_spec --all` 扫全部版本与历史 `specs/<id>/` |
+| `archived` | 原地不动（仍在所属版本目录下） | 关版只改状态位，路径不变、链接不断；版本层之前的历史 Spec 才搬入 `specs/<archive>/<id>/` |
+| `cancelled` | 原地不动 | 明确不做；理由记入所属版本的 `decisions.md` |
 
 **状态写法**：`VERSION.md` 的状态单元格必须以词表词开头，词后可跟注释，例如 ``| **状态** | `verifying`（已上线 main=abc，待复测） |``；`check_spec` 对不以词表词开头的状态给出警告。`close-spec` 会整格替换为 `archived`，并把原单元格文字写进变更记录行。
 
@@ -20,10 +20,13 @@
 
 ```bash
 make close-spec HOST=<repo> SPEC=<id>
-# = verify-deliver → VERSION=archived → git mv 到 specs/<archive dir>/<id>/ → 改写指向它的链接 → journey 收口
+# = verify-deliver → VERSION=archived（原地不动；历史 specs/<id>/ 才搬入归档并改写链接）→ journey 收口
 ```
 
-Agent 另做：更新宿主索引；询问是否 Deploy（**不**自动上生产）。
+关版前先**晋升**：仍然成立的结论写回常青文档（产品页、系统页）或新开 ADR（文档标准「五条规则」第 3 条）。
+版本内所有 Spec 关完、`retro.md` 写好后：`make close-iteration HOST=<repo> ITERATION=<版本>`（版本 README 状态改 `archived`，不搬目录）。
+
+Agent 另做：询问是否 Deploy（**不**自动上生产）。
 
 ## 2. Delivery Target
 

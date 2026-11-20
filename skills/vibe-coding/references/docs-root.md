@@ -19,7 +19,7 @@
 …
 ```
 
-**Spec 是一个版本（迭代）拆出的工作上下文包，所以建在版本目录里。** 只有一个 Spec 的小改动也先建版本。`<yyyy-mm>` 是版本开始的月份，`<w>` 按开始日期分：1～7 日 `w1`、8～14 日 `w2`、15～21 日 `w3`、22～28 日 `w4`、29 日起 `w5`；路径从版本开始就固定，跨周跨月也不搬。工具不依赖这两层的写法：`iterations/` 下 README 头部为 `type: iteration` 的目录就是版本，其下含 `VERSION.md` 的子目录就是 Spec。
+**Spec 是一个版本（迭代）拆出的工作上下文包，所以建在版本目录里。** 目录结构、周序号、读序与关闭流程只写在文档标准 `templates/docs/README.md`「版本布局与读序」，这里不复述。按 id 找 Spec 的唯一实现是 `skills/spec/scripts/spec_paths.py`。
 按 id 找 Spec 的唯一实现是 `skills/spec/scripts/spec_paths.py`（`check_spec`、`build_context_pack`、`ship`、`close-spec`、`close-iteration` 都走它）；Spec id 与版本 id 各自全局唯一。
 
 ## 写入规则

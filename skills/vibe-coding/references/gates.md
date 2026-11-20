@@ -29,7 +29,7 @@ Explore 下「设计方案 / 优化体验 / 我希望 / 聊聊」**≠** 授权�
 
 | # | 条件 |
 |---|---|
-| **(a)** | 已确认实施 Spec：`docs/specs/<id>/`（含 Verify 后 Repair） |
+| **(a)** | 已确认实施 Spec：所属版本下的 `docs/iterations/<yyyy-mm>/<w>/<版本>/<id>/`，且该版本 `requirements.md` 的待裁定已在 `decisions.md` 有结论（含 Verify 后 Repair） |
 | **(b)** | 本轮明确指令做具体事（开始做 / 实现 / 修复 / 确认方案 / 就按这个做…），范围可辨 |
 | **(c)** | 本轮明示 Polish（polish / 抛光 / 前端小改 / 按 refinement 修），且 **非 material** |
 

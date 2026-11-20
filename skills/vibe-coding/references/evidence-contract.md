@@ -83,7 +83,7 @@ Verify 证明整份 Spec 集成后（**先证伪，再写 Pass**；见 falsify-c
 | `production-delivered` | 生产真实生效 | 正常生产发布入口；须 P6 目标环境冒烟通过 |
 
 完成标签对齐已声明 Target。`matrix-accounted` / `acceptance-passed` / `design-ready` / `production-restored`
-不是 Delivery Target；分层见 [`workflow-contract.md`](./workflow-contract.md)「状态词汇」。
+不是 Delivery Target；分层见 [`states.md`](./states.md)。
 
 #### 交付条件
 

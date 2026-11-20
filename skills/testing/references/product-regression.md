@@ -46,6 +46,6 @@
 |---|---|---|
 | `docs/product/regression-register.md` | 是（启用后） | 人读索引与状态 |
 | `docs/product/regression/surfaces.json` | 否 | 宿主机读编排（有自动化 runner 时再创建） |
-| `specs/<id>/optional/regression-map.md` | 否 | 某版晋升映射与范围说明 |
+| `<Spec 目录>/optional/regression-map.md` | 否 | 某版晋升映射与范围说明 |
 
 默认 scaffold **不**创建 `surfaces.json`。没有自动化 runner 时不存在该文件即可。

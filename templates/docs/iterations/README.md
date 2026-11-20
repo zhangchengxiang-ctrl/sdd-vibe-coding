@@ -34,7 +34,7 @@ iterations/<yyyy-mm>/<w>/<版本>/
   <spec-id>/    本轮拆出的 Spec（五件套，模板见 specs/_template/）
 ```
 
-`<yyyy-mm>` 是版本开始的月份，`<w>` 按开始日期分：1～7 日 `w1`、8～14 日 `w2`、15～21 日 `w3`、22～28 日 `w4`、29 日起 `w5`；路径从版本开始就固定，跨周跨月也不搬。工具不依赖这两层的写法：`iterations/` 下 README 头部为 `type: iteration` 的目录就是版本，其下含 `VERSION.md` 的子目录就是 Spec。
+周序号、工具如何识别版本、读序与关闭流程见 [docs 标准「版本布局与读序」](../README.md#版本布局与读序)（只写在那里）。
 
 新建版本：复制 [`_template/`](./_template/README.md) 到 `iterations/<yyyy-mm>/<w>/<版本>/`，并在上表加一行。**只有一个 Spec 的小改动也建版本**（Spec 总是从某个版本拆出来的）。
 

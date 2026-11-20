@@ -108,7 +108,7 @@ Explore 路径：**跳过 2–4**，除非用户转 Deliver。
 
 ## 产品包
 
-成块能力：`docs/product/modules/<slug>/`（01–05）。  
+成块能力：`docs/product/modules/<slug>/`（01–04，常青；分期与系列验收写在版本目录）。  
 **默认剪枝**：简单诉求单页；**禁止**齐套空层（antipattern #7）。  
 [`product-package.md`](./references/product-package.md) · [`perceptible-path.md`](./references/perceptible-path.md) · [`scheme-antipatterns.md`](./references/scheme-antipatterns.md)。
 

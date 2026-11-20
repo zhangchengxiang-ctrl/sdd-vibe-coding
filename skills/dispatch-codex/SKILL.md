@@ -188,7 +188,7 @@ SPEC_ID=<SPEC_ID>
 ## Goal
 完成切片 S1：<入口一句话>（Oracle：<T-ids>）
 ## Context
-- docs/specs/<SPEC_ID>/{contract,tests,plan,run}.md
+- docs/iterations/<yyyy-mm>/<w>/<版本>/<SPEC_ID>/{contract,tests,plan,run}.md
 - paths: <3-8 paths>
 ## Constraints
 只做本 D allowlist；禁改 tests.md；服从 AGENTS + vibe-coding。

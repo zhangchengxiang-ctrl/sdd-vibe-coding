@@ -82,4 +82,4 @@ fm = (re.sub(r"^status:.*$", "status: archived", m.group(1), count=1, flags=re.M
 p.write_text("---\n" + fm + "\n---\n" + t[m.end():], encoding="utf-8")
 print("close-iteration: README status -> archived (nothing moved)")
 PYCHK
-echo "close-iteration: DONE — update the version index (iterations/README.md) by hand"
+echo "close-iteration: DONE — 确认本版本仍成立的结论已晋升到常青文档或 ADR（五条规则第 3 条）"

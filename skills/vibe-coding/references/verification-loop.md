@@ -29,7 +29,7 @@ make verify-deliver HOST=<repo> SPEC=<id>
 
 | 轨 | 禁止 | 允许 |
 |---|---|---|
-| Build / Repair | 改 Spec `tests.md`；改产品包 `06-acceptance-matrix` 等验收矩阵 Oracle | 写自动化测、改实现、记 `run.md` |
+| Build / Repair | 改 Spec `tests.md`；改版本目录的 `acceptance-matrix.md` 等验收矩阵 Oracle | 写自动化测、改实现、记 `run.md` |
 | Plan + 用户批准 | — | 修订 Oracle |
 
 宣称「实现完成」时 `run.md` 必填：

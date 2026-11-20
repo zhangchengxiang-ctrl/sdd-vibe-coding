@@ -18,7 +18,7 @@ Codex 有效窗约 258K，过线会 **auto-compact**（有损）。指挥侧不�
 | `SLICE_IDS` | 本 D 含有的 A 切片（可多个） | 打包结果 |
 | `SLICE_ID` | 主切片（兼容旧解析，取第一个） | `SLICE_IDS[0]` |
 | `Goal` | 本 D 用户可观察结果 | 各 A「入口」+ `T-xxx` |
-| `Context.pointers` | Spec 五件套路径（只指针） | `docs/specs/<id>/…` |
+| `Context.pointers` | Spec 五件套路径（只指针） | `docs/iterations/<yyyy-mm>/<w>/<版本>/<id>/…` |
 | `Context.paths` / allowlist | **硬写入面**（必填） | 表「触及路径」并集 |
 | `Context.t_ids` | 冻结 Oracle 本体（机检组 replay / 人工组不进 replay 集） | 各 A 完成定义 |
 | `Constraints` | Out / 禁改 Oracle / 只做本 D / 不准 compact 续跑 | 合同 + 固定硬门 |

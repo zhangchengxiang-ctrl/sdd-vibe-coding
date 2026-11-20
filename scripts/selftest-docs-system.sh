@@ -161,5 +161,32 @@ cp -r "$F8/docs/specs/_template" "$F8/docs/iterations/2026-11/w3/demo/s1"
 bash "$CHECK" "$F8" >"$TMP/c8.log" 2>&1
 expect "a scaffolded version with a Spec inside passes check-docs (0 warnings)" grep -q 'warnings=0' "$TMP/c8.log"
 
+# ---- 9. three kinds of document, five rules, and the plugin agrees with itself ------------------------------
+SK="$ROOT/skills"; TP="$ROOT/templates"
+expect "standard defines 三类文档 (常青 / 在途 / 记录)"        bash -c "grep -q '^## 三类文档' '$STD' && grep -q '常青' '$STD' && grep -q '在途' '$STD' && grep -q '记录' '$STD'"
+for n in 1 2 3 4 5; do
+  expect "standard has rule $n of 五条规则"                    bash -c "sed -n '/^## 五条规则/,/^## [^五]/p' '$STD' | grep -q '^$n\\. \\*\\*'"
+done
+expect "placement table tags every row with its kind"        bash -c "rows=\$(sed -n '/^### 这份文档该放哪/,/^## 五条规则/p' '$STD' | grep '^| ' | grep -v '^| 这份文档\\|^|---'); [[ -n \"\$rows\" ]] && ! echo \"\$rows\" | awk -F'|' '{print \$3}' | grep -vqE '常青|在途|记录|归档|模板'"
+STALE="$(grep -rnE 'docs/specs/<(id|SPEC_ID)>|`specs/<id>/' "$SK" "$TP" --include=*.md 2>/dev/null | grep -vE '历史|版本层之前|只读|legacy|不要再建|不再新建' || true)"
+expect "no skill or template still sends new Specs to docs/specs/<id>/" test -z "$STALE"
+[[ -n "$STALE" ]] && echo "$STALE" | sed 's/^/      /' | head -12
+expect "states.md: archived stays in place"                  bash -c "grep -q '原地' '$SK/vibe-coding/references/states.md' && ! grep -q '勿只改状态位留原地' '$SK/vibe-coding/references/states.md'"
+expect "VERSION template: archived stays in place"           bash -c "! grep -q '勿只改状态位' '$TP/docs/specs/_template/VERSION.md'"
+DANGLING="$(grep -rln 'workflow-contract[^\n]*「状态词汇」\|workflow-contract.md\`*「状态词汇」' "$SK" "$TP" 2>/dev/null || true)"
+grep -q '状态词汇' "$SK/vibe-coding/references/workflow-contract.md"; wc_has=$?
+expect "no pointer to a 「状态词汇」 section workflow-contract does not have" bash -c "[[ -z '$DANGLING' || $wc_has -eq 0 ]]"
+expect "status vocabulary claims one source, not two"         bash -c "[[ \$(grep -rl '状态词汇.*唯一真源\|唯一真源.*状态词汇' '$SK' '$TP' | wc -l) -eq 1 ]]"
+expect "version layout and week rule written in ONE place"   bash -c "[[ \$(grep -rl '1～7 日' '$SK' '$TP' | wc -l) -eq 1 ]]"
+expect "product package holds no delivery / acceptance files" bash -c "! grep -qE '05-delivery|06-acceptance' '$SK/design/references/product-package.md'"
+expect "router (vibe-coding) knows the version layer"         grep -q 'iterations/<yyyy-mm>/<w>/<版本>/' "$SK/vibe-coding/SKILL.md"
+expect "write-code gate (a) names the version"                grep -q '^| \*\*(a)\*\* |.*版本' "$SK/vibe-coding/references/gates.md"
+expect "standard defines 版本 vs VERSION.md"                   grep -q 'VERSION.md` 是 Spec 的状态卡' "$STD"
+# check-docs reads the whole placement section, ### sub-headings included
+P9="$TMP/p9"; mk "$P9"; mkdir -p "$P9/docs/alpha" "$P9/docs/beta"
+printf '# d\n\n## 这份文档该放哪\n\n### 常青\n\n| x | `alpha/` |\n\n### 在途\n\n| y | `beta/` |\n\n## 别的\n' > "$P9/docs/README.md"
+bash "$CHECK" "$P9" >"$TMP/c9.log" 2>&1
+expect "check-docs sees dirs declared under ### sub-headings"   bash -c "! grep -q 'beta/' '$TMP/c9.log'"
+
 echo "--- selftest-docs-system: pass=$pass fail=$fail ---"
 [[ $fail -eq 0 ]]

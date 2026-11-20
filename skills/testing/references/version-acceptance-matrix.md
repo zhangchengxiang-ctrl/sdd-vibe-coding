@@ -1,6 +1,6 @@
 # Version Acceptance 矩阵（全角色 × 全场景）
 
-> 蒸馏自人工纠正后的高质量实践（组织扩展 `06-acceptance-matrix`、BI 浏览器走查剧本、权限破坏性生命周期等）。  
+> 蒸馏自人工纠正后的高质量实践（版本级验收矩阵、BI 浏览器走查剧本、权限破坏性生命周期等）。  
 > **可选用例设计合同**——不是每个 Build 切片的默认义务。  
 > 日常单 Spec 仍走 `tests.md` + [`falsify-checklist`](./falsify-checklist.md) + [`verification-loop`](../../vibe-coding/references/verification-loop.md)。
 
@@ -30,10 +30,10 @@
 
 ## 落盘位置（宿主）
 
-优先产品包内一页（大模块建议 `06-acceptance-matrix` 或 `05` 下剧本），作为系列**唯一 Oracle**：
+放在**版本目录**内一页（系列验收属于这一轮，是在途文档，不放常青的产品包），作为系列**唯一 Oracle**：
 
 ```text
-docs/product/modules/<slug>/06-acceptance-matrix.md   # 或宿主语言后缀
+docs/iterations/<yyyy-mm>/<w>/<版本>/acceptance-matrix.md   # 或宿主语言后缀
 ```
 
 亦可 `…/research/浏览器走查用例-<日期>.md`（步骤型剧本）。  

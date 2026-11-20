@@ -137,7 +137,7 @@ expect "docs-root documents the layout"                      grep -q 'iterations
 expect "iterations README: directory is membership"          grep -q '目录即归属' "$ROOT/templates/docs/iterations/README.md"
 expect "iterations README: a one-Spec change still gets a version" grep -q '只有一个 Spec 的小改动也建版本' "$ROOT/templates/docs/iterations/README.md"
 expect "docs README: placement row points into the version"  grep -q 'iterations/<yyyy-mm>/<w>/<版本>/<id>/' "$ROOT/templates/docs/README.md"
-expect "week bucket is defined by date, not weekday"          grep -q '1～7 日 `w1`' "$ROOT/templates/docs/iterations/README.md"
+expect "week bucket is defined by date, not weekday"          grep -q '1～7 日 `w1`' "$ROOT/templates/docs/README.md"
 expect "version template is recognised as a version"         grep -q '^type: iteration' "$ROOT/templates/docs/iterations/_template/README.md"
 
 # ---- 8. a version carries the wish: quote → requirements → decisions, then Specs ------------------------

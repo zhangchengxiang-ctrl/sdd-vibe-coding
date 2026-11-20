@@ -12,12 +12,11 @@ docs/product/modules/<slug>/
 ├── 01-experience.md
 ├── 02-product-model.md
 ├── 03-presentation.md   # 可同号改名
-├── 04-runtime.md        # 薄：产品级约束
-├── 05-delivery.md
-└── 06-acceptance-matrix.md  # 可选：系列 Version Acceptance
+└── 04-runtime.md        # 薄：产品级约束
 ```
 
-读序钉死：体验 → 模型 → 呈现 → 运行时意图 → 交付。  
+读序钉死：体验 → 模型 → 呈现 → 运行时意图。
+产品包是**常青**文档（文档标准「三类文档」）：只写产品要做成什么样。分期、灰度、联调、风险与关版 Test 索引属于这一轮，写在版本目录（`README.md` 的 Spec 清单与并行矩阵、`requirements.md`）；系列验收矩阵写在版本目录的 `acceptance-matrix.md`（见 testing `version-acceptance-matrix`）。  
 语言后缀随宿主约定（默认无后缀）。域特化只许同号改名。
 
 ## 2. modules ↔ specs（真源）
@@ -25,15 +24,16 @@ docs/product/modules/<slug>/
 | 真源 | 写什么 | 本层边界外 |
 |------|--------|----------|
 | `modules/<slug>/` | 产品决策（可超前） | 本版实现细节、关版 Test 全文 |
-| `specs/<id>/` | 本版实施 + `tests.md` 阅卷 | 只改 Spec 不改产品语义 |
+| 版本目录 `iterations/<yyyy-mm>/<w>/<版本>/` | 这一轮：原话、需求、裁定、分期、系列验收 | 产品语义变化写回本层 |
+| Spec `iterations/<yyyy-mm>/<w>/<版本>/<id>/` | 本版实施 + `tests.md` 阅卷 | 只改 Spec 不改产品语义 |
 | system-map + 代码 | as-built | 愿景蓝图 |
 
-**05** 索引 Spec `T-xxx`；Test / Oracle 正文只在 Spec `tests.md`。
+Test / Oracle 正文只在 Spec `tests.md`；产品包不索引 `T-xxx`（那是版本与 Spec 的事）。
 
 ## 3. 全集章节（适用则写；否则 N/A+理由或省略整层）
 
 ### README
-一句话 + 状态/Gap/Spec · 读序地图 · 已拍板决策**索引** · 真源边界
+一句话 + 所属版本 / Gap 的链接（不写状态） · 读序地图 · 已拍板决策**索引** · 真源边界
 
 ### 01 体验
 设计立场 · 角色/画像 · 操控面 · 用户旅程 · 可感配置/屏幕 · 体验非目标  
@@ -50,15 +50,6 @@ IA · 文案/视觉语义 · 组件/表面规格（无 UI → 整篇省略）
 进程/边界意图 · 关键路径语义 · 安全/观测约束  
 表结构、长锚点、API 字段全集 → Spec `plan.md`
 
-### 05 交付
-分期 · 配置/环境 · 联调检查 · 风险 · 关版 Test **索引**（正文在 Spec `tests.md`）
-
-### 06 验收矩阵（可选 · 大模块）
-
-多角色 × 多表面 / 多 Spec 系列的 **Version Acceptance 唯一 Oracle**（全角色全场景或等价浏览器剧本）。  
-写法通则：testing [`version-acceptance-matrix.md`](../../testing/references/version-acceptance-matrix.md)。  
-未触发系列验收时可省略；触发后 **不得**用单 Spec Build Pass 冒充本矩阵 Pass。
-
 ## 4. 剪枝表
 
 | 类型 | 剪枝 |
@@ -67,7 +58,7 @@ IA · 文案/视觉语义 · 组件/表面规格（无 UI → 整篇省略）
 | 纯体验愿景 | 可省略 04（README 声明） |
 | 单层 ≤~80 行 | 单文件豁免 |
 | 域特化呈现 | `03-cards` / `03-authoring` 等同号 |
-| 调研附录 | `05-research` / `07-*` 等不占 01–05 合同位；**06 验收矩阵**占用可选合同位（见上） |
+| 调研附录 | 调研结论是记录，放 `reports/`（带日期），不进产品包 |
 
 **硬门：** 04 概念保留在 04；交付不改号接到 03；关版以 Spec 验收为准（设计稿单独不构成关版）。
 

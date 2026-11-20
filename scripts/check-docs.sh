@@ -49,8 +49,15 @@ warns = 0
 # ---- 1. placement coverage ------------------------------------------------------------
 readme = docs / "README.md"
 text = readme.read_text(encoding="utf-8") if readme.is_file() else ""
-m = re.search(r"^###?\s*这份文档该放哪.*?(?=^#{2,3}\s|\Z)", text, re.S | re.M)
-scope = m.group(0) if m else text
+# The section runs until the next heading of the SAME or a HIGHER level, so a host may split the
+# table under ### / #### sub-headings (e.g. one per kind of document) without hiding rows.
+m = re.search(r"^(#{2,3})\s*这份文档该放哪.*$", text, re.M)
+if m:
+    lvl = len(m.group(1))
+    nxt = re.search(rf"^#{{1,{lvl}}}\s", text[m.end():], re.M)
+    scope = text[m.start(): m.end() + (nxt.start() if nxt else len(text) - m.end())]
+else:
+    scope = text
 if not text:
     print(f"WARN  {docs.name}/README.md missing — nothing declares where documents go"); warns += 1
 elif not m:
