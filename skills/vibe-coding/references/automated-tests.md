@@ -18,7 +18,7 @@
    红绿证据: red `<cmd>` exit=<n> · green `<cmd>` exit=0
    ```
    Polish / trivial / 无自动化 → `红绿证据: N/A · polish|trivial|无自动化`。  
-   **禁止**改 Spec `tests.md` 或产品包验收矩阵来刷绿；改 Oracle 回 Plan。
+   **禁止**改 Spec `tests.md` 或版本目录的验收矩阵来刷绿；改 Oracle 回 Plan。
 
 ## 默认分层（宿主可改名）
 

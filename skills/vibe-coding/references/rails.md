@@ -4,6 +4,7 @@
 
 ## Build
 
+- 宿主声明 `SDD workspace: shared-local`（多个会话共用一个 checkout）：开工先 `owners.py claim` 本 D 的触及路径；提交前单独跑 `owners.py commit-guard`，失败不提交（[workspace-contract §10](./workspace-contract.md)）
 - 覆盖当前 D 内 A 切片的入口、数据流、错误语义；先按事实映射核对
 - 未点名切片：取打包后第一个未完成 D；「整份 Spec」→ 按 edit-wave 推进（每 D 仍须装进 272K）
 - 新建 / 大改用户可见页面：先读 [LOAD-MAP](./design-standards/LOAD-MAP.md) + [product-judgment](./design-standards/product-judgment.md)
@@ -12,7 +13,7 @@
 - **硬门：** 只可报「实现完成」；禁止宣称「可交付」/ `acceptance-passed` 
 - **声明派生：** 「实现完成」→ eligible：`dispatch-run-id:`；ineligible：`executor: conductor`；人强制自写：`override: 用户要求自写` / `polish · 用户本轮明示`；`acceptance-passed` → `make verify-deliver`（`check_spec --closing`）
 - **硬门：** 禁止 Deploy P5/P6 或读写生产；须路由 Skill `deploy` + 本轮 P4
-- **硬门（钉 2 · Oracle 冻结）：** 禁止改 `tests.md` 与产品包验收矩阵；`run.md` 须有 `oracle-freeze: intact`
+- **硬门（钉 2 · Oracle 冻结）：** 禁止改 `tests.md` 与版本目录的验收矩阵（`acceptance-matrix.md`）；`run.md` 须有 `oracle-freeze: intact`
 
 ## Verify
 

@@ -128,6 +128,7 @@ updated: YYYY-MM-DD
 | `- SDD docs root: <相对路径>` | `docs` | SDD 文档树的根 |
 | `- SDD archive dir: <目录名>` | `archive` | `specs/` 下放版本层之前的已关版 Spec 的目录（版本内的 Spec 关版不搬动）；`close-spec`、`check_spec` 读它 |
 | `- SDD gap register: <相对宿主根的路径>` | `<root>/product/gap-register.md` | 宿主已有等价的缺口登记时声明；脚手架据此不再另建一份 |
+| `- SDD workspace: <模式>` | 按 Spec 选 `local \| managed-worktree \| git-worktree` | 宿主强制多个会话共用一个 checkout 时写 `shared-local`：开工声明写入面、提交前 `commit-guard`（vibe-coding `references/workspace-contract.md` §10） |
 
 ## 真源优先级（冲突时）
 

@@ -2,7 +2,7 @@
 # Run `make` or `make help` for the command list.
 
 .PHONY: help install install-dev install-cursor install-claude install-codex \
-	scaffold codex-dispatch wish-orchestrate context-pack verify check-docs check-spec verify-deliver close-spec close-iteration iteration-layout-selftest check-host-docs \
+	scaffold codex-dispatch wish-orchestrate context-pack verify check-docs check-spec verify-deliver close-spec close-iteration iteration-layout-selftest owners-selftest check-host-docs \
 	preflight-rail codex-preflight ship oracle-migration dispatch-gates-selftest public-gates contract-sync \
 	dispatch-live-lifecycle dispatch-live-scenario \
 	phase3-negative eval-live eval-skill-load wish-journey \
@@ -168,6 +168,9 @@ close-iteration:
 
 iteration-layout-selftest:
 	bash scripts/selftest-iteration-layout.sh
+
+owners-selftest:
+	bash scripts/selftest-owners.sh
 
 codex-preflight:
 	bash scripts/codex-preflight.sh --cwd "$(HOST)"

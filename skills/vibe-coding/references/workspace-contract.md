@@ -42,7 +42,7 @@ Plan 为每个 Spec Build 选择 `local | managed-worktree | git-worktree`。选
 
 一个会修改文件的写入面同一时刻只有一个 owner：`current-chat | user-thread | subagent`。
 该 owner 只写一个 Local checkout 或一个 Worktree 中的已声明写入边界。文件所有权不写入
-Claim 账本；由原生执行上下文、Workspace、依赖和 handoff 共同表达。
+Claim 账本；由原生执行上下文、Workspace、依赖和 handoff 共同表达（多个会话共用一个 checkout 时见 §10 shared-local）。
 
 有原生 Subagent 时，只有可独立实现、验证和交接的写入面才分派。没有这些能力时，在当前
 Build owner 串行执行，由当前对话推进到完成单元。
@@ -196,3 +196,18 @@ PM 不需要输入恢复指针路径、线程 ID 或 Worktree 目录。
 handoff 必须记录真实 owner / 原生 ID、Workspace、base SHA、Branch、PR、外部资源 Claims、
 状态和下一动作。恢复指针是机器恢复指针，不作为 PM 操作说明。托管 Worktree 的清理
 由当前 surface / 产品策略管理；永久或 CLI Worktree 按宿主规则清理，永不删除仍含未交付改动的工作区。
+
+## 10. shared-local（多个会话共用一个 checkout）
+
+> 宿主在 `AGENTS.md` 声明 `- SDD workspace: shared-local` 时适用：宿主规则不允许每个任务各开 Worktree（例如都在默认分支上直接改、测试只能在挂载主目录的容器里跑），于是多个 owner 同时写同一个 checkout、共用同一个 git index。§4「单 owner」不再由 Workspace 天然保证，改由下列声明与机检保证。
+
+工具：`python3 <plugin>/skills/vibe-coding/scripts/owners.py`（声明存在宿主本机 `.sdd/owners/<owner>.tsv`，不入库；与外部资源的 `claims.md` 分开——它不是 Claim 账本）。
+
+1. **开工先声明写入面**：`owners.py claim <host> --owner <名> [--spec <id>] <条目>…`。条目取 Spec `plan.md` 的「触及路径」（`文件` 或 `文件::符号`），没有 Spec 的工作写本次要改的文件；要搬动或整体改写的目录写成 `目录/`。与别的会话相交时 claim 被拒：排进同一车道串行，或收窄到 `文件::符号`。
+2. **改动、搬目录前检查**：`owners.py check <host> --owner <名> <条目>…`；改到声明之外的文件前先补 claim。
+3. **每次提交前单独跑 `commit-guard`**，确认 index 里只有自己声明的路径：`owners.py commit-guard <host> --owner <名> [--allow <路径>…]`。失败时**不要提交**：别的会话暂存的路径留给它，只把自己的路径改回正确状态。不要把 guard 和 `git commit` 串成一条命令。
+4. **共享文件只提交自己的 hunk**：别的会话在同一文件里也有未提交改动时，把自己的改动应用到 index 中的版本（`git hash-object -w` + `git update-index --cacheinfo`），同时应用到工作区，不 `git add` 整个文件。
+5. **结束释放**：`owners.py release <host> --owner <名>`。超过 12 小时未更新的声明标为过期，只提示不阻塞；确认对方已停再释放。
+
+`owner` 名由会话自定，稳定且可读（例如 `docs-sdd`、`dashboard-cache`），写进 handoff 的 owner 一栏。
+
