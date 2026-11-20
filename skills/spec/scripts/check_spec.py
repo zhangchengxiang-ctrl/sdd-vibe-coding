@@ -1744,6 +1744,10 @@ def find_spec_dirs(
 
 
 NEW_SPEC_STATUSES = ("draft", "ready", "in-progress")
+# A Spec stops competing for files only when it is closed. `verifying` Specs still get Repair
+# edits, and a status word outside the vocabulary (hosts write `built-dev`, `production-delivered`,
+# …) must not silently drop a Spec out of the overlap check — unknown counts as still in flight.
+TERMINAL_STATUSES = ("archived", "cancelled")
 
 
 def check_write_set(spec_dir: Path, plan: str, report: Report, *, structure_only: bool) -> None:
@@ -1854,9 +1858,9 @@ def check_placement(spec_dir: Path, report: Report, *, structure_only: bool) -> 
 
 
 def spec_write_set(spec_dir: Path) -> set[str] | None:
-    """Union of a Spec's declared 触及路径; None unless it is still in planning / build."""
+    """Union of a Spec's declared 触及路径; None once the Spec is closed (archived / cancelled)."""
     parsed = parse_version_status(read_text(spec_dir / "VERSION.md"))
-    if parsed is None or parsed[1] not in NEW_SPEC_STATUSES:
+    if parsed is not None and parsed[1] in TERMINAL_STATUSES:
         return None
     headers, rows = parse_md_table_after(read_text(spec_dir / "plan.md"), "纵向切片")
     if "触及路径" not in headers:
@@ -1870,10 +1874,11 @@ def spec_write_set(spec_dir: Path) -> set[str] | None:
 def check_iteration_overlaps(
     docs: Path, checked: list[Path], archive_names: frozenset[str], report: Report
 ) -> None:
-    """Warn when two in-flight Specs of the SAME iteration declare overlapping write sets.
+    """Warn when two not-yet-closed Specs of the SAME version declare overlapping write sets.
 
-    They must share a serial lane (ADR / spec skill「切分互斥与并行」). Only pairs that include at
-    least one Spec being checked are reported; shipped and archived Specs do not compete.
+    They must share a serial lane (spec skill「切分互斥与并行」). Only pairs that include at least
+    one Spec being checked are reported. Every Spec competes until it is archived or cancelled —
+    including `verifying` (Repair edits files) and unknown status words.
     """
     peers: dict[str, list[tuple[Path, set[str]]]] = {}
     for d in spec_paths.active_spec_dirs(docs, archive_names | {"archive"}):
@@ -1926,7 +1931,7 @@ def check_version_status(spec_dir: Path, report: Report, *, structure_only: bool
     if token not in STATUS_VOCAB:
         report.warn(
             f"{spec_dir.name}/VERSION.md: 状态 {cell[:40]!r} 不以词表词开头 "
-            f"({'|'.join(STATUS_VOCAB)})；注释请写在状态词之后"
+            f"({'|'.join(STATUS_VOCAB)})；注释请写在状态词之后。在此之前它按「仍在施工」参与重叠检查"
         )
 
 

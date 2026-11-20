@@ -121,13 +121,18 @@ mkspec x2 draft "t.replace('$ROW','$(ws 'backend/e.py::execute_query')')"; setit
 mkspec x3 draft "t.replace('$ROW','$(ws 'backend/e.py::other_fn')')";      setiter x3 it1
 mkspec x4 draft "t.replace('$ROW','$(ws 'backend/e.py::execute_query')')"; setiter x4 it2
 mkspec x5 verifying "t.replace('$ROW','$(ws 'backend/e.py')')";            setiter x5 it1
+mkspec x6 built-dev "t.replace('$ROW','$(ws 'backend/e.py::execute_query')')"; setiter x6 it1
+mkspec x7 archived "t.replace('$ROW','$(ws 'backend/e.py::execute_query')')";  setiter x7 it1
 mkspec y1 draft "t.replace('$ROW','| S1 | | T-001 | backend/f.py | | |\\n| S2 | | T-002 | backend/f.py | — | |')"
 mkspec y2 draft "t.replace('$ROW','| S1 | | T-001 | backend/f.py | | |\\n| S2 | | T-002 | backend/f.py | S1 | |')"
 python3 "$CHECK_SPEC" "$W" --all --skip-agents >"$TMP/ov-all.log" 2>&1
 expect "same iteration, same symbol: warns"                    grep -q '迭代 it1: x1 与 x2 的触及路径相交' "$TMP/ov-all.log"
 expect "same iteration, different symbols: no warning"         bash -c "! grep -E '迭代 it1: x(1|2) 与 x3|迭代 it1: x3 与 x(1|2)' '$TMP/ov-all.log'"
 expect "different iteration: no warning"                       bash -c "! grep -E '迭代 it2' '$TMP/ov-all.log'"
-expect "a shipped (verifying) Spec does not compete"           bash -c "! grep -E '迭代 it1:.*x5' '$TMP/ov-all.log'"
+expect "a verifying Spec still competes (repairs edit files)"  grep -qE '迭代 it1:.*x5' "$TMP/ov-all.log"
+expect "an unknown status word still competes (built-dev)"    grep -qE '迭代 it1: (x[1-5] 与 x6|x6 与 x[1-5])' "$TMP/ov-all.log"
+expect "...and its vocabulary warning says so"                grep -q 'x6/VERSION.md: 状态.*按「仍在施工」参与重叠检查' "$TMP/ov-all.log"
+expect "an archived Spec does not compete"                    bash -c "! grep -E '迭代 it1:.*x7' '$TMP/ov-all.log'"
 expect "inside one Spec: overlap without dependency warns"     grep -q 'y1/plan.md: 切片 S1 与 S2 的触及路径相交且互无依赖' "$TMP/ov-all.log"
 expect "inside one Spec: overlap with a dependency is fine"    bash -c "! grep -q 'y2/plan.md: 切片 S1 与 S2' '$TMP/ov-all.log'"
 python3 "$CHECK_SPEC" "$W" x1 --skip-agents >"$TMP/ov-one.log" 2>&1
