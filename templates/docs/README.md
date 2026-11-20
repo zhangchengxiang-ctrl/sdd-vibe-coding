@@ -72,7 +72,7 @@
 | 这一轮要达成什么、含哪些 Spec、何时算关 | 在途 | `iterations/<yyyy-mm>/<w>/<版本>/README.md` |
 | 一个可验收切片怎么做、怎么验 | 在途 | `iterations/<yyyy-mm>/<w>/<版本>/<id>/`（Spec 是版本拆出的工作包） |
 | 新 Spec 从哪复制；版本层之前的历史 Spec | 模板 · 归档 | `specs/_template/`；`specs/<id>/`、`specs/<archive>/<id>/`（只读） |
-| 谁正占着哪个文件 | 在途 | `reference/claims.md` |
+| 外部共享资源（数据库、端口、测试账号、浏览器、部署槽）现在由谁占用 | 在途 | `reference/claims.md`（文件不建 Claim：文件互斥由单 owner + Workspace 保证，见 vibe-coding `references/workspace-contract.md`） |
 | 会话流水：做了什么、下一步 | 记录 | `reference/handoff.md`（只追加；按月切到宿主归档） |
 | 先做哪些、排期 | 常青 | `planning/roadmap.md`（只排优先级，不写进度） |
 | 还没做的差距 | 常青 | `product/gap-register.md`（或宿主声明的 `SDD gap register`）；已关闭的进 `gap-closed.md`（记录） |
