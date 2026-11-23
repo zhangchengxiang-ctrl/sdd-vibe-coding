@@ -222,6 +222,10 @@ rm -f "$X/docs/operations/requests/20261101-q.md"
 U="$TMP/_under/h"; mkdir -p "$TMP/_under"; cp -r "$G" "$U"
 sed -i 's/^status: active$/status: bogus/' "$U/docs/iterations/2026-11/w4/v1/README.md"
 expect "R15 下划线路径下仍检查版本" bash -c "python3 '$TOOL' check '$U' --today 2026-11-23 | grep -q 'C2 docs/iterations/2026-11/w4/v1/README.md'"
+# R18 a version with no Spec can be cancelled by hand
+mkdir -p "$X/docs/iterations/2026-11/w4/v2"; printf -- '---\ntitle: V2\ntype: iteration\nstatus: cancelled\nowner: x\nupdated: 2026-11-23\n---\n# V2\n' > "$X/docs/iterations/2026-11/w4/v2/README.md"
+python3 "$TOOL" gen "$X" >/dev/null
+expect "R18 无 Spec 版本可手工取消" grep -q "^status: cancelled" "$X/docs/iterations/2026-11/w4/v2/README.md"
 # R9 undated standing section stays; age by date
 printf '\n## 常驻约定\n\n- 不要滚动我\n' >> "$G/docs/handoff.md"
 python3 "$TOOL" gen "$G" >/dev/null

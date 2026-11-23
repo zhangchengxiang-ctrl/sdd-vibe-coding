@@ -240,7 +240,9 @@ def derived_version_status(vdir: Path) -> str:
     sts = [spec_status(v) for v in sorted(vdir.glob("*/VERSION.md"))]
     sts = [s for s in sts if s]
     if not sts:
-        return "draft"
+        # a version with no Spec may be closed by hand (merged elsewhere, never started)
+        fm, _ = front_matter(read(vdir / "README.md")) if (vdir / "README.md").is_file() else ({}, 0)
+        return fm.get("status") if fm.get("status") in ("cancelled", "archived") else "draft"
     if all(s in ("archived", "cancelled") for s in sts):
         return "cancelled" if all(s == "cancelled" for s in sts) else "archived"
     if any(s != "draft" for s in sts):
