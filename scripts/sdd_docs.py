@@ -97,32 +97,40 @@ def git(host: Host, *args: str) -> str:
     return subprocess.run(["git", "-C", str(host.root), *args], capture_output=True, text=True).stdout
 
 
-_RENAMES: dict[str, dict[str, str]] = {}
+_ADDED: dict[str, dict[str, str]] = {}
 
 
-def staged_renames(host: Host) -> dict[str, str]:
-    """new path -> old path for renames staged in the index (so a moved file keeps its age)."""
+def added_map(host: Host) -> dict[str, str]:
+    """repo-relative path -> date it first entered git, carried across renames (one git call)."""
     key = str(host.root)
-    if key not in _RENAMES:
-        out = git(host, "diff", "--cached", "-M", "--name-status", "-z").split("\0")
-        m, i = {}, 0
-        while i < len(out) - 1:
-            if out[i].startswith("R") and i + 2 < len(out):
-                m[out[i + 2]] = out[i + 1]; i += 3
-            else:
-                i += 2
-        _RENAMES[key] = m
-    return _RENAMES[key]
+    if key in _ADDED:
+        return _ADDED[key]
+    out = git(host, "log", "--reverse", "-M", "--name-status", "--format=@%cs", "--", host.docs_rel, "AGENTS.md")
+    m: dict[str, str] = {}
+    date = ""
+    for line in out.splitlines():
+        if line.startswith("@"):
+            date = line[1:]; continue
+        parts = line.split("\t")
+        if not parts or not parts[0]:
+            continue
+        st = parts[0]
+        if st.startswith("A") and len(parts) >= 2:
+            m.setdefault(parts[1], date)
+        elif st.startswith("R") and len(parts) >= 3:
+            m[parts[2]] = m.get(parts[1], date)
+    # staged renames keep the age of their source
+    staged = git(host, "diff", "--cached", "-M", "--name-status").splitlines()
+    for line in staged:
+        parts = line.split("\t")
+        if parts and parts[0].startswith("R") and len(parts) >= 3 and parts[1] in m:
+            m[parts[2]] = m[parts[1]]
+    _ADDED[key] = m
+    return m
 
 
 def added_date(host: Host, p: Path) -> str | None:
-    out = git(host, "log", "--follow", "--diff-filter=A", "--format=%cs", "--", str(p)).split()
-    if out:
-        return out[-1]
-    old = staged_renames(host).get(host.rel(p))
-    if old:
-        out = git(host, "log", "--follow", "--diff-filter=A", "--format=%cs", "--", old).split()
-    return out[-1] if out else None
+    return added_map(host).get(host.rel(p))
 
 
 def strip_code(text: str) -> str:
