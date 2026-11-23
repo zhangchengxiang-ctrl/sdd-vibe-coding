@@ -131,7 +131,9 @@ def first_heading(text: str) -> str:
 
 
 def git(host: Host, *args: str) -> str:
-    return subprocess.run(["git", "-C", str(host.root), *args], capture_output=True, text=True).stdout
+    """Git runs in SDD_GIT_ROOT when set: lets `check` read an exported index while history comes from the repo."""
+    root = os.environ.get("SDD_GIT_ROOT") or str(host.root)
+    return subprocess.run(["git", "-C", root, *args], capture_output=True, text=True).stdout
 
 
 _ADDED: dict[str, dict[str, str]] = {}
