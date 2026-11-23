@@ -378,7 +378,9 @@ PY
 LOG=""; RC=0
 run_one() {   # cwd id phase tree cmd
   local cwd="$1" oid="$2" phase="$3" tree="$4" cmd="$5"
-  LOG="$LOG_ROOT/${oid}-${phase}-${tree:0:8}.log"
+  # spec + slice in the name: two Specs replaying T-001 on the same tree must not overwrite each
+  # other's evidence (each row pins its log by sha256)
+  LOG="$LOG_ROOT/${SPEC}-${SLICE:-all}-${oid}-${phase}-${tree:0:8}.log"
   if [[ "$DRY" == "1" ]]; then RC=0; return 0; fi
   ( cd "$cwd" && timeout --signal=TERM --kill-after=30s "${TIMEOUT_SEC}s" \
       bash -c "$cmd" ) >"$LOG" 2>&1

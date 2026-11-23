@@ -597,5 +597,9 @@ write_contract "$HG" "T-002"     # T-001 was frozen, then dropped from the mappi
 check "ship-vanished-obligation-refused" 2 bash "$SHIP" --host "$HG" --spec s1 --from-meta "$MG"
 saw "ship-names-vanished-obligation" 'no longer a P0 Oracle'
 
+# Two Specs replaying the same T-id on the same tree must not share a log file: each evidence row
+# pins its log by sha256, so an overwrite silently invalidates the other Spec's evidence.
+check "ship-log-name-carries-spec" 0 grep -qF 'LOG="$LOG_ROOT/${SPEC}-${SLICE:-all}-${oid}-' "$SHIP"
+
 echo "--- selftest-ship: pass=$pass fail=$fail ---"
 [[ "$fail" -eq 0 ]]
