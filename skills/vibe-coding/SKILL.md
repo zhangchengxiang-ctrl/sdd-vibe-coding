@@ -36,6 +36,7 @@ Explore / Deliver 合同 → [`explore-deliver.md`](./references/explore-deliver
 |---|---|
 | 帮我想想 / 聊聊 / 怎么设计 / 调研 / 读代码 / 对比方案（未要求落盘） | **Explore** → 直接答；Shape 用 `design`+debate/grounding；infra 机制可 Explore+读码后入 Plan |
 | 用户说「先别走 SDD / 不要卡片 / 直接给方案 / 这轮 Explore」 | **Explore**（强制；见 explore-deliver） |
+| 先记下来 / 以后有空再做 / 不着急 / 可能做也可能不做 | **Explore** → 只在 `product/demand-pool.md` 加一行（`draft`/`parked`），调研结论写 `reports/` 并链接；**不建版本、不登记 gap**。开新话题前先查需求池，已调研 / 已搁置 / 已决定不做的不重复调研 |
 | 机制/平台（kill/timeout/取消传播/RG/capacity/cancel/query gateway/中止 等）且要 **落盘/实施** | Deliver → Plan → Skill `spec` |
 | 初始化 / 接入存量 / 基线空 | 冷启动 → Skill `design` → `project-init` |
 | 我希望 / 我想要（基线已齐） | 默认 **Explore** → `design`；用户要「产品方案/给 PM」→ Deliver Shape 卡片；确认后落成一个版本 `docs/iterations/<yyyy-mm>/<w>/<版本>/`（原话 → 需求 → 裁定），Spec 在其下切 |

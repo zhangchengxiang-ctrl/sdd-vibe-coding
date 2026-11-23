@@ -98,7 +98,7 @@ make scaffold HOST=/path DRY_RUN=1                    # 只探测，不写盘
 | `PROFILE` | 行为 |
 |-----------|------|
 | `detect`（默认） | 空 SDD root → `full`；已有文件 → `minimal`；保留路径语义冲突 → **拒绝**（exit 2） |
-| `minimal` | `AGENTS.md` + product 槽位 + `specs/_template` + `reference/`（不含空 foundation 等） |
+| `minimal` | `AGENTS.md` + product 槽位 + `specs/_template` + `handoff.md` `claims.md`（不含空 foundation 等） |
 | `full` | 整棵 `templates/docs` 写入 `SDD_ROOT` |
 
 | `SDD_ROOT` | 行为 |

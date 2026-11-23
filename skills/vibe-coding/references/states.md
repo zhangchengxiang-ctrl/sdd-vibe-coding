@@ -56,6 +56,7 @@ Agent 另做：询问是否 Deploy（**不**自动上生产）。
 |---|---|---|
 | `matrix-accounted` | `run.md` | 适用 Test 已有终态 |
 | `design-ready` | 产品包 / demand-pool | 产品方案已确认（方案闸通过） |
+| `parked` / `dropped` / `merged` | demand-pool | 暂缓（写理由与重启条件）/ 决定不做（写原因）/ 并入已有版本或 gap（写去向）；都是终止或休眠条目态，不进 Delivery Target |
 | `production-restored` | Incident | 生产已止血 ≠ 根因已修 |
 
 ## 证据分级

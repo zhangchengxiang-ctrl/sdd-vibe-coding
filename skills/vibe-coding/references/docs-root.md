@@ -8,7 +8,7 @@
 2. 找子弹 `- SDD docs root: <path>`（相对仓库根）；
 3. 若缺失 → 视为 `docs`。
 
-技能与合同中的 `docs/product/`、Spec 目录、`docs/reference/` 等，均指：
+技能与合同中的 `docs/product/`、Spec 目录、`docs/handoff.md` 等，均指：
 
 ```text
 <SDD docs root>/product/

@@ -193,7 +193,7 @@ printf '# d\n\n## 这份文档该放哪\n\n### 常青\n\n| x | `alpha/` |\n\n###
 bash "$CHECK" "$P9" >"$TMP/c9.log" 2>&1
 expect "check-docs sees dirs declared under ### sub-headings"   bash -c "! grep -q 'beta/' '$TMP/c9.log'"
 
-expect "placement: claims are for external resources, not files (= workspace-contract)" bash -c "grep -q '^| 外部共享资源.*| 在途 | \`reference/claims.md\`' '$STD' && ! grep -q '谁正占着哪个文件' '$STD'"
+expect "placement: claims are for external resources, not files (= workspace-contract)" bash -c "grep -q '^| 外部共享资源.*| 在途 | \`claims.md\`' '$STD' && ! grep -q '谁正占着哪个文件' '$STD'"
 
 echo "--- selftest-docs-system: pass=$pass fail=$fail ---"
 [[ $fail -eq 0 ]]

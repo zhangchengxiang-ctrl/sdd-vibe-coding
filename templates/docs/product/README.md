@@ -13,7 +13,7 @@
 | `demand-pool.md` | 尚未进入 Plan 的愿望和反馈 |
 | `gap-register.md` | 蓝图与现状之间的差距 |
 | `regression-register.md` | 维护态关键用户旅程（可选；合同见 skill `testing` → `product-regression`） |
-| `../planning/roadmap.md` | 排期 |
+| `roadmap.md` | 排期 |
 | `../iterations/<yyyy-mm>/<w>/<版本>/` | 一次许愿：原话、需求、裁定，以及其中的 Spec（施工中与已关版都在这里） |
 
 ## 能力地图

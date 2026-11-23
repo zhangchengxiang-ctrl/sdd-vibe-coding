@@ -28,8 +28,8 @@
 | 这一轮的需求判据、范围、待裁定 | 该版本的 `iterations/<yyyy-mm>/<w>/<版本>/requirements.md` |
 | 用户裁定（对待裁定的回答）与版本级决策 | 该版本的 `iterations/<yyyy-mm>/<w>/<版本>/decisions.md` |
 | 当前版本实施合同 | `iterations/<yyyy-mm>/<w>/<版本>/<id>/`（`contract` + `tests` + `plan` + `run`） |
-| 活跃任务、Workspace、PR 和下一步 | `reference/handoff.md`（索引，不复制合同正文） |
-| 并行互斥 Claim | `reference/claims.md` |
+| 活跃任务、Workspace、PR 和下一步 | `handoff.md`（索引，不复制合同正文） |
+| 并行互斥 Claim | `claims.md` |
 | 实际实现 | 代码、迁移和配置 |
 | 验收证据 | `iterations/<yyyy-mm>/<w>/<版本>/<id>/run.md`（附件路径写在 Evidence 列） |
 | 一个版本的目标、含哪些 Spec、并行矩阵、何时算关 | `iterations/<yyyy-mm>/<w>/<版本>/README.md`（只链接 Spec，不抄状态） |
@@ -46,10 +46,9 @@
 
 | 路径 | 语义 |
 |---|---|
-| `product/` | 愿望、蓝图、gap（含 `modules/`、`foundation/`） |
+| `product/` | 愿望、蓝图、gap、排期 `roadmap.md`（含 `modules/`、`foundation/`；roadmap full scaffold，minimal 可后补） |
 | `specs/` | Spec 模板 `_template/`；版本层之前的历史 Spec（只读） |
-| `reference/handoff.md` · `reference/claims.md` | 交付索引与 Claim |
-| `planning/roadmap.md` | 排期（full scaffold；minimal 可后补） |
+| `handoff.md` · `claims.md` | 交付索引与 Claim |
 | `iterations/` | 版本层：`<yyyy-mm>/<w>/<版本>/`，一次许愿一个版本——原话、需求、用户裁定、目标与并行矩阵，以及从中切出的 Spec |
 | `operations/incidents/` · `operations/requests/` · `operations/runbooks/` | 事故、跨团队请求、运维手册 |
 | `reports/` | 带日期的调查 / 评审 / 审计 / 基准结论 |
@@ -65,16 +64,16 @@
 | 这份文档回答什么 | 类 | 放哪 |
 |---|---|---|
 | 要做什么、做到什么程度（长期） | 常青 | `product/`；排进一轮后建版本，再拆 Spec |
-| 还没排期的愿望 | 在途 | `product/demand-pool.md`；排进一轮即建版本，原话移入该版本的 `quote.md` |
+| 还没排期的愿望；可能做、也可能不做的功能灵感 | 在途 | `product/demand-pool.md` 加一行，调研结论写 `reports/` 并在该行链接；**不建版本、不登记 gap、不进 roadmap**；排进一轮才建版本，原话移入该版本的 `quote.md`。开新话题前先查池，避免重复调研 |
 | 用户说的原话 | 记录 | `iterations/<yyyy-mm>/<w>/<版本>/quote.md`（没有版本就先建版本；逐字、只追加） |
 | 这一轮要满足什么、待用户拍板什么 | 在途 | `iterations/<yyyy-mm>/<w>/<版本>/requirements.md` |
 | 用户怎么拍板的 | 在途 | `iterations/<yyyy-mm>/<w>/<版本>/decisions.md`（待裁定在此有结论之前不切 Spec） |
 | 这一轮要达成什么、含哪些 Spec、何时算关 | 在途 | `iterations/<yyyy-mm>/<w>/<版本>/README.md` |
 | 一个可验收切片怎么做、怎么验 | 在途 | `iterations/<yyyy-mm>/<w>/<版本>/<id>/`（Spec 是版本拆出的工作包） |
 | 新 Spec 从哪复制；版本层之前的历史 Spec | 模板 · 归档 | `specs/_template/`；`specs/<id>/`、`specs/<archive>/<id>/`（只读） |
-| 外部共享资源（数据库、端口、测试账号、浏览器、部署槽）现在由谁占用 | 在途 | `reference/claims.md`（文件不建 Claim：文件互斥由单 owner + Workspace 保证，见 vibe-coding `references/workspace-contract.md`） |
-| 会话流水：做了什么、下一步 | 记录 | `reference/handoff.md`（只追加；按月切到宿主归档） |
-| 先做哪些、排期 | 常青 | `planning/roadmap.md`（只排优先级，不写进度） |
+| 外部共享资源（数据库、端口、测试账号、浏览器、部署槽）现在由谁占用 | 在途 | `claims.md`（文件不建 Claim：文件互斥由单 owner + Workspace 保证，见 vibe-coding `references/workspace-contract.md`） |
+| 会话流水：做了什么、下一步 | 记录 | `handoff.md`（只追加；按月切到宿主归档） |
+| 先做哪些、排期 | 常青 | `product/roadmap.md`（只排优先级，不写进度） |
 | 还没做的差距 | 常青 | `product/gap-register.md`（或宿主声明的 `SDD gap register`）；已关闭的进 `gap-closed.md`（记录） |
 | 找谁、要对方做什么、做没做 | 在途 | `operations/requests/` |
 | 出了什么事、怎么恢复 | 在途 | `operations/incidents/` |
@@ -83,7 +82,7 @@
 | 系统现状、设计缘由（可选） | 常青 | 宿主自有，如 `architecture/`；已拍板的技术决定是 ADR（记录，只追加） |
 | 不再维护但需可查 | 归档 | 版本与其中的 Spec 关闭后原地不动（状态词标明 `archived`）；版本层之前的历史 Spec 在 `specs/<archive>/`；其余进宿主 `_archive/` |
 
-`reference/handoff.md` 是**会话与任务索引**，`operations/requests/` 是**跨团队请求单**，二者不是一回事，不要混用名字。
+`handoff.md` 是**会话与任务索引**，`operations/requests/` 是**跨团队请求单**，二者不是一回事，不要混用名字。
 
 **宿主扩展必须声明。** 宿主增加的每个顶层目录，都要在本表里加一行写明「它回答什么」；没有对应一行的目录，`scripts/check-docs.sh` 会警告。
 
@@ -147,7 +146,7 @@ updated: YYYY-MM-DD
 
 ```text
 Spec 五件套（执行合同）+ 代码/运行环境
-  ≫ reference/handoff.md
+  ≫ handoff.md
   ≫ product/modules/（产品蓝图）
   ≫ product/demand-pool.md（愿望池）
 ```

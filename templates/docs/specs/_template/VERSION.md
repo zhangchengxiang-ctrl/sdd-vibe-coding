@@ -23,7 +23,7 @@ Delivery Target 只使用：
 Requirements Lock 只使用：`open | locked | reopened`（本文为权威；Decision Cards 在
 `optional/clarify.md`）。
 
-Rail 属于对话，不属于 Version；当前 Rail 只在 `reference/handoff.md` 记录。
+Rail 属于对话，不属于 Version；当前 Rail 只在 `handoff.md` 记录。
 
 必填文件：`contract.md`、`tests.md`、`plan.md`、`run.md`。
 按需从 `_template/optional/` 复制 `clarify` / `migration-design` / `threat-model` /

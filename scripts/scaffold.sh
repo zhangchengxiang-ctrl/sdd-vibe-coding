@@ -127,7 +127,7 @@ is_minimal_rel() {
     README.md) return 0 ;;
     product/README.md|product/demand-pool.md|product/gap-register.md) return 0 ;;
     product/modules/.gitkeep) return 0 ;;
-    reference/handoff.md|reference/claims.md) return 0 ;;
+    handoff.md|claims.md) return 0 ;;
     specs/_template/*) return 0 ;;
     *) return 1 ;;
   esac
