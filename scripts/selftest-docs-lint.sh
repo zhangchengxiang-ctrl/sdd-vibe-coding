@@ -222,6 +222,11 @@ rm -f "$X/docs/operations/requests/20261101-q.md"
 U="$TMP/_under/h"; mkdir -p "$TMP/_under"; cp -r "$G" "$U"
 sed -i 's/^status: active$/status: bogus/' "$U/docs/iterations/2026-11/w4/v1/README.md"
 expect "R15 下划线路径下仍检查版本" bash -c "python3 '$TOOL' check '$U' --today 2026-11-23 | grep -q 'C2 docs/iterations/2026-11/w4/v1/README.md'"
+# R19 sub-items inside a dated request directory use the work vocabulary too
+mkdir -p "$X/docs/operations/requests/20261101-pack"; printf -- '---\ntitle: p\ntype: request\nstatus: open\nowner: x\nupdated: 2026-11-01\n---\n# p\n' > "$X/docs/operations/requests/20261101-pack/README.md"
+printf -- '---\ntitle: r1\ntype: request\nstatus: 待认领\nowner: x\nupdated: 2026-11-01\n---\n# r1\n' > "$X/docs/operations/requests/20261101-pack/R1.md"
+expect "R19 请求单目录内子单的旧状态词报出" bash -c "grep -q 'ERROR C2 docs/operations/requests/20261101-pack/R1.md' <<<\"\$(python3 '$TOOL' check '$X' --today 2026-11-23)\""
+rm -rf "$X/docs/operations/requests/20261101-pack"
 # R18 a version with no Spec can be cancelled by hand
 mkdir -p "$X/docs/iterations/2026-11/w4/v2"; printf -- '---\ntitle: V2\ntype: iteration\nstatus: cancelled\nowner: x\nupdated: 2026-11-23\n---\n# V2\n' > "$X/docs/iterations/2026-11/w4/v2/README.md"
 python3 "$TOOL" gen "$X" >/dev/null

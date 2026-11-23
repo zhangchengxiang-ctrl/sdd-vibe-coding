@@ -586,8 +586,9 @@ def check(host: Host, focus: set[str] | None, today: str, deleted: set[str] | No
         if not base.is_dir():
             continue
         cands = [p for p in base.glob("*.md") if p.name != "README.md" and not p.name.startswith("_")]
-        cands += [p / "README.md" for p in base.iterdir() if p.is_dir() and (p / "README.md").is_file()
-                  and re.match(r"\d{8}-", p.name)]
+        # a dated directory is one request / incident with sub-items: every .md in it carries a work state
+        cands += [q for p in base.iterdir() if p.is_dir() and re.match(r"\d{8}-", p.name)
+                  for q in p.rglob("*.md")]
         for p in sorted(cands):
             fm = need(p, keys, typ=TYPE_OF[sub])
             if "status" in fm:
