@@ -390,6 +390,16 @@ declare -A BASE_VERDICT=()
 
 # --- baseline: every machine Oracle must be RED, for the right reason -------------
 if [[ "$PHASE" != "verify" ]]; then
+  # Baseline trees are a cache keyed by (host path, base SHA): reused across runs and never
+  # removed on exit, so they pile up in TMPDIR (tmpfs on the dev host). Drop trees untouched
+  # for SHIP_WT_TTL_MIN (default a day) before reusing. No live replay runs that long, so this
+  # cannot race another dispatch, and a dirty tree left by an interrupted run is exactly what
+  # the reuse guard below would abort on.
+  if [[ "$DRY" != "1" ]]; then
+    find "${TMPDIR:-/tmp}" -maxdepth 1 -type d -name 'sdd-ship-base-*' \
+      -mmin +"${SHIP_WT_TTL_MIN:-1440}" -exec rm -rf {} + 2>/dev/null
+    git -C "$HOST" worktree prune >/dev/null 2>&1 || true
+  fi
   WT="${TMPDIR:-/tmp}/sdd-ship-base-$(printf '%s' "$HOST" | cksum | cut -d' ' -f1)-${BASE:0:8}"
   if [[ -d "$WT" ]]; then
     # Reuse only a clean tree, ignoring the dep symlinks this script made itself; a dirty

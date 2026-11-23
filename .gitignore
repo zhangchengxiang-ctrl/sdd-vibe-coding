@@ -51,3 +51,4 @@ docs/.sdd-scaffold
 
 # Local research downloads (do not commit)
 tmp/
+.playwright-mcp/
