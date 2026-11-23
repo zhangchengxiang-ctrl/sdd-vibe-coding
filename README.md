@@ -124,13 +124,16 @@ make scaffold HOST=/path DRY_RUN=1                    # 只探测，不写盘
 |-------|------|
 | `vibe-coding` | 显式 SDD 入口（高信号才隐式触发）；路由 Shape/Plan/Build/Verify/Deploy/Diagnose/Incident |
 | `design` | Shape（含探索对话、代码库 grounding、产品包；对照 design-standards ux/visual） |
+| `saas-product-design` | 专业 SaaS 中后台页面方案：信息架构、交互、视觉规格；复用 design-standards，不启动交付轨 |
 | `spec` | Plan（含架构与设计边界轻门） |
 | `testing` | Verify / 证据（含浏览器真实通道、UX 走查变体；ux 真源在 design-standards） |
 | `deploy` | 发布 P0–P6（证据 → 发布+验证方案 → 批准 → 执行 → 目标环境冒烟关版） |
 | `debug` | Diagnose / Incident |
 | `dispatch-codex` | 可选：Cursor/Claude 指挥 → Codex 施工（需用户明示） |
 
-只有 `vibe-coding` 可在**显式 SDD 高信号**下隐式触发；子 skill 均 `disable-model-invocation`，由主入口路由或 `@` 显式调用。日常调研/排障/实现问答不得加载本插件入口。能力进 references，不另开平行 Skill。
+交付轨只有 `vibe-coding` 可在**显式 SDD 高信号**下隐式触发；交付子 skill 由主入口路由或 `@` 显式调用。日常调研/排障/实现问答不得加载 SDD 入口。
+
+`saas-product-design` 是页面设计能力入口，不是平行交付轨：明确要求 SaaS 中后台页面方案时可独立使用，或显式调用。信息架构、交互与视觉规范仍由 `design-standards` 单一维护，不复制另一套；进入编码/验收/部署仍走宿主授权及既有交付轨。技能依赖同包参考，不能只拷一个 `SKILL.md` 当独立包。
 
 ## 仓库里有什么 / 没有什么
 

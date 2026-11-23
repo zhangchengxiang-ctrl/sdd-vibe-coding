@@ -68,7 +68,8 @@
 - Workspace / Worktree / Claim：只改 `workspace-contract.md`
 - 产品包章节与剪枝：只改 `skills/design/references/product-package.md`
 - 系统架构 / UX / 视觉 / 页面门控社区底线：只改 `skills/vibe-coding/references/design-standards/`
-  （Verify 接线薄页 `skills/testing/references/ux-standards.md`；启发式正文在 design-standards）
+  （Verify 接线薄页 `skills/testing/references/ux-standards.md`；启发式正文在 design-standards）。
+- SaaS 中后台设计请求的任务化入口与页面方案输出：`skills/saas-product-design/SKILL.md`；直接按需读取上述唯一真源，不复制 token/交互规则，不成为第二套 Shape/Build/Verify/Deploy 授权体系。独立调用不自动进入 SDD；同包参考必须随插件提供。
 - 产品回归启用条件与分层：只改 `skills/testing/references/product-regression.md`
 - Build 期自动化测试通则（含红绿证据）：只改 `skills/vibe-coding/references/automated-tests.md`
 - 事实映射门、纵向切片、测试合同门、Plan 流程、**check_spec 机检**（含 `--closing` / oracle-freeze）：只改 `skills/spec/`（含 `scripts/check_spec.py`）
