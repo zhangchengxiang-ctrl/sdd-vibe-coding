@@ -115,7 +115,8 @@ expect "T-003 报告按 topic 分组" grep -q "### 示例" "$G/docs/reports/READ
 expect "T-003 事故索引" grep -q "20261101-x" "$G/docs/operations/incidents/README.md"
 expect "T-003 gap 总表 2 条在办" grep -q "在办（2）" "$G/docs/architecture/11-gap-register.md"
 expect "T-003 handoff 只留 10 节" test "$(grep -c '^## 2026' "$G/docs/handoff.md")" = 10
-expect "T-003 handoff 滚动进归档" grep -q "记录 12" "$G/docs/_archive/handoff/handoff-archive-2026-11.md"
+expect "T-003 handoff 滚动的是最旧的（按日期）" grep -q "记录 01" "$G/docs/_archive/handoff/handoff-archive-2026-11.md"
+expect "T-003 最新的留在 handoff" grep -q "记录 12" "$G/docs/handoff.md"
 expect "T-003 归档内链接已改写" grep -q "](../../product/demand-pool.md)" "$G/docs/_archive/handoff/handoff-archive-2026-11.md"
 
 # T-004 hand edit of a generated section
@@ -133,6 +134,7 @@ sed -i 's/^id: GAP-002/id: GAP-009/' "$B/docs/architecture/gaps/GAP-002.md"
 sed -i 's/review: 2099-01-01/review: 2000-01-01/' "$B/docs/architecture/gaps/GAP-002.md"
 printf '# C1\n\n| **状态** | active |\n' > "$B/docs/product/C1-x.md"
 printf '# x\n见 [a](missing.md) 与 docs/old/thing\n' > "$B/docs/product/x.md"
+printf '# y\n见 [坏锚](x.md#不存在的节) 与 [同页](#也不存在)\n## 真标题\n见 [好锚](#真标题)\n' > "$B/docs/product/y.md"
 echo "见 docs/old/rule" >> "$B/AGENTS.md"
 head -c 50000 /dev/zero | tr '\0' 'a' >> "$B/docs/product/x.md"
 mkdir -p "$B/docs/strange" "$B/docs/product/lonely"; echo x > "$B/docs/strange/a.md"; echo x > "$B/docs/product/lonely/a.md"
@@ -140,6 +142,10 @@ mkdir -p "$B/docs/reports"; cp "$HERE/../templates/docs/reports/_template.md" "$
 echo "| DEM-001 | 2026-11-01 | wish | 重复 | P2 | \`parked\` | | | |" >> "$B/docs/product/demand-pool.md"
 out="$(python3 "$TOOL" check "$B" --today 2026-11-23 || true)"
 for rule in C1 C2 C3 C4 C5 C6 C7 C9 C10; do expect "T-001 报出 $rule" grep -q "ERROR $rule" <<<"$out"; done
+expect "T-001 C5 报出失效锚点" grep -q "锚点不存在 x.md#不存在的节" <<<"$out"
+expect "T-001 C5 报出本页失效锚点" grep -q "本页锚点不存在 #也不存在" <<<"$out"
+expect "T-001 C5 有效锚点不误报" bash -c "! grep -q '#真标题' <<<\"$out\""
+expect "T-001 复审日当天算到期" bash -c "sed -i 's/review: 2000-01-01/review: 2026-11-23/' '$B/docs/architecture/gaps/GAP-002.md'; python3 '$TOOL' check '$B' --today 2026-11-23 | grep -q 'WARN C8 docs/architecture/gaps/GAP-002.md'"
 expect "T-001 C8 为警告" grep -q "WARN C8" <<<"$out"
 expect "T-001 退出码非 0" bash -c "! python3 '$TOOL' check '$B' --today 2026-11-23"
 expect "T-001 --files 之外的错误降级" bash -c "python3 '$TOOL' check '$B' --today 2026-11-23 --files docs/README.md | grep -q 'WARN C6 AGENTS.md'"
@@ -155,6 +161,89 @@ expect "T-005 入链已改写" grep -q "](sub/b.md)" "$M/docs/product/a.md"
 expect "T-005 出链已改写" grep -q "](../../architecture/11-gap-register.md)" "$M/docs/product/sub/b.md"
 expect "T-006 目标已存在则拒绝" bash -c "! python3 '$TOOL' mv '$M' docs/product/a.md docs/product/sub/b.md"
 expect "T-006 拒绝时不改文件" grep -q "](sub/b.md)" "$M/docs/product/a.md"
+
+
+# ---- regression cases from the 2026-11-23 blind review (one per finding) ----
+X="$TMP/x"; cp -r "$G" "$X"; (cd "$X" && git add -A && git commit -qm base)
+chk() { python3 "$TOOL" check "$X" --today 2026-11-23 "$@" 2>&1 || true; }
+# R2 deleting a link target is an ERROR even when only the deletion is staged
+printf '# l\n见 [v](victim.md)\n' > "$X/docs/product/linker.md"; echo "# v" > "$X/docs/product/victim.md"
+(cd "$X" && git add -A && git commit -qm l && git rm -q docs/product/victim.md)
+expect "R2 删除被链接文件被拦" bash -c "python3 '$TOOL' check '$X' --today 2026-11-23 --files --deleted docs/product/victim.md | grep -q 'ERROR C5 docs/product/linker.md'"
+(cd "$X" && git reset -q --hard)
+# R10 broken / variant generated markers
+REGBAK="$TMP/_reg.bak"; cp "$X/docs/architecture/11-gap-register.md" "$REGBAK"
+sed -i 's#<!-- /sdd:gen gaps -->##' "$X/docs/architecture/11-gap-register.md"
+expect "R10 缺结束标记报 C4" bash -c "grep -q 'ERROR C4.*缺结束标记' <<<\"\$(python3 '$TOOL' check '$X' --today 2026-11-23)\""
+cp "$REGBAK" "$X/docs/architecture/11-gap-register.md"
+sed -i 's#<!-- sdd:gen gaps -->#<!--sdd:gen gaps-->#' "$X/docs/architecture/11-gap-register.md"
+expect "R10 变体标记报 C4" bash -c "grep -q 'ERROR C4.*格式错误' <<<\"\$(python3 '$TOOL' check '$X' --today 2026-11-23)\""
+cp "$REGBAK" "$X/docs/architecture/11-gap-register.md"
+printf '# m\n正文提到 `<!-- sdd:gen NAME -->` 不算标记\n' > "$X/docs/product/mention.md"
+expect "R10 行内代码里的标记不误报" bash -c "! grep -q 'mention.md' <<<\"\$(python3 '$TOOL' check '$X' --today 2026-11-23)\""
+rm -f "$X/docs/product/mention.md"
+# R11 / R12 link parsing
+printf '# a\n[s](<no such.md>) [r][x]\n\n[x]: nope.md\n行内 `[c](inline-nope.md)` 不算\n[sp](my%%20file.md)\n' > "$X/docs/product/links.md"; echo "# m" > "$X/docs/product/my file.md"
+out="$(chk)"
+expect "R11 尖括号带空格的断链报出" grep -q "断链 no such.md" <<<"$out"
+expect "R11 引用式断链报出" grep -q "断链 nope.md" <<<"$out"
+expect "R12 行内代码里的链接不误报" bash -c "! grep -q inline-nope <<<\"\$1\"" _ "$out"
+expect "R12 %20 解码后不误报" bash -c "! grep -q 'my%20file' <<<\"\$1\"" _ "$out"
+rm -f "$X/docs/product/links.md" "$X/docs/product/my file.md"
+# R13 C1 values
+printf -- '---\ntitle: t\ntype: banana\nowner:\nupdated: 2026-11-24\n---\n# t\n' > "$X/docs/reports/notopic-20261124.md"
+out="$(chk)"
+expect "R13 空 owner 报出" grep -q "notopic-20261124.md: 头部缺字段或为空 owner, topic" <<<"$out"
+expect "R13 type 不符报出" grep -q "type \`banana\` 应为 \`report\`" <<<"$out"
+rm -f "$X/docs/reports/notopic-20261124.md"
+sed -i 's/^owner: x$/owner: 这是一段很长很长很长很长的说明文字而不是负责人的名字，应该写在正文的字段表里而不是头部的 owner 字段/' "$X/docs/architecture/gaps/GAP-001.md"
+expect "R13 owner 为长句报出" bash -c "grep -q 'owner 应是负责人名称' <<<\"\$(python3 '$TOOL' check '$X' --today 2026-11-23)\""
+(cd "$X" && git checkout -q -- docs/architecture/gaps/GAP-001.md)
+# R14 gap date / released
+sed -i 's/review: 2099-01-01/review: TBD/' "$X/docs/architecture/gaps/GAP-001.md"
+sed -i 's/status: open/status: done/; /^review:/d' "$X/docs/architecture/gaps/GAP-002.md"
+out="$(chk)"
+expect "R14 复审日非日期报出" grep -q "复审日 \`TBD\` 不是" <<<"$out"
+expect "R14 done 缺 released 报出" grep -q "GAP-002.md: \`done\` 必须写 released" <<<"$out"
+(cd "$X" && git checkout -q -- docs/architecture/gaps)
+# R16 nested archive / stray gap file
+mkdir -p "$X/docs/product/_archive"; echo "# o" > "$X/docs/product/_archive/old.md"; echo "# s" > "$X/docs/architecture/gaps/notes.md"
+out="$(chk)"
+expect "R16 嵌套归档目录报出" grep -q "ERROR C9 docs/product/_archive" <<<"$out"
+expect "R16 gap 目录杂文件报出" grep -q "ERROR C9 docs/architecture/gaps/notes.md" <<<"$out"
+rm -rf "$X/docs/product/_archive" "$X/docs/architecture/gaps/notes.md"
+# R17 recreated after delete counts as new
+mkdir -p "$X/docs/operations/requests"; printf -- '---\ntitle: q\ntype: request\nstatus: open\nowner: x\nupdated: 2026-11-01\n---\n# q\n' > "$X/docs/operations/requests/20261101-q.md"
+(cd "$X" && git add -A && git commit -qm q && git rm -q docs/operations/requests/20261101-q.md && git commit -qm rmq)
+mkdir -p "$X/docs/operations/requests"; printf '# q 无头部\n' > "$X/docs/operations/requests/20261101-q.md"
+expect "R17 删除后重建按新文件报 ERROR" bash -c "grep -q 'ERROR C1 docs/operations/requests/20261101-q.md' <<<\"\$(python3 '$TOOL' check '$X' --today 2026-11-23)\""
+rm -f "$X/docs/operations/requests/20261101-q.md"
+# R15 host under an underscore path still finds versions
+U="$TMP/_under/h"; mkdir -p "$TMP/_under"; cp -r "$G" "$U"
+sed -i 's/^status: active$/status: bogus/' "$U/docs/iterations/2026-11/w4/v1/README.md"
+expect "R15 下划线路径下仍检查版本" bash -c "python3 '$TOOL' check '$U' --today 2026-11-23 | grep -q 'C2 docs/iterations/2026-11/w4/v1/README.md'"
+# R9 undated standing section stays; age by date
+printf '\n## 常驻约定\n\n- 不要滚动我\n' >> "$G/docs/handoff.md"
+python3 "$TOOL" gen "$G" >/dev/null
+expect "R9 不带日期的常驻节不被滚动" grep -q "常驻约定" "$G/docs/handoff.md"
+# R5 / R6 / R7 / R8 mv
+M2="$TMP/mv2"; cp -r "$G" "$M2"; mkdir -p "$M2/docs/product/sub"
+printf '# s\n[up](../a.md)\n' > "$M2/docs/product/sub/s.md"; echo "# a" > "$M2/docs/product/a.md"; echo "# sibling" > "$M2/docs/product/sub.md"
+printf '见 docs/product/sub.md 与 docs/product/sub/s.md\n' > "$M2/docs/product/ref.md"
+printf 'x:\n\tcat docs/product/a.md\n' > "$M2/Makefile"; printf '{"p": "docs/product/a.md"}\n' > "$M2/cfg.json"
+printf '# crlf\r\n[a](a.md)\r\n' > "$M2/docs/product/crlf.md"
+(cd "$M2" && git add -A && git commit -qm m2); echo "# untracked" > "$M2/docs/product/untracked.md"
+expect "R5 有未跟踪源时整体拒绝" bash -c "! python3 '$TOOL' mv '$M2' docs/product/a.md docs/product/a2.md docs/product/untracked.md docs/product/u2.md"
+expect "R5 拒绝时第一项也没动" test -f "$M2/docs/product/a.md"
+rm -f "$M2/docs/product/untracked.md"
+expect "R6 目录带尾斜杠可移动" python3 "$TOOL" mv "$M2" docs/product/sub/ docs/archive2/x/
+expect "R6 移走文件的出链已改写" grep -q "](../../product/a.md)" "$M2/docs/archive2/x/s.md"
+expect "R7 同名 .md 不被误改" grep -q "docs/product/sub.md" "$M2/docs/product/ref.md"
+expect "R7 目录前缀引用已改写" grep -q "docs/archive2/x/s.md" "$M2/docs/product/ref.md"
+python3 "$TOOL" mv "$M2" docs/product/a.md docs/product/a-renamed.md >/dev/null
+expect "R8 Makefile 引用已改写" grep -q "docs/product/a-renamed.md" "$M2/Makefile"
+expect "R8 json 引用已改写" grep -q "docs/product/a-renamed.md" "$M2/cfg.json"
+expect "R8 CRLF 保留" bash -c "grep -q $'\r' '$M2/docs/product/crlf.md' && grep -q 'a-renamed.md' '$M2/docs/product/crlf.md'"
 
 echo "--- selftest-docs-lint: pass=$PASS fail=$FAIL ---"
 [[ $FAIL -eq 0 ]]

@@ -2,6 +2,8 @@
 
 最后更新：YYYY-MM-DD
 
+> 新记录写在本文件上方（在途段之下），一节一个 `## YYYY-MM-DD · 主题`；`scripts/sdd_docs.py gen` 按日期把最旧的节滚动到归档，只留 10 节、15KB 以内。不带日期的 `## ` 节是常驻约定，不会被滚动。
+
 本文件是跨 surface 的机器恢复索引，不替代用户任务、Subagent 或 Worktree 的运行状态，
 也不复制 `plan.md` Workspace Strategy 或 Spec 合同正文。
 原生能力可用时，`Owner` 写 `user-thread:<id>` 或 `subagent:<id>`，`Workspace` 写实际

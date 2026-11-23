@@ -32,7 +32,15 @@ BUDGET_HANDOFF = 15 * 1024
 BUDGET_HUB = 12 * 1024
 HANDOFF_KEEP = 10
 VERSION_MAX_DAYS = 42
-LINK = re.compile(r"\]\(<?([^)\s>#]+)>?((?:#[^)\s]*)?)(?:\s+\"[^\"]*\")?\)")
+LINK = re.compile(r"\]\((?:<(?P<ap>[^>#]+)>|(?P<p>[^)\s#<>]+))(?P<anc>#[^)\s>]*)?>?(?:\s+\"[^\"]*\")?\)")
+REFDEF = re.compile(r"(?m)^ {0,3}\[[^\]\n]+\]:[ \t]*<?(?P<p>[^\s>#]+)>?(?P<anc>#\S*)?")
+MARKER = re.compile(r"<!--\s*/?\s*sdd:gen\b[^>]*-->")
+GOOD_MARKER = re.compile(r"<!-- (/?)sdd:gen ([\w-]+) -->")
+TEXT_EXTS = (".md", ".mdc", ".yaml", ".yml", ".py", ".sh", ".ts", ".tsx", ".mjs", ".js", ".json", ".toml",
+             ".txt", ".ini", ".cfg", ".sql")
+TEXT_NAMES = ("Makefile", "Dockerfile", ".gitignore")
+TYPE_OF = {"iterations": "iteration", "operations/requests": "request", "operations/incidents": "incident",
+           "reports": "report"}
 GEN = re.compile(r"(<!-- sdd:gen (?P<name>[\w-]+) -->\n)(?P<body>.*?)(<!-- /sdd:gen (?P=name) -->)", re.S)
 
 
@@ -60,8 +68,37 @@ class Host:
 
 
 # ----------------------------------------------------------------------------- helpers
+_ORIG: dict[Path, str] = {}
+
+
 def read(p: Path) -> str:
-    return p.read_text(encoding="utf-8", errors="replace")
+    """Read keeping line endings as-is (CRLF survives a rewrite)."""
+    with open(p, encoding="utf-8", errors="replace", newline="") as f:
+        t = f.read()
+    _ORIG.setdefault(p.resolve(), t)
+    return t
+
+
+def write(p: Path, text: str) -> None:
+    with open(p, "w", encoding="utf-8", newline="") as f:
+        f.write(text)
+
+
+def link_path(m) -> str:
+    return m.group("ap") if m.group("ap") is not None else m.group("p")
+
+
+def fmt_link(path: str, anc: str, angle: bool) -> str:
+    return "](<%s%s>)" % (path, anc) if angle or " " in path else "](%s%s)" % (path, anc)
+
+
+def link_targets(text: str):
+    """(path, anchor) for inline and reference-style links outside code (fenced or inline)."""
+    body = strip_code(text)
+    for m in LINK.finditer(body):
+        yield link_path(m), (m.group("anc") or "")
+    for m in REFDEF.finditer(body):
+        yield m.group("p"), (m.group("anc") or "")
 
 
 def front_matter(text: str) -> tuple[dict, int]:
@@ -117,6 +154,8 @@ def added_map(host: Host) -> dict[str, str]:
         st = parts[0]
         if st.startswith("A") and len(parts) >= 2:
             m.setdefault(parts[1], date)
+        elif st.startswith("D") and len(parts) >= 2:
+            m.pop(parts[1], None)
         elif st.startswith("R") and len(parts) >= 3:
             m[parts[2]] = m.get(parts[1], date)
     # staged renames keep the age of their source
@@ -134,8 +173,9 @@ def added_date(host: Host, p: Path) -> str | None:
 
 
 def strip_code(text: str) -> str:
+    text = re.sub(r"(?ms)^ {0,3}(```|~~~).*?^ {0,3}\1[^\n]*$", "", text)
     text = re.sub(r"```.*?```", "", text, flags=re.S)
-    return re.sub(r"`[^`\n]*`", "``", text)
+    return re.sub(r"(`+)(?!`).+?(?<!`)\1(?!`)", "``", text)
 
 
 def is_external(t: str) -> bool:
@@ -149,6 +189,37 @@ def md_files(base: Path):
         yield p
 
 
+_ANCHORS: dict[Path, set[str]] = {}
+
+
+def gh_slug(h: str) -> str:
+    """GitHub heading anchor: lowercase, drop punctuation except - and _, spaces to -."""
+    h = re.sub(r"<[^>]+>", "", h).strip().lower()
+    h = re.sub(r"[^\w\- ]", "", h)
+    return h.replace(" ", "-")
+
+
+def anchors_of(p: Path) -> set[str]:
+    p = p.resolve()
+    if p not in _ANCHORS:
+        t = re.sub(r"```.*?```", "", read(p), flags=re.S)
+        out, seen = set(), {}
+        for h in re.findall(r"(?m)^#{1,6}\s+(.+?)\s*#*\s*$", t):
+            a = gh_slug(h); n = seen.get(a, 0)
+            out.add(a if n == 0 else f"{a}-{n}"); seen[a] = n + 1
+        out |= set(re.findall(r'<a\s+(?:id|name)="([^"]+)"', t))
+        _ANCHORS[p] = out
+    return _ANCHORS[p]
+
+
+def anchor_ok(target: Path, anchor: str) -> bool:
+    from urllib.parse import unquote
+    a = unquote(anchor).lower()
+    if not a or re.fullmatch(r"l\d+(-l\d+)?", a):   # GitHub line anchors
+        return True
+    return a in anchors_of(target)
+
+
 def spec_status(version_md: Path) -> str | None:
     t = read(version_md)
     m = re.search(r"^\|\s*\**状态\**\s*\|\s*`?([a-z-]+)", t, re.M) or re.search(r"^-\s*Status:\s*`?([a-z-]+)", t, re.M)
@@ -159,7 +230,8 @@ def versions(host: Host) -> list[Path]:
     it = host.docs / "iterations"
     if not it.is_dir():
         return []
-    return sorted(p.parent for p in it.glob("*/*/*/README.md") if not any(x.startswith("_") for x in p.parts))
+    return sorted(p.parent for p in it.glob("*/*/*/README.md")
+                  if not any(x.startswith("_") for x in p.relative_to(it).parts))
 
 
 def derived_version_status(vdir: Path) -> str:
@@ -326,32 +398,44 @@ def gen_handoff_active(host: Host) -> str:
 
 def relink_text(text: str, old_dir: Path, new_dir: Path) -> str:
     def f(m):
-        t = m.group(1)
+        t = link_path(m)
         if is_external(t):
             return m.group(0)
         tgt = os.path.normpath(os.path.join(old_dir, t))
-        return "](%s%s)" % (os.path.relpath(tgt, new_dir).replace(os.sep, "/"), m.group(2))
+        return fmt_link(os.path.relpath(tgt, new_dir).replace(os.sep, "/"), m.group("anc") or "", m.group("ap") is not None)
     return LINK.sub(f, text)
 
 
 def rotate_handoff(host: Host, text: str) -> tuple[str, dict[Path, str]]:
-    """Keep newest HANDOFF_KEEP `## YYYY-MM-DD` sections (file order = newest first) under budget; move the rest."""
-    parts = re.split(r"(?m)^(?=## \d{4}-\d{2}-\d{2})", text)
+    """Keep the newest HANDOFF_KEEP dated `## YYYY-MM-DD` sections under budget; archive the oldest.
+
+    Age is the section date, not its position, so newest-first and append-only files both work; for
+    equal dates the file's own order decides. Undated `## ` sections (standing notes) never move."""
+    parts = re.split(r"(?m)^(?=## )", text)
     head, secs = parts[0], parts[1:]
-    moved: list[str] = []
-    while len(secs) > HANDOFF_KEEP or (len((head + "".join(secs)).encode()) > BUDGET_HANDOFF and len(secs) > 3):
-        moved.insert(0, secs.pop())
-    if not moved:
+    dated = [i for i, x in enumerate(secs) if re.match(r"## \d{4}-\d{2}-\d{2}", x)]
+    if not dated:
+        return text, {}
+    first, last = secs[dated[0]][3:13], secs[dated[-1]][3:13]
+    newest_first = first >= last
+    def age_key(i):  # smaller = older
+        return (secs[i][3:13], -i if newest_first else i)
+    moved_idx: set[int] = set()
+    def size():
+        return len((head + "".join(x for k, x in enumerate(secs) if k not in moved_idx)).encode())
+    live = sorted(dated, key=age_key)
+    while live and (len(live) > HANDOFF_KEEP or (size() > BUDGET_HANDOFF and len(live) > 3)):
+        moved_idx.add(live.pop(0))
+    if not moved_idx:
         return text, {}
     arch: dict[Path, str] = {}
-    hdir = host.docs
-    for s in moved:
-        month = re.match(r"## (\d{4}-\d{2})", s).group(1)
-        ap = host.archive / "handoff" / f"handoff-archive-{month}.md"
-        body = relink_text(s, hdir, ap.parent)
+    for i in sorted(moved_idx, key=age_key):
+        s_ = secs[i]
+        ap = host.archive / "handoff" / f"handoff-archive-{s_[3:10]}.md"
+        body = relink_text(s_, host.docs, ap.parent)
         body = re.sub(r"(?m)^## ", "### ", body, count=1)
         arch[ap] = arch.get(ap, "") + body.rstrip("\n") + "\n\n"
-    return head + "".join(secs), arch
+    return head + "".join(x for k, x in enumerate(secs) if k not in moved_idx), arch
 
 
 def apply_gen(text: str, name: str, body: str) -> str:
@@ -402,8 +486,8 @@ class Report:
         self.errors = 0
         self.warns = 0
 
-    def add(self, level: str, rule: str, path: str, msg: str, fix: str = ""):
-        if level == "ERROR" and self.focus is not None and path not in self.focus and not path.startswith("*"):
+    def add(self, level: str, rule: str, path: str, msg: str, fix: str = "", force: bool = False):
+        if level == "ERROR" and not force and self.focus is not None and path not in self.focus and not path.startswith("*"):
             level = "WARN"
         if level == "ERROR":
             self.errors += 1
@@ -420,7 +504,7 @@ def is_new(host: Host, p: Path, cache: dict) -> bool:
     return cache[p]
 
 
-def check(host: Host, focus: set[str] | None, today: str) -> int:
+def check(host: Host, focus: set[str] | None, today: str, deleted: set[str] | None = None) -> int:
     r = Report(focus)
     D = host.docs
     newc: dict = {}
@@ -430,13 +514,25 @@ def check(host: Host, focus: set[str] | None, today: str) -> int:
         return arch in p.resolve().parents
 
     # C1 + C2 + C3: typed documents
-    def need(p: Path, keys: tuple, rule="C1"):
+    deleted = deleted or set()
+
+    def need(p: Path, keys: tuple, rule="C1", typ: str | None = None):
         fm, _ = front_matter(read(p))
-        miss = [k for k in keys if k not in fm]
+        miss = [k for k in keys if not fm.get(k)]
+        lvl = "ERROR" if is_new(host, p, newc) else "WARN"
         if miss:
-            lvl = "ERROR" if is_new(host, p, newc) else "WARN"
-            r.add(lvl, rule, host.rel(p), f"头部缺字段 {', '.join(miss)}", "补齐 front matter")
+            r.add(lvl, rule, host.rel(p), f"头部缺字段或为空 {', '.join(miss)}", "补齐 front matter")
+        if typ and fm.get("type") and fm["type"] != typ:
+            r.add(lvl, rule, host.rel(p), f"type `{fm['type']}` 应为 `{typ}`")
+        if len(fm.get("owner", "")) > 40:
+            r.add("ERROR", rule, host.rel(p), "owner 应是负责人名称，不是一句话", "截成负责人，说明写进正文")
         return fm
+
+    def valid_date(v: str) -> bool:
+        try:
+            dt.date.fromisoformat(v); return True
+        except ValueError:
+            return False
 
     def work_extras(p: Path, fm: dict, gap: bool):
         st = fm.get("status")
@@ -448,13 +544,21 @@ def check(host: Host, focus: set[str] | None, today: str) -> int:
             req = ("version",)
         if gap and st in ("open", "shaping", "ready"):
             req = ("review",)
+        if gap and st == "done":
+            req = ("released",)
         miss = [k for k in req if not fm.get(k)]
         if miss:
             r.add("ERROR", "C2", host.rel(p), f"`{st}` 必须写 {', '.join(miss)}")
+        if fm.get("review") and not valid_date(fm["review"]):
+            r.add("ERROR", "C2", host.rel(p), f"复审日 `{fm['review']}` 不是 YYYY-MM-DD 日期")
+        if gap and st == "done" and fm.get("released") not in (None, "", "true", "false", "unknown"):
+            r.add("ERROR", "C2", host.rel(p), "released 只能是 true / false / unknown")
+        if gap and st == "done" and fm.get("released") == "unknown":
+            r.add("WARN", "C8", host.rel(p), "已结束但是否已随 origin/main 上线未核实（released: unknown）")
 
     for v in versions(host):
         rp = v / "README.md"
-        fm = need(rp, ("title", "type", "status", "owner", "updated"))
+        fm = need(rp, ("title", "type", "status", "owner", "updated"), typ="iteration")
         st = fm.get("status")
         d = derived_version_status(v)
         if st not in VERSION_STATES:
@@ -464,7 +568,7 @@ def check(host: Host, focus: set[str] | None, today: str) -> int:
         for q in sorted(v.glob("*.md")):
             if q.name == "README.md":
                 continue
-            qf = need(q, ("title", "type", "owner", "updated"))
+            qf = need(q, ("title", "type", "owner", "updated"), typ="iteration")
             if "status" in qf:
                 r.add("ERROR", "C3", host.rel(q), "版本内非 README 文档不写状态", "删掉 status 行")
         for vm in sorted(v.glob("*/VERSION.md")):
@@ -481,7 +585,7 @@ def check(host: Host, focus: set[str] | None, today: str) -> int:
         cands += [p / "README.md" for p in base.iterdir() if p.is_dir() and (p / "README.md").is_file()
                   and re.match(r"\d{8}-", p.name)]
         for p in sorted(cands):
-            fm = need(p, keys)
+            fm = need(p, keys, typ=TYPE_OF[sub])
             if "status" in fm:
                 work_extras(p, fm, gap=False)
 
@@ -489,7 +593,7 @@ def check(host: Host, focus: set[str] | None, today: str) -> int:
         fm, _ = front_matter(read(entry))
         if "status" in fm:
             r.add("ERROR", "C3", host.rel(entry), "报告是记录类，不写状态", "删掉 status；被推翻用 superseded-by")
-        need(entry, ("title", "type", "owner", "updated"))
+        need(entry, ("title", "type", "owner", "updated", "topic"), typ="report")
         if not re.search(r"-\d{8}(\.md|/)?$", name):
             r.add("ERROR", "C9", host.rel(p), "报告名必须是 <主题>-<YYYYMMDD>", "用 mv 改名")
 
@@ -500,7 +604,7 @@ def check(host: Host, focus: set[str] | None, today: str) -> int:
     gp = gap_files(host)
     seen_gap = set()
     for p in gp:
-        fm = need(p, ("id", "title", "type", "status", "severity", "owner", "created"))
+        fm = need(p, ("id", "title", "type", "status", "severity", "owner", "created"), typ="gap")
         if fm.get("id") and fm["id"] != p.stem:
             r.add("ERROR", "C10", host.rel(p), f"文件名 {p.stem} 与 id {fm['id']} 不一致")
         if p.stem in seen_gap:
@@ -508,7 +612,7 @@ def check(host: Host, focus: set[str] | None, today: str) -> int:
         seen_gap.add(p.stem)
         work_extras(p, fm, gap=True)
         rv = fm.get("review")
-        if rv and fm.get("status") in WORK_LIVE + ("parked",) and rv < today:
+        if rv and fm.get("status") in WORK_LIVE + ("parked",) and rv <= today:
             r.add("WARN", "C8", host.rel(p), f"复审日 {rv} 已过", "进月度复审")
 
     dp, header, rows = demand_rows(host)
@@ -532,7 +636,7 @@ def check(host: Host, focus: set[str] | None, today: str) -> int:
                 r.add("ERROR", "C2", host.rel(dp), f"{i} `{st}` 必须在「说明」写重启条件 / 原因 / 去向")
             if st in ("parked",) + WORK_LIVE[:3] and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", rv):
                 r.add("ERROR", "C2", host.rel(dp), f"{i} `{st}` 必须有复审日 YYYY-MM-DD")
-            elif rv and st in ("parked",) + WORK_LIVE[:3] and rv < today:
+            elif rv and st in ("parked",) + WORK_LIVE[:3] and rv <= today:
                 r.add("WARN", "C8", host.rel(dp), f"{i} 复审日 {rv} 已过", "进月度复审")
             if st == "planned" and "iterations/" not in src:
                 r.add("ERROR", "C2", host.rel(dp), f"{i} `planned` 必须链到版本目录")
@@ -543,26 +647,54 @@ def check(host: Host, focus: set[str] | None, today: str) -> int:
             if d0 and (dt.date.fromisoformat(today) - dt.date.fromisoformat(d0)).days > VERSION_MAX_DAYS:
                 r.add("WARN", "C8", host.rel(v / "README.md"), f"版本自 {d0} 起未关，超过 {VERSION_MAX_DAYS} 天", "进月度复审")
 
-    # C4 generated sections
+    # C4 generated sections: markers well-formed and balanced, content up to date
+    for p in [x for x in md_files(D) if not in_arch(x)]:
+        t = strip_code(read(p))
+        if "sdd:gen" not in t:
+            continue
+        stack: list[str] = []
+        for m in MARKER.finditer(t):
+            g = GOOD_MARKER.fullmatch(m.group(0))
+            line = t[:m.start()].count("\n") + 1
+            if not g:
+                r.add("ERROR", "C4", host.rel(p), f"第 {line} 行生成标记格式错误 `{m.group(0)}`", "写成 <!-- sdd:gen NAME --> / <!-- /sdd:gen NAME -->")
+                continue
+            close, name = g.group(1) == "/", g.group(2)
+            if not close:
+                stack.append(name)
+            elif not stack or stack.pop() != name:
+                r.add("ERROR", "C4", host.rel(p), f"第 {line} 行生成标记 `{name}` 未配对")
+        for name in stack:
+            r.add("ERROR", "C4", host.rel(p), f"生成标记 `{name}` 缺结束标记")
     for p in plan_gen(host):
         r.add("ERROR", "C4", host.rel(p), "生成内容过期或被手改", "运行 sdd_docs.py gen")
 
-    # C5 links
+    # C5 links (inline, angle-bracket and reference-style; code spans ignored; anchors checked)
+    from urllib.parse import unquote
     hist = 0
     for p in list(md_files(D)) + [host.root / "AGENTS.md"]:
         if not p.is_file():
             continue
         historical = in_arch(p) or (D / "reports") in p.parents
-        body = re.sub(r"```.*?```", "", read(p), flags=re.S)
-        for t, _ in LINK.findall(body):
+        for t, anc in link_targets(read(p)):
             if is_external(t):
                 continue
-            path = re.split(r"[?]", t, maxsplit=1)[0]
-            if path and not os.path.exists(os.path.normpath(os.path.join(p.parent, path))):
-                if historical:
+            path = unquote(re.split(r"[?]", t, maxsplit=1)[0])
+            tgt = os.path.normpath(os.path.join(p.parent, path)) if path else ""
+            if path and not os.path.exists(tgt):
+                gone = host.rel(Path(tgt)) in deleted if tgt.startswith(str(host.root)) else False
+                if historical and not gone:
                     hist += 1
                 else:
-                    r.add("ERROR", "C5", host.rel(p), f"断链 {t}", "改链接或用 mv 移动")
+                    r.add("ERROR", "C5", host.rel(p), f"断链 {t}" + ("（目标在本次提交中被删除或移走）" if gone else ""),
+                          "改链接或用 mv 移动", force=gone)
+            elif anc and tgt.endswith(".md") and os.path.isfile(tgt) and not historical \
+                    and not anchor_ok(Path(tgt), anc[1:]):
+                r.add("ERROR", "C5", host.rel(p), f"锚点不存在 {t}{anc}", "改成目标文件里实际的标题锚点")
+        if not historical:
+            for anc in re.findall(r"\]\(#([^)\s]+)\)", strip_code(read(p))):
+                if not anchor_ok(p, anc):
+                    r.add("ERROR", "C5", host.rel(p), f"本页锚点不存在 #{anc}", "改成本页实际的标题锚点")
     if hist:
         r.add("WARN", "C5", "*history", f"历史区（归档、报告）断链 {hist} 条")
 
@@ -608,7 +740,7 @@ def check(host: Host, focus: set[str] | None, today: str) -> int:
     readme = D / "README.md"
     rt = read(readme) if readme.is_file() else ""
     for d in sorted(x for x in D.iterdir() if x.is_dir() and not x.name.startswith((".", "_"))):
-        if not re.search(rf"(?<![\w-]){re.escape(d.name)}/", rt):
+        if not re.search(rf"`{re.escape(d.name)}/", rt):
             r.add("ERROR", "C9", host.rel(d), "顶层目录未在 docs/README.md 放置表中声明")
     for d in sorted(D.rglob("*")):
         if not d.is_dir() or in_arch(d) or d == arch:
@@ -621,6 +753,14 @@ def check(host: Host, focus: set[str] | None, today: str) -> int:
         kids = [x for x in d.iterdir() if not x.name.startswith(".")]
         if len(kids) == 1 and kids[0].is_file():
             r.add("ERROR", "C9", host.rel(d), "单文件目录", f"改成单个文件 {d.name}.md")
+    for d in sorted(D.rglob("*")):
+        if d.is_dir() and d.name in ("_archive", "archive", host.archive.name) and d.resolve() != arch.resolve() \
+                and not in_arch(d) and d != arch and (D / "specs") not in d.parents:
+            r.add("ERROR", "C9", host.rel(d), "子目录里不另建归档目录（六条规则第 4 条）", f"移入 {host.rel(arch)}/ 并保留原相对路径")
+    if host.gap_dir and host.gap_dir.is_dir():
+        for x in sorted(host.gap_dir.iterdir()):
+            if not re.fullmatch(r"GAP-[A-Za-z0-9-]+\.md|_template\.md", x.name):
+                r.add("ERROR", "C9", host.rel(x), "gap 目录只放 GAP-NNN.md", "改名为 GAP-<编号>.md 或移出")
     tpl = PLUGIN / "templates/docs"
     for t in tpl.rglob("_template*"):
         twin = D / t.relative_to(tpl)
@@ -643,15 +783,36 @@ def check(host: Host, focus: set[str] | None, today: str) -> int:
 
 # ----------------------------------------------------------------------------- mv
 def mv(host: Host, pairs: list[tuple[str, str]]) -> int:
+    """Atomic-ish: validate every pair first, roll back moves already made if one fails, then relink."""
     root = host.root
+    pairs = [(a.rstrip("/"), b.rstrip("/")) for a, b in pairs]
+    srcs, dsts = [a for a, _ in pairs], [b for _, b in pairs]
+    problems = []
+    if len(set(srcs)) != len(srcs) or len(set(dsts)) != len(dsts):
+        problems.append("源或目标重复")
     for a, b in pairs:
         if not (root / a).exists():
-            print(f"mv: 源不存在 {a}", file=sys.stderr); return 2
+            problems.append(f"源不存在 {a}")
+        elif not git(host, "ls-files", "--", a).strip():
+            problems.append(f"源未被 git 跟踪 {a}")
         if (root / b).exists():
-            print(f"mv: 目标已存在 {b}", file=sys.stderr); return 2
+            problems.append(f"目标已存在 {b}")
+        if b == a or b.startswith(a + "/"):
+            problems.append(f"目标在源内部 {b}")
+    if problems:
+        for x in problems:
+            print(f"mv: {x}", file=sys.stderr)
+        return 2
+    done: list[tuple[str, str]] = []
     for a, b in pairs:
         (root / b).parent.mkdir(parents=True, exist_ok=True)
-        subprocess.check_call(["git", "-C", str(root), "mv", a, b])
+        res = subprocess.run(["git", "-C", str(root), "mv", a, b], capture_output=True, text=True)
+        if res.returncode:
+            for x, y in reversed(done):
+                subprocess.run(["git", "-C", str(root), "mv", y, x], capture_output=True)
+            print(f"mv: git mv {a} 失败，已回滚：{res.stderr.strip()}", file=sys.stderr)
+            return 2
+        done.append((a, b))
     def mp(p: str) -> str:
         for a, b in pairs:
             if p == a or p.startswith(a + "/"):
@@ -664,22 +825,22 @@ def mv(host: Host, pairs: list[tuple[str, str]]) -> int:
         return n
     files = [f for f in subprocess.run(["git", "-C", str(root), "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
                                        capture_output=True, text=True).stdout.split("\0") if f]
-    exts = (".md", ".mdc", ".yaml", ".yml", ".py", ".sh", ".ts", ".tsx", ".mjs", ".toml", ".txt")
-    arch_rel = host.rel(host.archive) + "/"
+    record_dirs = (host.rel(host.archive) + "/", host.rel(host.docs / "reports") + "/")
     changed = 0
     for f in files:
         fp = root / f
-        if not f.endswith(exts) or not fp.is_file() or "node_modules" in f:
+        if not (f.endswith(TEXT_EXTS) or os.path.basename(f).startswith(TEXT_NAMES)) or not fp.is_file() or "node_modules" in f:
             continue
         try:
-            s = fp.read_text(encoding="utf-8")
+            with open(fp, encoding="utf-8", newline="") as fh:
+                s_ = fh.read()
         except UnicodeDecodeError:
             continue
-        o = s
+        o = s_
         of = old_of(f)
         if f.endswith((".md", ".mdc")):
             def fix(m):
-                t = m.group(1)
+                t = link_path(m)
                 if is_external(t):
                     return m.group(0)
                 r_ = os.path.normpath(os.path.join(os.path.dirname(of), t))
@@ -689,13 +850,23 @@ def mv(host: Host, pairs: list[tuple[str, str]]) -> int:
                 new = os.path.relpath(nr, os.path.dirname(f))
                 if t.endswith("/") and not new.endswith("/"):
                     new += "/"
-                return "](%s%s)" % (new, m.group(2))
-            s = LINK.sub(fix, s)
-        if not f.startswith(arch_rel):
+                return fmt_link(new, m.group("anc") or "", m.group("ap") is not None)
+            s_ = LINK.sub(fix, s_)
+            def fixdef(m):
+                t = m.group("p")
+                if is_external(t):
+                    return m.group(0)
+                r_ = os.path.normpath(os.path.join(os.path.dirname(of), t))
+                nr = mp(r_)
+                if nr == r_ and of == f:
+                    return m.group(0)
+                return m.group(0).replace(t, os.path.relpath(nr, os.path.dirname(f)), 1)
+            s_ = REFDEF.sub(fixdef, s_)
+        if not f.startswith(record_dirs):
             for a, b in pairs:
-                s = re.sub(r"(?<![\w/.-])" + re.escape(a) + r"(?![\w-])", b, s)
-        if s != o:
-            fp.write_text(s, encoding="utf-8")
+                s_ = re.sub(r"(?<![\w/.-])" + re.escape(a) + r"(?=/|(?![\w.-]))", b, s_)
+        if s_ != o:
+            write(fp, s_)
             changed += 1
     print(f"mv: {len(pairs)} 项已移动，{changed} 个文件改写引用")
     return 0
@@ -714,22 +885,35 @@ def main(argv: list[str]) -> int:
         today = dt.date.today().isoformat()
         if "--today" in rest:
             today = rest[rest.index("--today") + 1]
-        if "--files" in rest:
-            fl = rest[rest.index("--files") + 1:]
-            fl = [x for x in fl if not x.startswith("--")]
-            focus = {Path(x).as_posix() for x in fl}
-        return check(host, focus, today)
+        def opt_list(flag):
+            if flag not in rest:
+                return None
+            out = []
+            for x in rest[rest.index(flag) + 1:]:
+                if x.startswith("--"):
+                    break
+                out.append(Path(x).as_posix())
+            return set(out)
+        focus = opt_list("--files")
+        return check(host, focus, today, opt_list("--deleted"))
     if cmd == "gen":
         plan = plan_gen(host)
         if "--check" in rest:
             for p in plan:
                 print(f"gen: 需要更新 {host.rel(p)}")
             return 1 if plan else 0
+        rc = 0
         for p, t in plan.items():
             p.parent.mkdir(parents=True, exist_ok=True)
-            p.write_text(t, encoding="utf-8")
+            if p.is_file():
+                with open(p, encoding="utf-8", errors="replace", newline="") as f:
+                    now = f.read()
+                if now != _ORIG.get(p.resolve(), now):
+                    print(f"gen: {host.rel(p)} 在生成期间被修改，跳过；请重跑 gen", file=sys.stderr); rc = 1
+                    continue
+            write(p, t)
             print(f"gen: 已更新 {host.rel(p)}")
-        return 0
+        return rc
     if cmd == "mv":
         if len(rest) < 2 or len(rest) % 2:
             print("mv: 参数必须成对 OLD NEW", file=sys.stderr); return 2
