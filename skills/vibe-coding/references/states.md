@@ -23,7 +23,7 @@ make close-spec HOST=<repo> SPEC=<id>
 # = verify-deliver → VERSION=archived（原地不动；历史 specs/<id>/ 才搬入归档并改写链接）→ journey 收口
 ```
 
-关版前先**晋升**：仍然成立的结论写回常青文档（产品页、系统页）或新开 ADR（文档标准「五条规则」第 3 条）。
+关版前先**晋升**：仍然成立的结论写回常青文档（产品页、系统页）或新开 ADR（文档标准「六条规则」第 3 条）。
 版本内所有 Spec 关完、`retro.md` 写好后：`make close-iteration HOST=<repo> ITERATION=<版本>`（版本 README 状态改 `archived`，不搬目录）。
 
 Agent 另做：询问是否 Deploy（**不**自动上生产）。
@@ -56,7 +56,6 @@ Agent 另做：询问是否 Deploy（**不**自动上生产）。
 |---|---|---|
 | `matrix-accounted` | `run.md` | 适用 Test 已有终态 |
 | `design-ready` | 产品包 / demand-pool | 产品方案已确认（方案闸通过） |
-| `parked` / `dropped` / `merged` | demand-pool | 暂缓（写理由与重启条件）/ 决定不做（写原因）/ 并入已有版本或 gap（写去向）；都是终止或休眠条目态，不进 Delivery Target |
 | `production-restored` | Incident | 生产已止血 ≠ 根因已修 |
 
 ## 证据分级
@@ -67,3 +66,20 @@ Agent 另做：询问是否 Deploy（**不**自动上生产）。
 | `Unverified` / `Assumption` | 尚未证明；仅写「待验证」 |
 
 冲突时以代码与数据库事实为准，先修 Spec 或标缺陷。
+
+## 5. 工作项（需求池 / gap / 请求单 / 事故单共用）
+
+`open → shaping → ready → planned → done`，休眠或终止：`parked | dropped | merged`。
+
+| 词 | 含义 | 必填 |
+|---|---|---|
+| `open` | 刚记下或刚证实 | 复审日（需求池、gap） |
+| `shaping` | 在调研或出方案，或方案已出、等用户拍板 | 复审日 |
+| `ready` | 方案已确认（方案闸通过，即旧称 `design-ready`） | 复审日 |
+| `planned` | 已进版本 | 版本链接（需求池真源列、gap `version:`） |
+| `done` | 已交付；gap 另写 `released: true / false` | — |
+| `parked` | 暂缓 | 重启条件 + 复审日 |
+| `dropped` | 不做，含接受风险 | 原因 |
+| `merged` | 并入其他条目 | 去向 |
+
+复审日默认是记录当天加 60 天；到期进入月度复审，结论只能是 `planned`、`parked`（给新复审日）或 `dropped`。版本 README 的状态 `draft | active | archived | cancelled` 由其中的 Spec 推导，不手写。报告、能力页、枢纽页不写状态，报告被推翻时用 `superseded-by:`。以上规则由 `scripts/sdd_docs.py check` 执行（C2、C3、C8）。

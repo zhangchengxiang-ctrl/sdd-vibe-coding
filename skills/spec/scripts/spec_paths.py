@@ -121,8 +121,9 @@ def find_spec_dir(docs: Path, spec_id: str, arch: frozenset[str]) -> Path | None
     hit = _one([d for d in active_spec_dirs(docs, arch) if d.name == name], f"Spec id {name}")
     if hit:
         return hit
-    return _one([docs / "specs" / a / name for a in sorted(arch) if (docs / "specs" / a / name).is_dir()],
-                f"Spec id {name}")
+    # legacy archive: specs/<archive>/<id>, or (hosts that retired docs/specs/) <archive>/specs/<id>
+    cands = [docs / "specs" / a / name for a in sorted(arch)] + [docs / a / "specs" / name for a in sorted(arch)]
+    return _one([c for c in cands if c.is_dir()], f"Spec id {name}")
 
 
 def find_iteration_dir(docs: Path, it_id: str, arch: frozenset[str] = frozenset()) -> Path | None:

@@ -1,9 +1,17 @@
+---
+title: <title>
+type: incident
+status: open
+owner: 
+updated: YYYY-MM-DD
+---
+
 # Incident · <title>
 
 | 字段 | 值 |
 |---|---|
 | Incident ID | |
-| 状态 | investigating / mitigating / monitoring / restored / closed |
+| 阶段 | investigating / mitigating / monitoring / restored / closed |
 | Environment | production |
 | 开始时间 | |
 | 恢复时间 | |

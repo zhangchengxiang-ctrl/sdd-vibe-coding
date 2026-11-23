@@ -32,6 +32,7 @@ report() {
 }
 
 run "dispatch-gates-selftest" bash skills/dispatch-codex/scripts/selftest-gates.sh
+run "docs-lint-selftest" bash scripts/selftest-docs-lint.sh
 run "ship-selftest" bash skills/dispatch-codex/scripts/selftest-ship.sh
 run "contract-sync" bash scripts/check-contract-sync.sh
 run "phase3-plugin-only" env PHASE3_PLUGIN_ONLY=1 bash scripts/phase3-negative-verify.sh

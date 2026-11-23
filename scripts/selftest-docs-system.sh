@@ -169,10 +169,10 @@ expect "a scaffolded version with a Spec inside passes check-docs (0 warnings)" 
 # ---- 9. three kinds of document, five rules, and the plugin agrees with itself ------------------------------
 SK="$ROOT/skills"; TP="$ROOT/templates"
 expect "standard defines 三类文档 (常青 / 在途 / 记录)"        bash -c "grep -q '^## 三类文档' '$STD' && grep -q '常青' '$STD' && grep -q '在途' '$STD' && grep -q '记录' '$STD'"
-for n in 1 2 3 4 5; do
-  expect "standard has rule $n of 五条规则"                    bash -c "sed -n '/^## 五条规则/,/^## [^五]/p' '$STD' | grep -q '^$n\\. \\*\\*'"
+for n in 1 2 3 4 5 6; do
+  expect "standard has rule $n of 六条规则"                    bash -c "sed -n '/^## 六条规则/,/^## [^六]/p' '$STD' | grep -q '^$n\\. \\*\\*'"
 done
-expect "placement table tags every row with its kind"        bash -c "rows=\$(sed -n '/^### 这份文档该放哪/,/^## 五条规则/p' '$STD' | grep '^| ' | grep -v '^| 这份文档\\|^|---'); [[ -n \"\$rows\" ]] && ! echo \"\$rows\" | awk -F'|' '{print \$3}' | grep -vqE '常青|在途|记录|归档|模板'"
+expect "placement table tags every row with its kind"        bash -c "rows=\$(sed -n '/^### 这份文档该放哪/,/^## 六条规则/p' '$STD' | grep '^| ' | grep -v '^| 这份文档\\|^|---'); [[ -n \"\$rows\" ]] && ! echo \"\$rows\" | awk -F'|' '{print \$3}' | grep -vqE '常青|在途|记录|归档|模板'"
 STALE="$(grep -rnE 'docs/specs/<(id|SPEC_ID)>|`specs/<id>/' "$SK" "$TP" --include=*.md 2>/dev/null | grep -vE '历史|版本层之前|只读|legacy|不要再建|不再新建' || true)"
 expect "no skill or template still sends new Specs to docs/specs/<id>/" test -z "$STALE"
 [[ -n "$STALE" ]] && echo "$STALE" | sed 's/^/      /' | head -12

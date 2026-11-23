@@ -74,7 +74,7 @@
 | 外部共享资源（数据库、端口、测试账号、浏览器、部署槽）现在由谁占用 | 在途 | `claims.md`（文件不建 Claim：文件互斥由单 owner + Workspace 保证，见 vibe-coding `references/workspace-contract.md`） |
 | 会话流水：做了什么、下一步 | 记录 | `handoff.md`（只追加；按月切到宿主归档） |
 | 先做哪些、排期 | 常青 | `product/roadmap.md`（只排优先级，不写进度） |
-| 还没做的差距 | 常青 | `product/gap-register.md`（或宿主声明的 `SDD gap register`）；已关闭的进 `gap-closed.md`（记录） |
+| 还没做的差距（附证据） | 在途 | 一条一个文件 `product/gaps/GAP-NNN.md`（或宿主声明的 `SDD gap dir`）；总表 `product/gap-register.md`（或 `SDD gap register`）由工具生成 |
 | 找谁、要对方做什么、做没做 | 在途 | `operations/requests/` |
 | 出了什么事、怎么恢复 | 在途 | `operations/incidents/` |
 | 遇到某症状怎么办（可重复步骤） | 常青 | `operations/runbooks/` |
@@ -86,13 +86,14 @@
 
 **宿主扩展必须声明。** 宿主增加的每个顶层目录，都要在本表里加一行写明「它回答什么」；没有对应一行的目录，`scripts/check-docs.sh` 会警告。
 
-## 五条规则
+## 六条规则
 
 1. **主题不建目录，只建枢纽页。** 一个主题在产品侧（`product/modules/<slug>/README.md`，或宿主的能力页）、系统侧（宿主自有，如 `architecture/` 的模块页）各至多一页，链出它的版本、Spec、ADR、报告、请求单。不建把常青、在途、记录装在一起的主题目录。
 2. **状态只写在在途文档里。** 版本 README 头部、Spec 的 `VERSION.md` / `run.md`、请求单、事故单写状态；枢纽页、各级 README 与索引、`roadmap.md` 只放链接。
 3. **关闭必须晋升。** Spec 关版（`close-spec`）与版本关闭（`close-iteration`）之前，把仍然成立的结论写回常青文档（产品页、系统页），或新开 ADR。不晋升，结论就只留在一个已关闭的版本里。
-4. **关闭不搬目录。** 版本与其中的 Spec 关闭只改状态词；归档目录只放版本层之前的历史 Spec（`specs/<archive>/`）与宿主其余已结束文件（宿主 `_archive/`）。子目录里不另建 `_archive/`。
-5. **一处一份。** 同一内容只在一处维护，别处只链接；`AGENTS.md` 已写的规则不复制到文档开头；被代码、脚本或 `AGENTS.md` 引用的路径，移动时在同一提交里改引用。
+4. **关闭不搬目录。** 在途文档（版本、Spec、需求池条目、gap、请求单、事故单）关闭只改状态词，原地不动；只有整个机制退役的目录才进归档（宿主 `_archive/`，保留原相对路径），并需 ADR。子目录里不另建 `_archive/`。
+5. **汇总表生成，不手写。** 版本索引、报告索引、事故索引、gap 总表、handoff 在途段写在 `<!-- sdd:gen NAME -->` 标记段里，由 `scripts/sdd_docs.py gen` 生成；手改会被检查器报 C4。
+6. **一处一份。** 同一内容只在一处维护，别处只链接；`AGENTS.md` 已写的规则不复制到文档开头；被代码、脚本或 `AGENTS.md` 引用的路径，移动时在同一提交里改引用。
 
 ## 文档元数据与生命周期
 
@@ -110,11 +111,11 @@ updated: YYYY-MM-DD
 
 | 类型 | 状态词 | 生命周期规则 |
 |---|---|---|
-| iteration | `draft → active → archived \| cancelled` | 版本的状态写在版本 `README.md` 头部（`close-iteration` 写 `archived`）；版本文档只链接 Spec，不抄 Spec 状态；`quote.md` 逐字、只追加 |
-| request | `待认领 → 评估中 → 建设中 → 对账中 → 已交付 \| 不做` | 「不做」必附原因；关闭后保留 30 天再进归档 |
-| incident | `investigating → mitigating → monitoring → restored → closed` | 沿用 `incidents/_template.md` 自带的字段表，不用上面的元数据块；只记事实、影响、根因（已证 / 未证分开）、处置 |
+| iteration | `draft → active → archived \| cancelled`，**由其中的 Spec 推导**（`gen` 写入） | 只有版本 `README.md` 头部有状态；版本内其他文档不写 `status`；`quote.md` 逐字、只追加 |
+| request | 工作项词表（`states.md` §5）：`open → shaping → planned → done \| dropped` | `dropped` 必写 `reason:`；对方进度写在 `note:` 或回复记录；关闭后原地保留 |
+| incident | 头部 `status` 用工作项词表（`open` / `done`）；处置阶段 `investigating → mitigating → monitoring → restored → closed` 写在正文字段表的「阶段」行 | 只记事实、影响、根因（已证 / 未证分开）、处置 |
 | runbook | `active \| deprecated` | 每份含触发症状、只读排查、处置、回滚、验证 |
-| report | `active \| superseded` | **不可变**：只在顶部追加更正；结论过期就新写一份并指向它 |
+| report | 不写 `status`；必填 `topic:`（生成索引按它分组）；被推翻时加 `superseded-by:` | **不可变**：只在顶部追加更正；结论过期就新写一份并指向它 |
 
 `updated` 必填；有「基于某版本核对」含义的文档另写 `verified_against`。
 
@@ -126,7 +127,11 @@ updated: YYYY-MM-DD
 |---|---|---|
 | `- SDD docs root: <相对路径>` | `docs` | SDD 文档树的根 |
 | `- SDD archive dir: <目录名>` | `archive` | `specs/` 下放版本层之前的已关版 Spec 的目录（版本内的 Spec 关版不搬动）；`close-spec`、`check_spec` 读它 |
-| `- SDD gap register: <相对宿主根的路径>` | `<root>/product/gap-register.md` | 宿主已有等价的缺口登记时声明；脚手架据此不再另建一份 |
+| `- SDD gap register: <相对宿主根的路径>` | `<root>/product/gap-register.md` | 生成的 gap 总表位置；脚手架据此不再另建一份 |
+| `- SDD gap dir: <相对宿主根的路径>` | `<root>/product/gaps` | gap 一条一文件的目录 |
+| `- SDD legacy paths: a, b, …` | — | 已退役的路径；在 `AGENTS.md`、规则、技能、目录 README 中出现即报 C6 |
+| `- SDD size exempt: glob, …` | — | 不受体积预算约束的路径（如业务口径大表） |
+| `- SDD strict since: YYYY-MM-DD` | — | 此日期之后新增的文档缺头部字段报 ERROR，之前的只报 WARN |
 | `- SDD workspace: <模式>` | 按 Spec 选 `local \| managed-worktree \| git-worktree` | 宿主强制多个会话共用一个 checkout 时写 `shared-local`：开工声明写入面、提交前 `commit-guard`（vibe-coding `references/workspace-contract.md` §10） |
 
 ## 真源优先级（冲突时）
@@ -206,11 +211,30 @@ docs/specs/_template/                        # 模板；docs/specs/<id>/ 只剩�
 
 ## 检查
 
-从插件仓校验宿主 docs（只读；退出码 1 = 有警告以外的错误）：
+检查、生成、移动都用 `scripts/sdd_docs.py`（只用标准库）：
 
 ```bash
-bash <plugin>/scripts/check-docs.sh <host> [--max-broken N]
+python3 <plugin>/scripts/sdd_docs.py check <host> [--files F …]   # C1～C10；有 ERROR 退出 1
+python3 <plugin>/scripts/sdd_docs.py gen   <host> [--check]       # 写入或核对生成段
+python3 <plugin>/scripts/sdd_docs.py mv    <host> OLD NEW …        # git mv + 全仓改引用
 ```
+
+| 规则 | 检查什么 |
+|---|---|
+| C1 | 带类型文档的头部字段（`strict since` 之后新增的为 ERROR） |
+| C2 | 状态词与必填项（工作项词表、Spec 词表、需求池表头） |
+| C3 | 禁写状态：报告、能力页、版本内非 README 文档；版本 README 与推导结果一致 |
+| C4 | 生成段最新、未被手改 |
+| C5 | 现行文档相对链接断链为 0；归档与报告只报总数 |
+| C6 | 规则类文件不出现已退役路径 |
+| C7 | 体积：`AGENTS.md` ≤ 24KB、常青单文件 ≤ 40KB、handoff ≤ 15KB、能力页 ≤ 12KB |
+| C8 | 期限（WARN）：复审日已过、版本超 42 天未关 |
+| C9 | 放置：顶层目录已声明、无单文件目录、无插件模板的本地副本、报告名带日期 |
+| C10 | 编号唯一：DEM、GAP、ADR |
+
+**改动分级**（决定要不要建版本）：T0 错字、纯文档 → 只写提交信息；T1 缺陷修复、单模块小改 → 在对应 gap 或需求池行记一笔并写 handoff；T2 新功能、行为变化、新表、≥5 个文件或跨模块 → 建版本与 Spec。
+
+旧脚本 `check-docs.sh` 保留兼容（放置、元数据、断链三项）。
 
 检查：宿主每个顶层目录是否在「这份文档该放哪」里有一行；本节所列类型的文档是否带元数据（版本目录里的 Spec 五件套除外）；相对链接的死链数（`--max-broken N` 超过则失败，用于「只增不减」的棘轮）。
 

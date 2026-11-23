@@ -22,7 +22,7 @@
 |---|---|---|---|
 | C-001 | | `modules/<slug>/` | |
 
-本表不写状态（文档标准「五条规则」第 2 条）：愿望的状态在 `demand-pool.md`，进行中的状态在版本与 Spec 里。
+本表不写状态（文档标准「六条规则」第 2 条）：愿望的状态在 `demand-pool.md`，进行中的状态在版本与 Spec 里。
 
 ## 三池流转
 
@@ -35,14 +35,13 @@ demand-pool（愿望）──Shape 确认方案──► design-ready
         │                                    │
         │                         关版 / 关闭：只改状态，原地不动
         │                                    │
-gap-register（蓝图 vs 现状差距）──关闭──► gap-closed（审计）
+gaps/GAP-NNN.md（蓝图 vs 现状差距，附证据）──done / dropped──► 原地改状态（总表 gap-register.md 由工具生成）
 ```
 
 | 池 | 何时写入 | 何时流出 |
 |---|---|---|
 | `demand-pool.md` | Shape：新愿望 / 故障 / 体验反馈 | 排进一轮 → 建版本，原话移入版本 `quote.md`，本条目链到该版本 |
-| `gap-register.md` | 蓝图与代码/运行现状不一致 | 差距消除或明确不做 → `gap-closed.md` |
-| `gap-closed.md` | 从 gap-register 关闭的条目 | 归档审计 |
+| `gaps/GAP-NNN.md` | 蓝图与代码/运行现状不一致，附证据 | 差距消除改 `done`、明确不做改 `dropped`，原地不动；总表 `gap-register.md` 由 `sdd_docs.py gen` 生成 |
 
 新愿望进 demand-pool；排进一轮就建版本 `docs/iterations/<yyyy-mm>/<w>/<版本>/`，实施与验收以其中的 Spec 为真源。产品决定变化时更新蓝图，
 技术实现变化时更新 Spec 或代码。

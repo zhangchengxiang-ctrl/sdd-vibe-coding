@@ -418,6 +418,12 @@ note(o[0] == 0 and o[1] >= 1 and "replay waived" in o[2],
      "close-override-warns-not-silent",
      "a hand-written Spec has no baseline to replay, so the override warns instead of failing")
 
+# Docs lint (C1..C10): a hand-edited generated index, a status outside the vocabulary and a
+# legacy path in a rule file all sat in a real host on 2026-11-23 with no check firing.
+import subprocess as _sp
+note(_sp.run(["bash", str(root / "scripts/selftest-docs-lint.sh")], capture_output=True).returncode == 0,
+     "docs-lint-rules", "C1..C10 each fire on their fixture; a clean host has 0 errors; gen is idempotent")
+
 # --- catalog accounting: every problem row names a probe or an open reason ---
 rows = list(csv.DictReader((root / "scripts/fixtures/gate-cases.tsv").open(encoding="utf-8"),
                            delimiter="\t"))

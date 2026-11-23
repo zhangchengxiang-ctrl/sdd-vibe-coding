@@ -10,26 +10,14 @@
 
 ## 状态（条目态）
 
-状态只写在本表（文档标准「五条规则」第 2 条）；进入版本后进度以版本与 Spec 为准，本表不抄。
-
-| 状态 | 含义 |
-|---|---|
-| `draft` | 刚记下，信息可能不完整 |
-| `shaping` | 正在澄清产品切片，或设计已出、等用户拍板 |
-| `design-ready` | **产品方案已确认**（方案闸通过），可进入研发自动编排 / Plan |
-| `planned` | 已排进一轮，已有版本，链接写在最后一列 |
-| `delivered` | 已交付 |
-| `parked` | 暂不处理，**必须写理由与重启条件** |
-| `dropped` | 决定不做，**必须写原因**，防止重复调研 |
-| `merged` | 并入了某个已有版本或 gap，**必须写去向链接** |
+词表与 gap、请求单、事故单共用，见插件 vibe-coding `references/states.md` §5：`open → shaping → ready → planned → done`，以及 `parked`（说明列写重启条件，必填复审日）、`dropped`（写原因）、`merged`（写去向）。`open` / `shaping` / `ready` / `parked` 必填复审日（默认当天加 60 天），到期进入月度复审。由 `scripts/sdd_docs.py check` 执行。
 
 与能力地图态区分：本表跟踪单条愿望；`product/README` 能力地图跟踪成块能力。
-`design-ready` 语义见插件 vibe-coding `references/states.md`。
 
 ## 条目
 
 类型：`wish`（愿望）/ `fault`（故障反馈）/ `ux`（体验反馈）/ `other`。优先级建议：`P0` / `P1` / `P2` / `park`，或写对应 roadmap 序号。
 
-| ID | 日期 | 类型 | 用户问题 / 目标 | 优先级建议 | 状态 | 重启条件 | 真源 / 版本 / 报告 |
-|---|---|---|---|---|---|---|---|
-| DEM-001 | | wish / fault / ux / other | | P0 / P1 / P2 / park | draft | | |
+| ID | 日期 | 类型 | 用户问题 / 目标 | 优先级建议 | 状态 | 复审日 | 说明 | 真源 / 版本 / 报告 |
+|---|---|---|---|---|---|---|---|---|
+| DEM-001 | YYYY-MM-DD | wish / fault / ux / other | | P0 / P1 / P2 / park | `open` | YYYY-MM-DD | | |

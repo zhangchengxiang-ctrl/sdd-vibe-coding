@@ -2,7 +2,7 @@
 # Run `make` or `make help` for the command list.
 
 .PHONY: help install install-dev install-cursor install-claude install-codex \
-	scaffold codex-dispatch wish-orchestrate context-pack verify check-docs check-spec verify-deliver close-spec close-iteration iteration-layout-selftest owners-selftest check-host-docs \
+	scaffold codex-dispatch wish-orchestrate context-pack verify check-docs docs-lint docs-gen docs-lint-selftest check-spec verify-deliver close-spec close-iteration iteration-layout-selftest owners-selftest check-host-docs \
 	preflight-rail codex-preflight ship oracle-migration dispatch-gates-selftest public-gates contract-sync \
 	dispatch-live-lifecycle dispatch-live-scenario \
 	phase3-negative eval-live eval-skill-load wish-journey \
@@ -193,6 +193,18 @@ check-host-docs:
 
 docs-system-selftest:
 	bash scripts/selftest-docs-system.sh
+
+# Docs lint / generate / move for a host (C1..C10, generated sections): see scripts/sdd_docs.py
+docs-lint:
+	@if [ -z "$(HOST)" ]; then echo 'Usage: make docs-lint HOST=<repo>'; exit 2; fi
+	python3 scripts/sdd_docs.py check "$(HOST)"
+
+docs-gen:
+	@if [ -z "$(HOST)" ]; then echo 'Usage: make docs-gen HOST=<repo>'; exit 2; fi
+	python3 scripts/sdd_docs.py gen "$(HOST)"
+
+docs-lint-selftest:
+	bash scripts/selftest-docs-lint.sh
 
 dispatch-gates-selftest:
 	bash skills/dispatch-codex/scripts/selftest-gates.sh

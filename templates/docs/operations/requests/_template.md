@@ -1,7 +1,7 @@
 ---
 title: <请求单标题>
 type: request
-status: 待认领
+status: open
 owner: <对方负责人，未指派写「待指派」>
 updated: YYYY-MM-DD
 ---
